@@ -1,3 +1,4 @@
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   DRIVER = 'DRIVER',
@@ -51,4 +52,13 @@ export interface Calculation {
 
   // Metadados
   revisionNotes?: string;
+}
+
+export interface Iban {
+  id: string;
+  driverId: string;
+  driverName: string; // The name of the driver from the users collection
+  fullName: string; // The full name on the bank account
+  nif: string;
+  iban: string;
 }

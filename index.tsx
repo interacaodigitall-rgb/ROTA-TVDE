@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { CalculationProvider } from './contexts/CalculationContext';
 import { UserProvider } from './contexts/UserContext';
+import { IbanProvider } from './contexts/IbanContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -16,9 +17,11 @@ root.render(
   <React.StrictMode>
     <AuthProvider>
       <UserProvider>
-        <CalculationProvider>
-          <App />
-        </CalculationProvider>
+        <IbanProvider>
+          <CalculationProvider>
+            <App />
+          </CalculationProvider>
+        </IbanProvider>
       </UserProvider>
     </AuthProvider>
   </React.StrictMode>

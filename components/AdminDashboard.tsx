@@ -10,10 +10,27 @@ import { Calculation, CalculationStatus, UserRole } from '../types';
 import Button from './ui/Button';
 import Card from './ui/Card';
 import { calculateSummary } from '../utils/calculationUtils';
+import IbanManagement from './IbanManagement';
 
 type AdminView = 'dashboard' | 'form' | 'reports' | 'details' | 'history' | 'iban';
 
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+
+const getWeekRange = () => {
+    const now = new Date();
+    // 0 is Sunday, 1 is Monday, etc. We want Monday to be the start.
+    const dayOfWeek = now.getDay(); 
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    
+    return { monday, sunday };
+};
 
 const NavLink: React.FC<{
   icon: JSX.Element;
@@ -95,18 +112,20 @@ const AdminDashboard: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const stats = useMemo(() => {
-    const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1))); // Monday
-    startOfWeek.setHours(0, 0, 0, 0);
+    const { monday, sunday } = getWeekRange();
 
     const weeklyGains = calculations
-      .filter(c => c.status === CalculationStatus.ACCEPTED && toDate(c.periodEnd) >= startOfWeek)
+      .filter(c => {
+        const periodEndDate = toDate(c.periodEnd);
+        return c.status === CalculationStatus.ACCEPTED && periodEndDate >= monday && periodEndDate <= sunday;
+      })
       .reduce((sum, c) => sum + calculateSummary(c).valorFinal, 0);
 
     return {
       weeklyGains,
       pendingCount: calculations.filter(c => c.status === CalculationStatus.PENDING).length,
       activeDrivers: users.filter(u => u.role === UserRole.DRIVER).length,
+      periodString: `${monday.toLocaleDateString('pt-PT', {day: '2-digit', month: '2-digit'})} / ${sunday.toLocaleDateString('pt-PT', {day: '2-digit', month: '2-digit', year: 'numeric'})}`,
     };
   }, [calculations, users]);
 
@@ -142,10 +161,10 @@ const AdminDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total Ganhos (Semana)" value={`€${stats.weeklyGains.toFixed(2)}`} subtext="Total bruto" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>} />
+          <StatCard title="Total Ganhos (Semana)" value={`€${stats.weeklyGains.toFixed(2)}`} subtext="Soma dos valores aceites" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>} />
           <StatCard title="Cálculos Pendentes" value={String(stats.pendingCount)} subtext="a necessitar de ação" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
           <StatCard title="Motoristas Ativos" value={String(stats.activeDrivers)} subtext="Total de motoristas" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.122-1.274-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.122-1.274.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} />
-          <StatCard title="Período da Calculo" value={`${new Date().toLocaleDateString('pt-PT', {day: '2-digit', month: 'short'})} - ${new Date(new Date().setDate(new Date().getDate() + 6)).toLocaleDateString('pt-PT', {day: '2-digit', month: 'short', year: 'numeric'})}`} subtext="Segunda a Domingo" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
+          <StatCard title="Período de Calculo" value={stats.periodString} subtext="Segunda a Domingo" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -284,7 +303,7 @@ const AdminDashboard: React.FC = () => {
              }
           </div>
         );
-      case 'iban': return <Card><h2 className="text-2xl font-bold">Gestão de IBAN</h2><p className="text-gray-400 mt-2">Funcionalidade em desenvolvimento.</p></Card>;
+      case 'iban': return <IbanManagement />;
       default: return <h2>Bem-vindo</h2>;
     }
   };

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Calculation, CalculationStatus, User, UserRole } from '../types';
 import Button from './ui/Button';
@@ -22,6 +23,15 @@ const CalculationLine: React.FC<{ label: string; value: string }> = ({ label, va
     <span>{label.padEnd(20, ' ')}</span>
     <span>{value}</span>
   </div>
+);
+
+const CompanyInfo = () => (
+    <div className="text-center text-xs text-gray-400 space-y-0.5 mt-6 pt-4 border-t border-dashed border-gray-600">
+        <p className="font-bold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+        <p>NIPC: 517112604</p>
+        <p>MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+        <p>TEL: +351 914 800 818</p>
+    </div>
 );
 
 const RevisionNotesModal: React.FC<{
@@ -254,6 +264,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
           <p>Status: <span className={`font-bold ${statusColor[calculation.status]}`}>{calculation.status}</span></p>
           <p>Calculado por: {admin?.name}</p>
         </div>
+        <CompanyInfo />
       </div>
       
       <div className="max-w-md mx-auto mt-6 flex justify-center items-center gap-4 flex-wrap">

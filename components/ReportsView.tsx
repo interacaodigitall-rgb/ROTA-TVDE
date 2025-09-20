@@ -102,7 +102,6 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
         return;
     }
     
-    // Create a clone for printing
     const clone = element.cloneNode(true) as HTMLElement;
     clone.style.position = 'absolute';
     clone.style.left = '-9999px';
@@ -112,42 +111,72 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
     
     document.body.appendChild(clone);
     
-    // Force black text and transparent background on all elements for printing
     const allElements = clone.querySelectorAll<HTMLElement>('*');
     allElements.forEach(el => {
         el.style.color = 'black';
         el.style.backgroundColor = 'transparent';
     });
+    
+    if (isDriverView) {
+        clone.style.fontSize = '12px';
+        clone.style.lineHeight = '1.4';
+        clone.style.padding = '1rem'; 
+        
+        const header = clone.querySelector<HTMLElement>('.text-center.mb-6');
+        if (header) {
+            header.style.marginBottom = '1rem';
+            header.style.paddingBottom = '0.5rem';
+        }
 
-    // Generate a single, potentially very tall, canvas from the clone
+        const dateContainer = clone.querySelector<HTMLElement>('.border-b.pb-4.mb-4');
+        if (dateContainer) {
+            dateContainer.style.marginBottom = '1rem';
+            dateContainer.style.paddingBottom = '0.5rem';
+        }
+
+        const reportCard = clone.querySelector<HTMLElement>('.bg-gray-900\\/50.p-4');
+        if(reportCard) {
+            reportCard.style.padding = '0.75rem';
+        }
+
+        const reportRows = clone.querySelectorAll<HTMLElement>('.py-2');
+        reportRows.forEach(row => {
+            row.style.paddingTop = '0.25rem';
+            row.style.paddingBottom = '0.25rem';
+        });
+    }
+
     const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff' });
     document.body.removeChild(clone);
 
     const data = canvas.toDataURL('image/png');
     
-    const pdf = new jspdf.jsPDF('p', 'pt', 'a4'); // portrait
+    const pdf = new jspdf.jsPDF('p', 'pt', 'a4');
     const imgProps = pdf.getImageProperties(data);
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
     
     const margin = 40;
-    const contentWidth = pdfWidth - margin * 2;
-    const contentHeight = (imgProps.height * contentWidth) / imgProps.width;
-    const pageHeight = pdfHeight - margin * 2;
+    const availableWidth = pdfWidth - margin * 2;
+    const availableHeight = pdfHeight - margin * 2;
+    
+    const imgRatio = imgProps.width / imgProps.height;
+    const pageRatio = availableWidth / availableHeight;
 
-    // Logic to split the tall canvas image across multiple PDF pages
-    let heightLeft = contentHeight;
-    let yPosition = margin;
+    let finalWidth, finalHeight;
 
-    pdf.addImage(data, 'PNG', margin, yPosition, contentWidth, contentHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-        yPosition -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(data, 'PNG', margin, yPosition, contentWidth, contentHeight);
-        heightLeft -= pageHeight;
+    if (imgRatio > pageRatio) {
+      finalWidth = availableWidth;
+      finalHeight = finalWidth / imgRatio;
+    } else {
+      finalHeight = availableHeight;
+      finalWidth = finalHeight * imgRatio;
     }
+    
+    const xOffset = margin + (availableWidth - finalWidth) / 2;
+    const yOffset = margin + (availableHeight - finalHeight) / 2;
+    
+    pdf.addImage(data, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
     
     const start = startDate.replace(/-/g, '');
     const end = endDate.replace(/-/g, '');
@@ -180,6 +209,12 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
       </div>
       <Card>
        <div ref={reportPrintRef} className="p-1 sm:p-4">
+            <div className="text-center mb-6 border-b border-gray-700 pb-4">
+                <h3 className="text-xl font-bold">ROTA TVDE 5.0</h3>
+                <p className="text-sm font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+                <p className="text-xs text-gray-400">NIPC: 517112604 | TEL: +351 914 800 818</p>
+                <p className="text-xs text-gray-400">MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+            </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-700 pb-4 mb-4">
               <p className="text-sm text-gray-400 md:col-span-3">
                 {isDriverView

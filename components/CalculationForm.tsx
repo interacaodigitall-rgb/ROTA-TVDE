@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCalculations } from '../hooks/useCalculations';
@@ -33,9 +34,9 @@ const NumberInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { labe
 const initialFormData = {
   periodStart: '',
   periodEnd: '',
-  uberRides: 0, uberTips: 0, uberTolls: 0,
-  boltRides: 0, boltTips: 0, boltTolls: 0,
-  vehicleRental: 0, fleetCard: 0, rentalTolls: 0, otherExpenses: 0,
+  uberRides: '0', uberTips: '0', uberTolls: '0',
+  boltRides: '0', boltTips: '0', boltTolls: '0',
+  vehicleRental: '0', fleetCard: '0', rentalTolls: '0', otherExpenses: '0',
 };
 
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -65,16 +66,16 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       setFormData({
         periodStart: toInputDate(calculationToEdit.periodStart),
         periodEnd: toInputDate(calculationToEdit.periodEnd),
-        uberRides: calculationToEdit.uberRides,
-        uberTips: calculationToEdit.uberTips,
-        uberTolls: calculationToEdit.uberTolls,
-        boltRides: calculationToEdit.boltRides,
-        boltTips: calculationToEdit.boltTips,
-        boltTolls: calculationToEdit.boltTolls,
-        vehicleRental: calculationToEdit.vehicleRental,
-        fleetCard: calculationToEdit.fleetCard,
-        rentalTolls: calculationToEdit.rentalTolls,
-        otherExpenses: calculationToEdit.otherExpenses,
+        uberRides: String(calculationToEdit.uberRides || '0'),
+        uberTips: String(calculationToEdit.uberTips || '0'),
+        uberTolls: String(calculationToEdit.uberTolls || '0'),
+        boltRides: String(calculationToEdit.boltRides || '0'),
+        boltTips: String(calculationToEdit.boltTips || '0'),
+        boltTolls: String(calculationToEdit.boltTolls || '0'),
+        vehicleRental: String(calculationToEdit.vehicleRental || '0'),
+        fleetCard: String(calculationToEdit.fleetCard || '0'),
+        rentalTolls: String(calculationToEdit.rentalTolls || '0'),
+        otherExpenses: String(calculationToEdit.otherExpenses || '0'),
       });
     } else {
       setDriverId('');
@@ -91,7 +92,21 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (e.target.value === '0') {
+        const { name } = e.target;
+        setFormData(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      if (e.target.value === '') {
+          const { name } = e.target;
+          setFormData(prev => ({ ...prev, [name]: '0' }));
+      }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,6 +116,19 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       return;
     }
 
+    const numericFormData = {
+        uberRides: parseFloat(formData.uberRides) || 0,
+        uberTips: parseFloat(formData.uberTips) || 0,
+        uberTolls: parseFloat(formData.uberTolls) || 0,
+        boltRides: parseFloat(formData.boltRides) || 0,
+        boltTips: parseFloat(formData.boltTips) || 0,
+        boltTolls: parseFloat(formData.boltTolls) || 0,
+        fleetCard: parseFloat(formData.fleetCard) || 0,
+        rentalTolls: parseFloat(formData.rentalTolls) || 0,
+        otherExpenses: parseFloat(formData.otherExpenses) || 0,
+        vehicleRental: parseFloat(formData.vehicleRental) || 0,
+    };
+
     const calculationData: any = {
       driverId,
       driverName,
@@ -108,17 +136,15 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       type: calculationType,
       periodStart: formData.periodStart,
       periodEnd: formData.periodEnd,
-      ...formData,
-      vehicleRental: calculationType === CalculationType.FROTA ? formData.vehicleRental : 0,
+      ...numericFormData,
+      vehicleRental: calculationType === CalculationType.FROTA ? numericFormData.vehicleRental : 0,
     };
     
     if (isEditMode && calculationToEdit) {
         updateCalculation(calculationToEdit.id, {
             ...calculationData,
-            // DO NOT pass back the 'date' field. It's the creation timestamp and should not be updated.
-            // Passing back the original Timestamp object can cause serialization issues.
-            status: CalculationStatus.PENDING, // Reset status for re-approval
-            revisionNotes: '', // Clear previous notes
+            status: CalculationStatus.PENDING, 
+            revisionNotes: '',
         });
     } else {
         addCalculation({
@@ -178,11 +204,11 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
             <div className="md:col-span-1 grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-1">
                  <div>
                     <label htmlFor="periodStart" className="block text-sm font-medium text-gray-300">Início do Período</label>
-                    <input type="date" id="periodStart" value={formData.periodStart} onChange={(e) => setFormData({...formData, periodStart: e.target.value})} required className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                    <input type="date" id="periodStart" name="periodStart" value={formData.periodStart} onChange={handleInputChange} required className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
                 </div>
                 <div>
                     <label htmlFor="periodEnd" className="block text-sm font-medium text-gray-300">Fim do Período</label>
-                    <input type="date" id="periodEnd" value={formData.periodEnd} onChange={(e) => setFormData({...formData, periodEnd: e.target.value})} required className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                    <input type="date" id="periodEnd" name="periodEnd" value={formData.periodEnd} onChange={handleInputChange} required className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
                 </div>
             </div>
         </div>
@@ -190,22 +216,22 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         <div>
             <h3 className="text-lg font-medium leading-6 text-white border-b border-gray-700 pb-2 mb-4">Ganhos</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                <NumberInput label="Uber Corridas" name="uberRides" value={formData.uberRides} onChange={handleInputChange} />
-                <NumberInput label="Uber Gorjetas" name="uberTips" value={formData.uberTips} onChange={handleInputChange} />
-                <NumberInput label="Uber Portagens" name="uberTolls" value={formData.uberTolls} onChange={handleInputChange} />
-                <NumberInput label="Bolt Corridas" name="boltRides" value={formData.boltRides} onChange={handleInputChange} />
-                <NumberInput label="Bolt Gorjetas" name="boltTips" value={formData.boltTips} onChange={handleInputChange} />
-                <NumberInput label="Bolt Portagens" name="boltTolls" value={formData.boltTolls} onChange={handleInputChange} />
+                <NumberInput label="Uber Corridas" name="uberRides" value={formData.uberRides} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Uber Gorjetas" name="uberTips" value={formData.uberTips} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Uber Portagens" name="uberTolls" value={formData.uberTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Bolt Corridas" name="boltRides" value={formData.boltRides} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Bolt Gorjetas" name="boltTips" value={formData.boltTips} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Bolt Portagens" name="boltTolls" value={formData.boltTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
             </div>
         </div>
 
         <div>
             <h3 className="text-lg font-medium leading-6 text-white border-b border-gray-700 pb-2 mb-4">Deduções</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                 <NumberInput label="Aluguer Veículo" name="vehicleRental" value={formData.vehicleRental} onChange={handleInputChange} disabled={calculationType !== CalculationType.FROTA} />
-                <NumberInput label="Cartão Frota" name="fleetCard" value={formData.fleetCard} onChange={handleInputChange} />
-                <NumberInput label="Portagens (Aluguer)" name="rentalTolls" value={formData.rentalTolls} onChange={handleInputChange} />
-                <NumberInput label="Outras Despesas" name="otherExpenses" value={formData.otherExpenses} onChange={handleInputChange} />
+                 <NumberInput label="Aluguer Veículo" name="vehicleRental" value={formData.vehicleRental} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} disabled={calculationType !== CalculationType.FROTA} />
+                <NumberInput label="Cartão Frota" name="fleetCard" value={formData.fleetCard} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Portagens (Aluguer)" name="rentalTolls" value={formData.rentalTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Outras Despesas" name="otherExpenses" value={formData.otherExpenses} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
             </div>
         </div>
 
