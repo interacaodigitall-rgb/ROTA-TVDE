@@ -1,5 +1,5 @@
 {
-  "name": "TVDE 5.0 DEMO",
-  "description": "A web application for TVDE drivers and administrators to manage weekly earnings calculations. Admins can create and assign calculations, and drivers can review, accept, or request revisions. ",
+  "name": "ROTA TVDE 5.0 Calculator",
+  "description": "A web application for TVDE drivers and administrators to manage weekly earnings calculations. Admins can create and assign calculations, and drivers can review, accept, or request revisions.",
   "requestFramePermissions": []
 }

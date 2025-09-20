@@ -1,13 +1,14 @@
+
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Calculation, CalculationStatus, UserRole } from '../types';
+import { db, firestore } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
-import { MOCK_CALCULATIONS } from '../constants';
 
 interface CalculationContextType {
   calculations: Calculation[];
   loading: boolean;
   error: string | null;
-  addCalculation: (calculation: Omit<Calculation, 'id' | 'date'>) => Promise<void>;
+  addCalculation: (calculation: Omit<Calculation, 'id'>) => Promise<void>;
   updateCalculationStatus: (id: string, status: CalculationStatus) => Promise<void>;
   updateCalculation: (id: string, updates: Partial<Omit<Calculation, 'id'>>) => Promise<void>;
 }
@@ -15,6 +16,7 @@ interface CalculationContextType {
 export const CalculationContext = createContext<CalculationContextType | undefined>(undefined);
 
 // Helper to parse YYYY-MM-DD string as local date to avoid timezone issues.
+// new Date('YYYY-MM-DD') creates a date at UTC midnight, which can cause off-by-one day errors.
 const parseLocalDate = (dateString: string): Date => {
     if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
         return new Date(NaN); // Return an invalid date for bad input
@@ -34,54 +36,81 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
     if (!user) {
       setCalculations([]);
       setLoading(false);
+      setError(null);
       return;
     }
 
     setLoading(true);
-    // Simulate fetching calculations from a local source
-    setTimeout(() => {
-        let userCalculations = MOCK_CALCULATIONS;
-        if (user.role !== UserRole.ADMIN) {
-            // In a real app, this filtering would be done by the backend query.
-            userCalculations = MOCK_CALCULATIONS.filter(c => c.driverId === user.id);
-        }
-        // Make a copy to avoid mutating the constant
-        setCalculations([...userCalculations].sort((a, b) => b.date.getTime() - a.date.getTime()));
+    setError(null);
+
+    let query: any;
+    const collectionRef = db.collection('calculations');
+
+    if (user.role === UserRole.ADMIN) {
+        query = collectionRef.orderBy('date', 'desc');
+    } else {
+        query = collectionRef.where('driverId', '==', user.id).orderBy('date', 'desc');
+    }
+
+    const unsubscribe = query.onSnapshot((snapshot: any) => {
+        const calcs = snapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data(),
+        } as Calculation));
+        setCalculations(calcs);
         setLoading(false);
-    }, 500); // Simulate network delay
+        setError(null);
+    }, (err: any) => {
+        console.error("Error fetching calculations: ", err);
+        // Check for specific Firestore missing index error
+        if (err.code === 'failed-precondition') {
+            const indexCreationUrl = `https://console.firebase.google.com/v1/r/project/meus-calculosv1/firestore/indexes?create_composite=ClRwcm9qZWN0cy9tZXVzLWNhbGN1bG9zdjEvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NhbGN1bGF0aW9ucy9pbmRleGVzL18QARoMCghkcml2ZXJJZBABGggKBGRhdGUQAhoMCghfX25hbWVfXxAC`;
+            setError(`A base de dados necessita de uma configuração (índice) para carregar os seus cálculos. Por favor, aceda ao seguinte link, clique em 'Criar', e aguarde alguns minutos pela criação do índice. Depois, recarregue esta página. Link: ${indexCreationUrl}`);
+        } else {
+            setError("Ocorreu um erro ao carregar os cálculos. Verifique a sua ligação ou tente mais tarde.");
+        }
+        setCalculations([]);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
-  const addCalculation = useCallback(async (calculation: Omit<Calculation, 'id' | 'date'>) => {
-    const newCalculation: Calculation = {
-        ...calculation,
-        id: `calc-demo-${Date.now()}`, // Create a unique ID for the demo session
-        date: new Date(),
-        // The form provides dates as strings, so we must parse them into Date objects
-        periodStart: parseLocalDate(calculation.periodStart as unknown as string),
-        periodEnd: parseLocalDate(calculation.periodEnd as unknown as string),
-    };
-    setCalculations(prev => [newCalculation, ...prev]);
+  const addCalculation = useCallback(async (calculation: Omit<Calculation, 'id'>) => {
+    try {
+        const newCalculation = {
+            ...calculation,
+            date: firestore.FieldValue.serverTimestamp(),
+            periodStart: parseLocalDate(calculation.periodStart as string),
+            periodEnd: parseLocalDate(calculation.periodEnd as string),
+        };
+      await db.collection('calculations').add(newCalculation);
+    } catch (error) {
+      console.error("Error adding calculation: ", error);
+    }
   }, []);
 
   const updateCalculationStatus = useCallback(async (id: string, status: CalculationStatus) => {
-    setCalculations(prev => 
-        prev.map(calc => calc.id === id ? { ...calc, status, revisionNotes: status !== CalculationStatus.REVISION_REQUESTED ? '' : calc.revisionNotes } : calc)
-    );
+    try {
+      await db.collection('calculations').doc(id).update({ status });
+    } catch (error) {
+      console.error("Error updating calculation status: ", error);
+    }
   }, []);
 
   const updateCalculation = useCallback(async (id: string, updates: Partial<Omit<Calculation, 'id'>>) => {
-    const safeUpdates: any = { ...updates };
-    // The form provides dates as strings, ensure they are Date objects before updating state
-    if (updates.periodStart && typeof updates.periodStart === 'string') {
-        safeUpdates.periodStart = parseLocalDate(updates.periodStart);
+    try {
+        const safeUpdates: any = { ...updates };
+        if (updates.periodStart && typeof updates.periodStart === 'string') {
+            safeUpdates.periodStart = parseLocalDate(updates.periodStart);
+        }
+        if (updates.periodEnd && typeof updates.periodEnd === 'string') {
+            safeUpdates.periodEnd = parseLocalDate(updates.periodEnd);
+        }
+        await db.collection('calculations').doc(id).update(safeUpdates);
+    } catch (error) {
+        console.error("Error updating calculation: ", error);
     }
-    if (updates.periodEnd && typeof updates.periodEnd === 'string') {
-        safeUpdates.periodEnd = parseLocalDate(updates.periodEnd);
-    }
-
-    setCalculations(prev => 
-        prev.map(calc => calc.id === id ? { ...calc, ...safeUpdates } : calc)
-    );
   }, []);
 
   return (

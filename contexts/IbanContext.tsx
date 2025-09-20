@@ -1,7 +1,8 @@
+
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Iban } from '../types';
+import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
-import { MOCK_IBANS } from '../constants';
 
 interface IbanContextType {
   ibans: Iban[];
@@ -26,30 +27,47 @@ export const IbanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     setLoading(true);
-    // Simulate fetching IBANs from a local source
-    setTimeout(() => {
-      // Make a copy to ensure our local state is mutable
-      setIbans([...MOCK_IBANS]); 
-      setLoading(false);
-    }, 300); // Simulate network delay
+    const unsubscribe = db.collection('ibans').onSnapshot(
+      (snapshot: any) => {
+        const ibanList = snapshot.docs.map((doc: any) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Iban[];
+        setIbans(ibanList);
+        setLoading(false);
+      },
+      (error: any) => {
+        console.error("Error fetching IBANs:", error);
+        setIbans([]);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   const addIban = useCallback(async (ibanData: Omit<Iban, 'id'>) => {
-    const newIban = {
-        ...ibanData,
-        id: `iban-demo-${Date.now()}`, // Create a unique ID for the demo session
-    };
-    setIbans(prev => [...prev, newIban]);
+    try {
+      await db.collection('ibans').add(ibanData);
+    } catch (error) {
+      console.error("Error adding IBAN: ", error);
+    }
   }, []);
 
   const updateIban = useCallback(async (id: string, updates: Partial<Omit<Iban, 'id'>>) => {
-    setIbans(prev => 
-        prev.map(iban => iban.id === id ? { ...iban, ...updates } : iban)
-    );
+    try {
+      await db.collection('ibans').doc(id).update(updates);
+    } catch (error) {
+      console.error("Error updating IBAN: ", error);
+    }
   }, []);
 
   const deleteIban = useCallback(async (id: string) => {
-    setIbans(prev => prev.filter(iban => iban.id !== id));
+    try {
+      await db.collection('ibans').doc(id).delete();
+    } catch (error) {
+      console.error("Error deleting IBAN: ", error);
+    }
   }, []);
 
   return (

@@ -27,10 +27,10 @@ const CalculationLine: React.FC<{ label: string; value: string }> = ({ label, va
 
 const CompanyInfo = () => (
     <div className="text-center text-xs text-gray-400 space-y-0.5 mt-6 pt-4 border-t border-dashed border-gray-600">
-        <p className="font-bold">ROTA RÁPIDA - TVDE, LDA</p>
-        <p>NIPC: 987654321</p>
-        <p>MORADA: AVENIDA DA LIBERDADE, 100 - 1250-145 LISBOA</p>
-        <p>TEL: +351 912 345 678</p>
+        <p className="font-bold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+        <p>NIPC: 517112604</p>
+        <p>MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+        <p>TEL: +351 914 800 818</p>
     </div>
 );
 
@@ -184,8 +184,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
     pdf.addImage(data, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
 
     const driverName = calculation.driverName.replace(/\s+/g, '_');
-    // FIX: The `toDate()` method does not exist on a `Date` object. Use the `toDate` helper function to handle both `Date` objects and potential Firestore timestamps.
-    const endDate = toDate(calculation.periodEnd).toLocaleDateString('pt-PT').replace(/\//g, '-');
+    const endDate = calculation.periodEnd.toDate().toLocaleDateString('pt-PT').replace(/\//g, '-');
     pdf.save(`Resumo_Semanal_${driverName}_${endDate}.pdf`);
   };
   
