@@ -1,14 +1,17 @@
 
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { User } from '../types';
+import { User, UserRole, CalculationType } from '../types';
 import { auth, db } from '../firebase';
+import { MOCK_ADMIN_USER, MOCK_FROTA_DRIVER_USER, MOCK_SLOT_DRIVER_USER } from '../demoData';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
+  isDemo: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  loginAsDemo: (role: UserRole, type?: CalculationType) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,8 +20,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
 
   const logout = useCallback(async () => {
+    if (isDemo) {
+        setIsDemo(false);
+        setUser(null);
+        setError(null);
+        return;
+    }
     try {
       await auth.signOut();
       setUser(null);
@@ -27,11 +37,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error("Error signing out:", error);
       setError("Failed to sign out.");
     }
-  }, []);
+  }, [isDemo]);
 
   useEffect(() => {
+    if (isDemo) {
+        setLoading(false);
+        return;
+    }
+
     setLoading(true);
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      setIsDemo(false); // Ensure demo mode is off on real auth change
       setError(null); // Clear errors on auth state change
       if (firebaseUser) {
         try {
@@ -63,10 +79,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isDemo]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setError(null);
+    setIsDemo(false); // Ensure demo mode is off for real login
     try {
       await auth.signInWithEmailAndPassword(email, password);
       // onAuthStateChanged will handle setting the user state and profile fetching.
@@ -84,8 +101,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  const loginAsDemo = useCallback((role: UserRole, type?: CalculationType) => {
+    setError(null);
+    setLoading(true);
+    let demoUser: User | null = null;
+    if (role === UserRole.ADMIN) {
+        demoUser = MOCK_ADMIN_USER;
+    } else if (role === UserRole.DRIVER) {
+        if (type === CalculationType.FROTA) {
+            demoUser = MOCK_FROTA_DRIVER_USER;
+        } else {
+            demoUser = MOCK_SLOT_DRIVER_USER;
+        }
+    }
+    
+    if (demoUser) {
+        setUser(demoUser);
+        setIsDemo(true);
+    } else {
+        setError("Tipo de demonstração inválido.");
+    }
+    setLoading(false);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, isDemo, login, logout, loginAsDemo }}>
       {children}
     </AuthContext.Provider>
   );

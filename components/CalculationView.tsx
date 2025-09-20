@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { calculateSummary } from '../utils/calculationUtils';
 import Card from './ui/Card';
 import { useUsers } from '../hooks/useUsers';
+import { MOCK_COMPANY_INFO } from '../demoData';
 
 // Add declarations for CDN libraries
 declare const html2canvas: any;
@@ -25,12 +26,23 @@ const CalculationLine: React.FC<{ label: string; value: string }> = ({ label, va
   </div>
 );
 
-const CompanyInfo = () => (
+const CompanyInfo: React.FC<{ isDemo: boolean }> = ({ isDemo }) => (
     <div className="text-center text-xs text-gray-400 space-y-0.5 mt-6 pt-4 border-t border-dashed border-gray-600">
-        <p className="font-bold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
-        <p>NIPC: 517112604</p>
-        <p>MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
-        <p>TEL: +351 914 800 818</p>
+        {isDemo ? (
+            <>
+                <p className="font-bold">{MOCK_COMPANY_INFO.name}</p>
+                <p>NIPC: {MOCK_COMPANY_INFO.nipc}</p>
+                <p>MORADA: {MOCK_COMPANY_INFO.address}</p>
+                <p>TEL: {MOCK_COMPANY_INFO.phone}</p>
+            </>
+        ) : (
+            <>
+                <p className="font-bold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+                <p>NIPC: 517112604</p>
+                <p>MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+                <p>TEL: +351 914 800 818</p>
+            </>
+        )}
     </div>
 );
 
@@ -79,7 +91,7 @@ const RevisionNotesModal: React.FC<{
 
 
 const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const { updateCalculationStatus, updateCalculation } = useCalculations();
   const { findUserById } = useUsers();
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
@@ -264,7 +276,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
           <p>Status: <span className={`font-bold ${statusColor[calculation.status]}`}>{calculation.status}</span></p>
           <p>Calculado por: {admin?.name}</p>
         </div>
-        <CompanyInfo />
+        <CompanyInfo isDemo={isDemo} />
       </div>
       
       <div className="max-w-md mx-auto mt-6 flex justify-center items-center gap-4 flex-wrap">

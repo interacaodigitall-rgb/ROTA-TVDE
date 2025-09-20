@@ -3,6 +3,7 @@ import React, { createContext, useState, ReactNode, useCallback, useEffect } fro
 import { Calculation, CalculationStatus, UserRole } from '../types';
 import { db, firestore } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
+import { MOCK_CALCULATIONS } from '../demoData';
 
 interface CalculationContextType {
   calculations: Calculation[];
@@ -30,9 +31,16 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [calculations, setCalculations] = useState<Calculation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
 
   useEffect(() => {
+    if (isDemo) {
+        setCalculations(MOCK_CALCULATIONS);
+        setLoading(false);
+        setError(null);
+        return;
+    }
+
     if (!user) {
       setCalculations([]);
       setLoading(false);
@@ -74,9 +82,20 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, isDemo]);
 
   const addCalculation = useCallback(async (calculation: Omit<Calculation, 'id'>) => {
+    if (isDemo) {
+        const newCalc: Calculation = {
+            ...calculation,
+            id: `demo-calc-${Date.now()}`,
+            date: new Date(),
+            periodStart: parseLocalDate(calculation.periodStart as string),
+            periodEnd: parseLocalDate(calculation.periodEnd as string),
+        };
+        setCalculations(prev => [newCalc, ...prev]);
+        return;
+    }
     try {
         const newCalculation = {
             ...calculation,
@@ -88,17 +107,25 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
     } catch (error) {
       console.error("Error adding calculation: ", error);
     }
-  }, []);
+  }, [isDemo]);
 
   const updateCalculationStatus = useCallback(async (id: string, status: CalculationStatus) => {
+    if (isDemo) {
+        setCalculations(prev => prev.map(c => c.id === id ? { ...c, status, revisionNotes: status === CalculationStatus.REVISION_REQUESTED ? c.revisionNotes : '' } : c));
+        return;
+    }
     try {
       await db.collection('calculations').doc(id).update({ status });
     } catch (error) {
       console.error("Error updating calculation status: ", error);
     }
-  }, []);
+  }, [isDemo]);
 
   const updateCalculation = useCallback(async (id: string, updates: Partial<Omit<Calculation, 'id'>>) => {
+    if (isDemo) {
+        setCalculations(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+        return;
+    }
     try {
         const safeUpdates: any = { ...updates };
         if (updates.periodStart && typeof updates.periodStart === 'string') {
@@ -111,7 +138,7 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
     } catch (error) {
         console.error("Error updating calculation: ", error);
     }
-  }, []);
+  }, [isDemo]);
 
   return (
     <CalculationContext.Provider value={{ calculations, loading, error, addCalculation, updateCalculationStatus, updateCalculation }}>

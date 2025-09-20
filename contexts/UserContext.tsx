@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
+import { MOCK_USERS } from '../demoData';
 
 interface UserContextType {
   users: User[];
@@ -15,9 +16,15 @@ export const UserContext = createContext<UserContextType | undefined>(undefined)
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isDemo } = useAuth();
 
   useEffect(() => {
+    if (isDemo) {
+      setUsers(MOCK_USERS);
+      setLoading(false);
+      return;
+    }
+    
     if (!currentUser) {
       setUsers([]);
       setLoading(false);
@@ -42,7 +49,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser, isDemo]);
 
   const findUserById = (id: string) => users.find(u => u.id === id);
 

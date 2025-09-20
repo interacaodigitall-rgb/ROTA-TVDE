@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useRef } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { CalculationStatus } from '../types';
@@ -5,6 +6,7 @@ import { calculateSummary } from '../utils/calculationUtils';
 import Button from './ui/Button';
 import Card from './ui/Card';
 import { useAuth } from '../hooks/useAuth';
+import { MOCK_COMPANY_INFO } from '../demoData';
 
 // Add declarations for CDN libraries
 declare const html2canvas: any;
@@ -47,7 +49,7 @@ const getDefaultDateRange = () => {
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
 
 const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const { calculations } = useCalculations();
   const { startDate: defaultStart, endDate: defaultEnd } = getDefaultDateRange();
   const [startDate, setStartDate] = useState(defaultStart);
@@ -211,9 +213,19 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
        <div ref={reportPrintRef} className="p-1 sm:p-4">
             <div className="text-center mb-6 border-b border-gray-700 pb-4">
                 <h3 className="text-xl font-bold">ROTA TVDE 5.0</h3>
-                <p className="text-sm font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
-                <p className="text-xs text-gray-400">NIPC: 517112604 | TEL: +351 914 800 818</p>
-                <p className="text-xs text-gray-400">MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+                 {isDemo ? (
+                    <>
+                        <p className="text-sm font-semibold">{MOCK_COMPANY_INFO.name}</p>
+                        <p className="text-xs text-gray-400">NIPC: {MOCK_COMPANY_INFO.nipc} | TEL: {MOCK_COMPANY_INFO.phone}</p>
+                        <p className="text-xs text-gray-400">MORADA: {MOCK_COMPANY_INFO.address}</p>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-sm font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+                        <p className="text-xs text-gray-400">NIPC: 517112604 | TEL: +351 914 800 818</p>
+                        <p className="text-xs text-gray-400">MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+                    </>
+                )}
             </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-700 pb-4 mb-4">
               <p className="text-sm text-gray-400 md:col-span-3">
