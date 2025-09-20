@@ -1,4 +1,3 @@
-
 export enum UserRole {
   ADMIN = 'ADMIN',
   DRIVER = 'DRIVER',
@@ -32,9 +31,9 @@ export interface Calculation {
   adminId: string;
   type: CalculationType;
   status: CalculationStatus;
-  date: any; // Will be a Firestore Timestamp
-  periodStart: any; // Will be a Firestore Timestamp
-  periodEnd: any; // Will be a Firestore Timestamp
+  date: Date;
+  periodStart: Date;
+  periodEnd: Date;
   
   // Ganhos
   uberRides: number;

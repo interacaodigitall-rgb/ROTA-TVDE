@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { useUsers } from '../hooks/useUsers';
@@ -81,7 +80,7 @@ const SidebarContent: React.FC<{
                 <span className="ml-3">Terminar Sessão</span>
             </a>
             <div className="mt-4 text-center">
-                <span className="inline-block bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">v16 - Recibos Verdes + Sync Fix</span>
+                <span className="inline-block bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Versão Demo</span>
             </div>
         </div>
     </>

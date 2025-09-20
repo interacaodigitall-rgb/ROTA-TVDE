@@ -1,7 +1,6 @@
-
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { db } from '../firebase';
+import { MOCK_USERS } from '../constants';
 import { useAuth } from '../hooks/useAuth';
 
 interface UserContextType {
@@ -18,6 +17,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { user: currentUser } = useAuth();
 
   useEffect(() => {
+    // In the demo, we only load users if someone is logged in, to mimic real behavior.
     if (!currentUser) {
       setUsers([]);
       setLoading(false);
@@ -25,23 +25,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     setLoading(true);
-    const unsubscribe = db.collection('users').onSnapshot(
-      (snapshot: any) => {
-        const userList = snapshot.docs.map((doc: any) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as User[];
-        setUsers(userList);
-        setLoading(false);
-      },
-      (error: any) => {
-        console.error("Error fetching users:", error);
-        setUsers([]);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
+    // Simulate fetching users from a local source
+    setTimeout(() => {
+      setUsers(MOCK_USERS);
+      setLoading(false);
+    }, 200); // Simulate network delay
   }, [currentUser]);
 
   const findUserById = (id: string) => users.find(u => u.id === id);

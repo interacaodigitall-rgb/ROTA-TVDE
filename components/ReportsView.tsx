@@ -211,9 +211,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
        <div ref={reportPrintRef} className="p-1 sm:p-4">
             <div className="text-center mb-6 border-b border-gray-700 pb-4">
                 <h3 className="text-xl font-bold">ROTA TVDE 5.0</h3>
-                <p className="text-sm font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
-                <p className="text-xs text-gray-400">NIPC: 517112604 | TEL: +351 914 800 818</p>
-                <p className="text-xs text-gray-400">MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+                <p className="text-sm font-semibold">ROTA RÁPIDA - TVDE, LDA</p>
+                <p className="text-xs text-gray-400">NIPC: 987654321 | TEL: +351 912 345 678</p>
+                <p className="text-xs text-gray-400">MORADA: AVENIDA DA LIBERDADE, 100 - 1250-145 LISBOA</p>
             </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-700 pb-4 mb-4">
               <p className="text-sm text-gray-400 md:col-span-3">
