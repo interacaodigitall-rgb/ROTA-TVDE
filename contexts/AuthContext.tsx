@@ -2,7 +2,8 @@
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { User, UserRole, CalculationType } from '../types';
 import { auth, db } from '../firebase';
-import { MOCK_ADMIN_USER, MOCK_FROTA_DRIVER_USER, MOCK_SLOT_DRIVER_USER } from '../demoData';
+// FIX: Corrected import to use a specific mock driver since MOCK_FROTA_DRIVER_USER is not exported from demoData.
+import { MOCK_ADMIN_USER, MOCK_FROTA_DRIVER_BX21BD, MOCK_SLOT_DRIVER_USER } from '../demoData';
 
 interface AuthContextType {
   user: User | null;
@@ -109,7 +110,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         demoUser = MOCK_ADMIN_USER;
     } else if (role === UserRole.DRIVER) {
         if (type === CalculationType.FROTA) {
-            demoUser = MOCK_FROTA_DRIVER_USER;
+            // FIX: Use the imported specific mock driver.
+            demoUser = MOCK_FROTA_DRIVER_BX21BD;
         } else {
             demoUser = MOCK_SLOT_DRIVER_USER;
         }

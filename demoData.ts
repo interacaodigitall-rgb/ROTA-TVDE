@@ -1,4 +1,3 @@
-
 import { User, UserRole, CalculationType, Calculation, CalculationStatus, Iban } from './types';
 
 // --- MOCK USERS ---
@@ -11,15 +10,79 @@ export const MOCK_ADMIN_USER: User = {
   type: CalculationType.SLOT, // N/A for admin, but good to have
 };
 
-export const MOCK_FROTA_DRIVER_USER: User = {
-  id: 'demo-frota-driver-id',
-  email: 'frota@demo.com',
+// --- FROTA DRIVERS ---
+export const MOCK_FROTA_DRIVER_BX21BD: User = {
+  id: 'demo-frota-driver-bx21bd',
+  email: 'frota1@demo.com',
   role: UserRole.DRIVER,
-  name: 'Motorista Frota (Demo)',
-  matricula: 'FRO-123',
+  name: 'Motorista (bx21bd)',
+  matricula: 'bx21bd',
   type: CalculationType.FROTA,
+  vehicleModel: 'TESLA model3 2020',
+  insuranceCompany: 'fidelidade',
+  insurancePolicy: '757347766',
+  fleetCardCompany: 'prio',
+  fleetCardNumber: '608713610737000 5',
 };
 
+export const MOCK_FROTA_DRIVER_BV80EJ: User = {
+  id: 'demo-frota-driver-bv80ej',
+  email: 'frota2@demo.com',
+  role: UserRole.DRIVER,
+  name: 'Motorista (bv80ej)',
+  matricula: 'bv80ej',
+  type: CalculationType.FROTA,
+  vehicleModel: 'TESLA model3 2022',
+  insuranceCompany: 'fidelidade',
+  insurancePolicy: '757310954',
+  fleetCardCompany: 'prio',
+  fleetCardNumber: '608713610737000 3',
+};
+
+export const MOCK_FROTA_DRIVER_BV34EH: User = {
+  id: 'demo-frota-driver-bv34eh',
+  email: 'frota3@demo.com',
+  role: UserRole.DRIVER,
+  name: 'Motorista (bv34eh)',
+  matricula: 'bv34eh',
+  type: CalculationType.FROTA,
+  vehicleModel: 'TESLA model3 2022',
+  insuranceCompany: 'fidelidade',
+  insurancePolicy: '757310960',
+  fleetCardCompany: 'prio',
+  fleetCardNumber: '608713610737000 4',
+};
+
+export const MOCK_FROTA_DRIVER_63ZC58: User = {
+  id: 'demo-frota-driver-63zc58',
+  email: 'frota4@demo.com',
+  role: UserRole.DRIVER,
+  name: 'Motorista (63zc58)',
+  matricula: '63zc58',
+  type: CalculationType.FROTA,
+  vehicleModel: 'BMW-GASOLEO',
+  insuranceCompany: 'fidelidade',
+  insurancePolicy: '757340103',
+  fleetCardCompany: 'prio',
+  fleetCardNumber: '782473610737000 0',
+};
+
+export const MOCK_FROTA_DRIVER_AA75LL: User = {
+  id: 'demo-frota-driver-aa75ll',
+  email: 'frota5@demo.com',
+  role: UserRole.DRIVER,
+  name: 'Motorista (aa75ll)',
+  matricula: 'aa75ll',
+  type: CalculationType.FROTA,
+  vehicleModel: '5008',
+  insuranceCompany: 'fidelidade',
+  insurancePolicy: '757355909',
+  fleetCardCompany: 'prio',
+  fleetCardNumber: '782473610737000 1',
+};
+
+
+// --- SLOT DRIVER ---
 export const MOCK_SLOT_DRIVER_USER: User = {
   id: 'demo-slot-driver-id',
   email: 'slot@demo.com',
@@ -27,11 +90,16 @@ export const MOCK_SLOT_DRIVER_USER: User = {
   name: 'Motorista Slot (Demo)',
   matricula: 'SLO-456',
   type: CalculationType.SLOT,
+  // Vehicle data is intentionally left blank for SLOT driver demo
 };
 
 export const MOCK_USERS: User[] = [
     MOCK_ADMIN_USER,
-    MOCK_FROTA_DRIVER_USER,
+    MOCK_FROTA_DRIVER_BX21BD,
+    MOCK_FROTA_DRIVER_BV80EJ,
+    MOCK_FROTA_DRIVER_BV34EH,
+    MOCK_FROTA_DRIVER_63ZC58,
+    MOCK_FROTA_DRIVER_AA75LL,
     MOCK_SLOT_DRIVER_USER,
 ];
 
@@ -39,8 +107,8 @@ export const MOCK_USERS: User[] = [
 export const MOCK_IBANS: Iban[] = [
     {
         id: 'demo-iban-frota',
-        driverId: MOCK_FROTA_DRIVER_USER.id,
-        driverName: MOCK_FROTA_DRIVER_USER.name,
+        driverId: MOCK_FROTA_DRIVER_BX21BD.id,
+        driverName: MOCK_FROTA_DRIVER_BX21BD.name,
         fullName: 'Demo Frota Driver Full Name',
         nif: '999888777',
         iban: 'PT50 0000 0000 1111 2222 3333 4',
@@ -75,8 +143,8 @@ export const MOCK_CALCULATIONS: Calculation[] = [
   // Frota Driver Calculations
   {
     id: 'demo-calc-frota-1',
-    driverId: MOCK_FROTA_DRIVER_USER.id,
-    driverName: MOCK_FROTA_DRIVER_USER.name,
+    driverId: MOCK_FROTA_DRIVER_BX21BD.id,
+    driverName: MOCK_FROTA_DRIVER_BX21BD.name,
     adminId: MOCK_ADMIN_USER.id,
     type: CalculationType.FROTA,
     status: CalculationStatus.PENDING,
@@ -86,11 +154,12 @@ export const MOCK_CALCULATIONS: Calculation[] = [
     uberRides: 450.50, uberTips: 25.00, uberTolls: 15.20,
     boltRides: 380.75, boltTips: 18.50, boltTolls: 10.80,
     vehicleRental: 200.00, fleetCard: 150.00, rentalTolls: 30.00, otherExpenses: 10.00,
+    otherExpensesNotes: 'Lavagem da viatura',
   },
   {
     id: 'demo-calc-frota-2',
-    driverId: MOCK_FROTA_DRIVER_USER.id,
-    driverName: MOCK_FROTA_DRIVER_USER.name,
+    driverId: MOCK_FROTA_DRIVER_BX21BD.id,
+    driverName: MOCK_FROTA_DRIVER_BX21BD.name,
     adminId: MOCK_ADMIN_USER.id,
     type: CalculationType.FROTA,
     status: CalculationStatus.ACCEPTED,
@@ -115,6 +184,7 @@ export const MOCK_CALCULATIONS: Calculation[] = [
     uberRides: 600.00, uberTips: 50.00, uberTolls: 30.00,
     boltRides: 550.00, boltTips: 40.00, boltTolls: 25.00,
     vehicleRental: 0, fleetCard: 80.00, rentalTolls: 0, otherExpenses: 5.00,
+    otherExpensesNotes: 'Ajuste de conta',
     revisionNotes: 'Acho que os valores do cartão frota estão incorretos, o valor deveria ser menor.'
   },
   {

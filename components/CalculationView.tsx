@@ -20,9 +20,9 @@ interface CalculationViewProps {
 const formatCurrency = (value: number) => `€ ${value.toFixed(2).padStart(8, ' ')}`;
 
 const CalculationLine: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="flex justify-between">
-    <span>{label.padEnd(20, ' ')}</span>
-    <span>{value}</span>
+  <div className="flex justify-between items-start gap-2">
+    <span className="flex-shrink-0">{label.padEnd(20, ' ')}</span>
+    <span className="text-right break-words">{value}</span>
   </div>
 );
 
@@ -202,6 +202,8 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
   
   const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
 
+  const hasVehicleInfo = driver && (driver.vehicleModel || driver.insurancePolicy || driver.fleetCardNumber);
+
   return (
     <>
       <div ref={printRef} className="bg-gray-800 border border-gray-700 shadow-2xl rounded-lg p-6 font-mono text-sm text-gray-200 max-w-md mx-auto">
@@ -216,6 +218,21 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
           <p>Data: {toDate(calculation.date).toLocaleDateString('pt-PT')}</p>
           <p>Período: {toDate(calculation.periodStart).toLocaleDateString('pt-PT')} até {toDate(calculation.periodEnd).toLocaleDateString('pt-PT')}</p>
         </div>
+        
+        {/* Vehicle Info */}
+        {hasVehicleInfo && (
+            <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
+                <p className="font-bold mb-2">┌─ VIATURA ────────────┐</p>
+                <div className="pl-4 pr-4 space-y-1">
+                    {driver.vehicleModel && <CalculationLine label="Viatura:" value={driver.vehicleModel} />}
+                    {driver.insuranceCompany && <CalculationLine label="Seguro:" value={driver.insuranceCompany} />}
+                    {driver.insurancePolicy && <CalculationLine label="Apólice:" value={driver.insurancePolicy} />}
+                    {driver.fleetCardCompany && <CalculationLine label="Cartão Frota:" value={driver.fleetCardCompany} />}
+                    {driver.fleetCardNumber && <CalculationLine label="Nº Cartão:" value={driver.fleetCardNumber} />}
+                </div>
+                <p className="font-bold mb-2">└──────────────────────┘</p>
+            </div>
+        )}
 
         {/* Ganhos */}
         <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
@@ -242,7 +259,14 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
               <CalculationLine label="IVA 6%:" value={formatCurrency(iva)} />
               <CalculationLine label="Cartão Frota:" value={formatCurrency(calculation.fleetCard)} />
               <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(calculation.rentalTolls)} />
-              <CalculationLine label="Outras Despesas:" value={formatCurrency(calculation.otherExpenses)} />
+              <div>
+                 <CalculationLine label="Outras Despesas:" value={formatCurrency(calculation.otherExpenses)} />
+                 {calculation.otherExpensesNotes && (
+                   <div className="text-right text-xs text-gray-400 pr-1 truncate">
+                     ({calculation.otherExpensesNotes})
+                   </div>
+                 )}
+              </div>
           </div>
           <p className="font-bold mt-2">├──────────────────────┤</p>
           <p className="font-bold pl-4 pr-4"> TOTAL DEDUÇÕES: {formatCurrency(totalDeducoes)}</p>

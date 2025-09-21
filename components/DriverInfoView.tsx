@@ -96,19 +96,34 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
                 )}
              </InfoCard>
 
-             <InfoCard title="Equipamentos Obrigatórios" borderColor="border-t-red-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}>
+            <InfoCard title="Dados da Viatura" borderColor="border-t-teal-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.623 5.91l-4.62 4.62a2.121 2.121 0 01-3-3l4.62-4.62A6 6 0 0117 7z" /></svg>}>
+                {user && (user.vehicleModel || user.insuranceCompany) ? (
+                    <div className="space-y-3">
+                        {user.vehicleModel && <div>
+                            <p className="text-xs text-gray-400">Modelo</p>
+                            <p className="font-semibold">{user.vehicleModel}</p>
+                        </div>}
+                         {(user.insuranceCompany || user.insurancePolicy) && <div>
+                            <p className="text-xs text-gray-400">Seguro</p>
+                            <p className="font-semibold">{user.insuranceCompany || 'N/A'} - Apólice: {user.insurancePolicy || 'N/A'}</p>
+                        </div>}
+                        {(user.fleetCardCompany || user.fleetCardNumber) && <div>
+                            <p className="text-xs text-gray-400">Cartão Frota</p>
+                            <p className="font-semibold">{user.fleetCardCompany || 'N/A'} - Nº: {user.fleetCardNumber || 'N/A'}</p>
+                        </div>}
+                    </div>
+                ) : (
+                    <p>Dados da viatura não disponíveis. Contacte a administração.</p>
+                )}
+             </InfoCard>
+
+             <InfoCard title="Requisitos e Equipamentos" borderColor="border-t-red-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}>
                 <ul className="space-y-4">
                   <InfoListItem title="Extintor 2kg com certificado" description="Deve estar dentro do prazo e fixado na viatura." />
                   <InfoListItem title="Dístico TVDE" description="Colado no para-brisas, visível e válido." />
                   <InfoListItem title="Aviso 'Não Fumadores'" description="Afixado visivelmente no interior do veículo." />
-                </ul>
-             </InfoCard>
-
-             <InfoCard title="Documentos e Apps" borderColor="border-t-orange-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
-                <ul className="space-y-4">
-                  <InfoListItem title="App de controlo de horas" description="Obrigatória para cumprir com a legislação laboral." />
-                  <InfoListItem title="Seguro de acidentes de trabalho" description="Emitido em nome do motorista, obrigatório por lei." />
-                  <InfoListItem title="Contratos assinados" description="Comodato e prestação de serviço guardados." />
+                  <InfoListItem title="Documentos Pessoais" description="Carta de Condução, Cartão de Cidadão, Registo Criminal, Certificado de Motorista TVDE. Sempre válidos." />
+                  <InfoListItem title="Aplicações TVDE" description="Uber Driver e Bolt Driver instaladas e atualizadas no telemóvel." />
                 </ul>
              </InfoCard>
           </div>

@@ -23,6 +23,13 @@ export interface User {
   name: string;
   matricula: string; 
   type: CalculationType;
+  
+  // Vehicle Information
+  vehicleModel?: string;
+  insuranceCompany?: string;
+  insurancePolicy?: string;
+  fleetCardCompany?: string;
+  fleetCardNumber?: string;
 }
 
 export interface Calculation {
@@ -49,6 +56,7 @@ export interface Calculation {
   fleetCard: number;
   rentalTolls: number;
   otherExpenses: number;
+  otherExpensesNotes?: string; // Reason for other expenses
 
   // Metadados
   revisionNotes?: string;

@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User } from '../types';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
@@ -9,6 +9,7 @@ interface UserContextType {
   users: User[];
   loading: boolean;
   findUserById: (id: string) => User | undefined;
+  updateUser: (id: string, updates: Partial<Omit<User, 'id'>>) => Promise<void>;
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -53,8 +54,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const findUserById = (id: string) => users.find(u => u.id === id);
 
+  const updateUser = useCallback(async (id: string, updates: Partial<Omit<User, 'id'>>) => {
+    if (isDemo) {
+        setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } as User : u));
+        return;
+    }
+    try {
+        await db.collection('users').doc(id).update(updates);
+    } catch (error) {
+        console.error("Error updating user: ", error);
+    }
+  }, [isDemo]);
+
+
   return (
-    <UserContext.Provider value={{ users, loading, findUserById }}>
+    <UserContext.Provider value={{ users, loading, findUserById, updateUser }}>
       {children}
     </UserContext.Provider>
   );

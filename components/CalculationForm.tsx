@@ -37,6 +37,7 @@ const initialFormData = {
   uberRides: '0', uberTips: '0', uberTolls: '0',
   boltRides: '0', boltTips: '0', boltTolls: '0',
   vehicleRental: '0', fleetCard: '0', rentalTolls: '0', otherExpenses: '0',
+  otherExpensesNotes: '',
 };
 
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -76,6 +77,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         fleetCard: String(calculationToEdit.fleetCard || '0'),
         rentalTolls: String(calculationToEdit.rentalTolls || '0'),
         otherExpenses: String(calculationToEdit.otherExpenses || '0'),
+        otherExpensesNotes: String(calculationToEdit.otherExpensesNotes || ''),
       });
     } else {
       setDriverId('');
@@ -90,7 +92,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
     }
   }, [selectedDriver, isEditMode]);
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -137,6 +139,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       periodStart: formData.periodStart,
       periodEnd: formData.periodEnd,
       ...numericFormData,
+      otherExpensesNotes: formData.otherExpensesNotes,
       vehicleRental: calculationType === CalculationType.FROTA ? numericFormData.vehicleRental : 0,
     };
     
@@ -227,11 +230,23 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
 
         <div>
             <h3 className="text-lg font-medium leading-6 text-white border-b border-gray-700 pb-2 mb-4">Deduções</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                  <NumberInput label="Aluguer Veículo" name="vehicleRental" value={formData.vehicleRental} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} disabled={calculationType !== CalculationType.FROTA} />
                 <NumberInput label="Cartão Frota" name="fleetCard" value={formData.fleetCard} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Portagens (Aluguer)" name="rentalTolls" value={formData.rentalTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Outras Despesas" name="otherExpenses" value={formData.otherExpenses} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <div className="md:col-span-4">
+                    <label htmlFor="otherExpensesNotes" className="block text-sm font-medium text-gray-300">Motivo para Outras Despesas</label>
+                    <input
+                        type="text"
+                        id="otherExpensesNotes"
+                        name="otherExpensesNotes"
+                        value={formData.otherExpensesNotes}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white"
+                        placeholder="Ex: Multa de estacionamento, lavagem, etc."
+                    />
+                </div>
             </div>
         </div>
 
