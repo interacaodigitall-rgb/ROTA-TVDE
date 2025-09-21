@@ -11,74 +11,74 @@ export const MOCK_ADMIN_USER: User = {
 };
 
 // --- FROTA DRIVERS ---
-export const MOCK_FROTA_DRIVER_BX21BD: User = {
-  id: 'demo-frota-driver-bx21bd',
+export const MOCK_FROTA_DRIVER_1: User = {
+  id: 'demo-frota-driver-1',
   email: 'frota1@demo.com',
   role: UserRole.DRIVER,
-  name: 'Motorista (bx21bd)',
-  matricula: 'bx21bd',
+  name: 'Motorista Frota A (Demo)',
+  matricula: 'FROTA-001',
   type: CalculationType.FROTA,
-  vehicleModel: 'TESLA model3 2020',
-  insuranceCompany: 'fidelidade',
-  insurancePolicy: '757347766',
-  fleetCardCompany: 'prio',
-  fleetCardNumber: '608713610737000 5',
+  vehicleModel: 'Viatura Elétrica (Demo)',
+  insuranceCompany: 'Seguros Demo S.A.',
+  insurancePolicy: 'DEMO-123456789',
+  fleetCardCompany: 'Combustíveis Fictícios',
+  fleetCardNumber: '9999-0001-0001-0001',
 };
 
-export const MOCK_FROTA_DRIVER_BV80EJ: User = {
-  id: 'demo-frota-driver-bv80ej',
+export const MOCK_FROTA_DRIVER_2: User = {
+  id: 'demo-frota-driver-2',
   email: 'frota2@demo.com',
   role: UserRole.DRIVER,
-  name: 'Motorista (bv80ej)',
-  matricula: 'bv80ej',
+  name: 'Motorista Frota B (Demo)',
+  matricula: 'FROTA-002',
   type: CalculationType.FROTA,
-  vehicleModel: 'TESLA model3 2022',
-  insuranceCompany: 'fidelidade',
-  insurancePolicy: '757310954',
-  fleetCardCompany: 'prio',
-  fleetCardNumber: '608713610737000 3',
+  vehicleModel: 'Viatura Híbrida (Demo)',
+  insuranceCompany: 'Seguros Demo S.A.',
+  insurancePolicy: 'DEMO-234567890',
+  fleetCardCompany: 'Combustíveis Fictícios',
+  fleetCardNumber: '9999-0002-0002-0002',
 };
 
-export const MOCK_FROTA_DRIVER_BV34EH: User = {
-  id: 'demo-frota-driver-bv34eh',
+export const MOCK_FROTA_DRIVER_3: User = {
+  id: 'demo-frota-driver-3',
   email: 'frota3@demo.com',
   role: UserRole.DRIVER,
-  name: 'Motorista (bv34eh)',
-  matricula: 'bv34eh',
+  name: 'Motorista Frota C (Demo)',
+  matricula: 'FROTA-003',
   type: CalculationType.FROTA,
-  vehicleModel: 'TESLA model3 2022',
-  insuranceCompany: 'fidelidade',
-  insurancePolicy: '757310960',
-  fleetCardCompany: 'prio',
-  fleetCardNumber: '608713610737000 4',
+  vehicleModel: 'Viatura Diesel (Demo)',
+  insuranceCompany: 'Seguros Demo S.A.',
+  insurancePolicy: 'DEMO-345678901',
+  fleetCardCompany: 'Combustíveis Fictícios',
+  fleetCardNumber: '9999-0003-0003-0003',
 };
 
-export const MOCK_FROTA_DRIVER_63ZC58: User = {
-  id: 'demo-frota-driver-63zc58',
+export const MOCK_FROTA_DRIVER_4: User = {
+  id: 'demo-frota-driver-4',
   email: 'frota4@demo.com',
   role: UserRole.DRIVER,
-  name: 'Motorista (63zc58)',
-  matricula: '63zc58',
+  name: 'Motorista Frota D (Demo)',
+  matricula: 'FROTA-004',
   type: CalculationType.FROTA,
-  vehicleModel: 'BMW-GASOLEO',
-  insuranceCompany: 'fidelidade',
-  insurancePolicy: '757340103',
-  fleetCardCompany: 'prio',
-  fleetCardNumber: '782473610737000 0',
+  vehicleModel: 'Viatura Luxo (Demo)',
+  insuranceCompany: 'Seguros Demo S.A.',
+  insurancePolicy: 'DEMO-456789012',
+  fleetCardCompany: 'Combustíveis Fictícios',
+  fleetCardNumber: '9999-0004-0004-0004',
 };
 
-export const MOCK_FROTA_DRIVER_AA75LL: User = {
-  id: 'demo-frota-driver-aa75ll',
+export const MOCK_FROTA_DRIVER_5: User = {
+  id: 'demo-frota-driver-5',
   email: 'frota5@demo.com',
   role: UserRole.DRIVER,
-  name: 'Motorista (aa75ll)',
-  matricula: 'aa75ll',
+  name: 'Motorista Frota E (Demo)',
+  matricula: 'FROTA-005',
   type: CalculationType.FROTA,
-  vehicleModel: '5008',
-  insuranceCompany: 'fidelidade',
-  insurancePolicy: '757355909',
-  fleetCardCompany: 'prio',
-  fleetCardNumber: '782473610737000 1',
+  vehicleModel: 'Viatura SUV (Demo)',
+  insuranceCompany: 'Seguros Demo S.A.',
+  insurancePolicy: 'DEMO-567890123',
+  fleetCardCompany: 'Combustíveis Fictícios',
+  fleetCardNumber: '9999-0005-0005-0005',
 };
 
 
@@ -95,11 +95,11 @@ export const MOCK_SLOT_DRIVER_USER: User = {
 
 export const MOCK_USERS: User[] = [
     MOCK_ADMIN_USER,
-    MOCK_FROTA_DRIVER_BX21BD,
-    MOCK_FROTA_DRIVER_BV80EJ,
-    MOCK_FROTA_DRIVER_BV34EH,
-    MOCK_FROTA_DRIVER_63ZC58,
-    MOCK_FROTA_DRIVER_AA75LL,
+    MOCK_FROTA_DRIVER_1,
+    MOCK_FROTA_DRIVER_2,
+    MOCK_FROTA_DRIVER_3,
+    MOCK_FROTA_DRIVER_4,
+    MOCK_FROTA_DRIVER_5,
     MOCK_SLOT_DRIVER_USER,
 ];
 
@@ -107,8 +107,8 @@ export const MOCK_USERS: User[] = [
 export const MOCK_IBANS: Iban[] = [
     {
         id: 'demo-iban-frota',
-        driverId: MOCK_FROTA_DRIVER_BX21BD.id,
-        driverName: MOCK_FROTA_DRIVER_BX21BD.name,
+        driverId: MOCK_FROTA_DRIVER_1.id,
+        driverName: MOCK_FROTA_DRIVER_1.name,
         fullName: 'Demo Frota Driver Full Name',
         nif: '999888777',
         iban: 'PT50 0000 0000 1111 2222 3333 4',
@@ -143,8 +143,8 @@ export const MOCK_CALCULATIONS: Calculation[] = [
   // Frota Driver Calculations
   {
     id: 'demo-calc-frota-1',
-    driverId: MOCK_FROTA_DRIVER_BX21BD.id,
-    driverName: MOCK_FROTA_DRIVER_BX21BD.name,
+    driverId: MOCK_FROTA_DRIVER_1.id,
+    driverName: MOCK_FROTA_DRIVER_1.name,
     adminId: MOCK_ADMIN_USER.id,
     type: CalculationType.FROTA,
     status: CalculationStatus.PENDING,
@@ -158,8 +158,8 @@ export const MOCK_CALCULATIONS: Calculation[] = [
   },
   {
     id: 'demo-calc-frota-2',
-    driverId: MOCK_FROTA_DRIVER_BX21BD.id,
-    driverName: MOCK_FROTA_DRIVER_BX21BD.name,
+    driverId: MOCK_FROTA_DRIVER_1.id,
+    driverName: MOCK_FROTA_DRIVER_1.name,
     adminId: MOCK_ADMIN_USER.id,
     type: CalculationType.FROTA,
     status: CalculationStatus.ACCEPTED,
@@ -198,6 +198,7 @@ export const MOCK_CALCULATIONS: Calculation[] = [
     periodStart: prevMonday,
     periodEnd: prevSunday,
     uberRides: 620.00, uberTips: 45.00, uberTolls: 28.00,
+    // Fix: Corrected typo 'tollTolls' to 'boltTolls' to match the 'Calculation' type.
     boltRides: 580.00, boltTips: 35.00, boltTolls: 22.00,
     vehicleRental: 0, fleetCard: 75.00, rentalTolls: 0, otherExpenses: 0,
   },

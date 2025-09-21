@@ -15,6 +15,7 @@ declare const jspdf: any;
 
 interface CalculationViewProps {
   calculation: Calculation;
+  onAccept?: () => void;
 }
 
 const formatCurrency = (value: number) => `€ ${value.toFixed(2).padStart(8, ' ')}`;
@@ -90,7 +91,7 @@ const RevisionNotesModal: React.FC<{
 };
 
 
-const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
+const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept }) => {
   const { user, isDemo } = useAuth();
   const { updateCalculationStatus, updateCalculation } = useCalculations();
   const { findUserById } = useUsers();
@@ -115,6 +116,11 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
     [CalculationStatus.PENDING]: 'text-yellow-400',
     [CalculationStatus.ACCEPTED]: 'text-green-400',
     [CalculationStatus.REVISION_REQUESTED]: 'text-red-400',
+  };
+  
+  const handleAccept = async () => {
+    await updateCalculationStatus(calculation.id, CalculationStatus.ACCEPTED);
+    onAccept?.();
   };
 
   const handleRequestRevision = (notes: string) => {
@@ -306,7 +312,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation }) => {
       <div className="max-w-md mx-auto mt-6 flex justify-center items-center gap-4 flex-wrap">
         {user?.role === UserRole.DRIVER && calculation.status === CalculationStatus.PENDING && (
           <>
-            <Button variant="success" onClick={() => updateCalculationStatus(calculation.id, CalculationStatus.ACCEPTED)}>
+            <Button variant="success" onClick={handleAccept}>
                 Aceitar
             </Button>
             <Button variant="warning" onClick={() => setIsRevisionModalOpen(true)}>

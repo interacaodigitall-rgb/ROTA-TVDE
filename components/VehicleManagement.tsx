@@ -108,25 +108,32 @@ const VehicleManagement: React.FC = () => {
                              <p className="text-gray-400">A carregar motoristas...</p>
                         ) : drivers.length > 0 ? (
                             <div className="space-y-4">
-                                {drivers.map(driver => (
-                                    <div key={driver.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                        <div className="flex justify-between items-start gap-4">
-                                            <div className="flex-grow">
-                                                <p className="font-bold text-white">{driver.name} <span className="text-xs font-normal text-gray-400">({driver.matricula})</span></p>
-                                                <div className="mt-2 text-xs text-gray-300 space-y-1">
-                                                    <p><span className="font-semibold text-gray-500">Modelo:</span> {driver.vehicleModel || 'N/A'}</p>
-                                                    <p><span className="font-semibold text-gray-500">Apólice:</span> {driver.insurancePolicy || 'N/A'} ({driver.insuranceCompany || 'N/A'})</p>
-                                                    <p><span className="font-semibold text-gray-500">Cartão:</span> {driver.fleetCardNumber || 'N/A'} ({driver.fleetCardCompany || 'N/A'})</p>
+                                {drivers.map(driver => {
+                                    const hasVehicleInfo = driver.vehicleModel || driver.insuranceCompany || driver.insurancePolicy || driver.fleetCardCompany || driver.fleetCardNumber;
+                                    return (
+                                        <div key={driver.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                            <div className="flex justify-between items-start gap-4">
+                                                <div className="flex-grow">
+                                                    <p className="font-bold text-white">{driver.name} <span className="text-xs font-normal text-gray-400">({driver.matricula})</span></p>
+                                                    {hasVehicleInfo ? (
+                                                        <div className="mt-2 text-xs text-gray-300 space-y-1">
+                                                            <p><span className="font-semibold text-gray-500">Modelo:</span> {driver.vehicleModel || 'N/A'}</p>
+                                                            <p><span className="font-semibold text-gray-500">Apólice:</span> {driver.insurancePolicy || 'N/A'} ({driver.insuranceCompany || 'N/A'})</p>
+                                                            <p><span className="font-semibold text-gray-500">Cartão:</span> {driver.fleetCardNumber || 'N/A'} ({driver.fleetCardCompany || 'N/A'})</p>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="mt-2 text-xs text-gray-400 italic">Nenhuma viatura associada.</p>
+                                                    )}
+                                                </div>
+                                                <div className="flex-shrink-0">
+                                                    <Button variant={selectedDriverId === driver.id ? 'success' : 'secondary'} onClick={() => setSelectedDriverId(driver.id)} className="text-xs px-2 py-1">
+                                                        {selectedDriverId === driver.id ? 'A Editar' : 'Editar'}
+                                                    </Button>
                                                 </div>
                                             </div>
-                                            <div className="flex-shrink-0">
-                                                <Button variant={selectedDriverId === driver.id ? 'success' : 'secondary'} onClick={() => setSelectedDriverId(driver.id)} className="text-xs px-2 py-1">
-                                                    {selectedDriverId === driver.id ? 'A Editar' : 'Editar'}
-                                                </Button>
-                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
                             <p className="text-gray-400">Nenhum motorista encontrado.</p>

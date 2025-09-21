@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import Button from './ui/Button';
@@ -28,6 +27,7 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
   const { ibans, loading: ibansLoading } = useIbans();
 
   const myIban = user ? ibans.find(iban => iban.driverId === user.id) : null;
+  const hasVehicleInfo = user && (user.vehicleModel || user.insuranceCompany || user.insurancePolicy || user.fleetCardCompany || user.fleetCardNumber);
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
@@ -97,7 +97,7 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
              </InfoCard>
 
             <InfoCard title="Dados da Viatura" borderColor="border-t-teal-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.623 5.91l-4.62 4.62a2.121 2.121 0 01-3-3l4.62-4.62A6 6 0 0117 7z" /></svg>}>
-                {user && (user.vehicleModel || user.insuranceCompany) ? (
+                {hasVehicleInfo ? (
                     <div className="space-y-3">
                         {user.vehicleModel && <div>
                             <p className="text-xs text-gray-400">Modelo</p>

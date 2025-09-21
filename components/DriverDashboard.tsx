@@ -102,7 +102,10 @@ const DriverDashboard: React.FC = () => {
                     <Button onClick={() => setView('list')} className="mb-4">
                         &larr; Voltar aos Meus Cálculos
                     </Button>
-                    <CalculationView calculation={selectedCalculation} />
+                    <CalculationView 
+                        calculation={selectedCalculation} 
+                        onAccept={() => setView('list')}
+                    />
                  </div>
             </div>
         );
