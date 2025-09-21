@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useRef } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { CalculationStatus } from '../types';
@@ -108,7 +107,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
     clone.style.position = 'absolute';
     clone.style.left = '-9999px';
     clone.style.top = '0px';
-    clone.style.width = element.offsetWidth + 'px';
+    clone.style.width = '700px'; // Use a fixed width for consistent PDF rendering
     clone.style.backgroundColor = 'white';
     
     document.body.appendChild(clone);
@@ -118,6 +117,28 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
         el.style.color = 'black';
         el.style.backgroundColor = 'transparent';
     });
+    
+    // Replace date inputs with simple text to ensure they render correctly in the PDF.
+    const startDateInput = clone.querySelector<HTMLInputElement>('#startDate');
+    const endDateInput = clone.querySelector<HTMLInputElement>('#endDate');
+    
+    const formatDateForDisplay = (dateString: string) => {
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}`;
+    };
+
+    if (startDateInput?.parentElement) {
+        const p = document.createElement('p');
+        p.textContent = formatDateForDisplay(startDateInput.value);
+        p.className = 'mt-1 block w-full rounded-md py-2 px-3 sm:text-sm text-black';
+        startDateInput.parentElement.replaceChild(p, startDateInput);
+    }
+    if (endDateInput?.parentElement) {
+        const p = document.createElement('p');
+        p.textContent = formatDateForDisplay(endDateInput.value);
+        p.className = 'mt-1 block w-full rounded-md py-2 px-3 sm:text-sm text-black';
+        endDateInput.parentElement.replaceChild(p, endDateInput);
+    }
     
     if (isDriverView) {
         clone.style.fontSize = '12px';
@@ -163,20 +184,20 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
     const availableHeight = pdfHeight - margin * 2;
     
     const imgRatio = imgProps.width / imgProps.height;
-    const pageRatio = availableWidth / availableHeight;
-
-    let finalWidth, finalHeight;
-
-    if (imgRatio > pageRatio) {
-      finalWidth = availableWidth;
-      finalHeight = finalWidth / imgRatio;
-    } else {
-      finalHeight = availableHeight;
-      finalWidth = finalHeight * imgRatio;
+    
+    let finalWidth = availableWidth;
+    let finalHeight = finalWidth / imgRatio;
+    
+    // Ensure the image fits within the page height
+    if (finalHeight > availableHeight) {
+        finalHeight = availableHeight;
+        finalWidth = finalHeight * imgRatio;
     }
     
+    // Center horizontally
     const xOffset = margin + (availableWidth - finalWidth) / 2;
-    const yOffset = margin + (availableHeight - finalHeight) / 2;
+    // Align to top
+    const yOffset = margin;
     
     pdf.addImage(data, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
     
