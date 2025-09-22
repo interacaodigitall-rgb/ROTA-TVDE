@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { useUsers } from '../hooks/useUsers';
@@ -15,23 +16,38 @@ import VehicleManagement from './VehicleManagement';
 
 type AdminView = 'dashboard' | 'form' | 'reports' | 'details' | 'history' | 'iban' | 'vehicles';
 
-const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+/**
+ * Converts a Firestore Timestamp or JS Date into a JS Date object.
+ * @param timestamp The value to convert.
+ * @returns A JS Date object.
+ */
+const toDate = (timestamp: any): Date => {
+    if (!timestamp) return new Date(NaN);
+    if (typeof timestamp.toDate === 'function') return timestamp.toDate();
+    return new Date(timestamp);
+};
 
+/**
+ * Calculates the start (Monday) and end (Sunday) of the current week based on local time.
+ * @returns An object with `monday` and `sunday` Date objects.
+ */
 const getWeekRange = () => {
     const now = new Date();
-    // 0 is Sunday, 1 is Monday, etc. We want Monday to be the start.
-    const dayOfWeek = now.getDay(); 
+    const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
     monday.setHours(0, 0, 0, 0);
-    
+
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
     
     return { monday, sunday };
 };
+
+const toInputFormat = (date: Date) => date.toISOString().split('T')[0];
 
 const NavLink: React.FC<{
   icon: JSX.Element;
@@ -104,32 +120,63 @@ const StatCard: React.FC<{ title: string; value: string; subtext: string; icon: 
 );
 
 const AdminDashboard: React.FC = () => {
-  const { calculations, loading, error, updateCalculationStatus, updateCalculation } = useCalculations();
+  const { calculations, loading, error } = useCalculations();
   const { user, logout } = useAuth();
   const { users } = useUsers();
   
   const [view, setView] = useState<AdminView>('dashboard');
+  // FIX: Added state to track the view from which details are opened. This is used to fix a navigation bug where the "Back" button would always return to the dashboard, even if coming from the history view. This also resolves the associated TypeScript error.
+  const [fromView, setFromView] = useState<AdminView>('dashboard');
   const [selectedCalculation, setSelectedCalculation] = useState<Calculation | null>(null);
   const [calculationToEdit, setCalculationToEdit] = useState<Calculation | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const stats = useMemo(() => {
-    const { monday, sunday } = getWeekRange();
+  const { monday, sunday } = useMemo(() => getWeekRange(), []);
+  const [startDate, setStartDate] = useState(toInputFormat(monday));
+  const [endDate, setEndDate] = useState(toInputFormat(sunday));
+  
+  const filteredCalculations = useMemo(() => {
+    if (!startDate || !endDate) return calculations;
+    
+    // Helper to parse YYYY-MM-DD string as a local date
+    const parseInputDate = (dateString: string): Date => {
+        const [year, month, day] = dateString.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    };
 
-    const weeklyGains = calculations
-      .filter(c => {
+    const start = parseInputDate(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = parseInputDate(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return calculations.filter(c => {
         const periodEndDate = toDate(c.periodEnd);
-        return c.status === CalculationStatus.ACCEPTED && periodEndDate >= monday && periodEndDate <= sunday;
-      })
-      .reduce((sum, c) => sum + calculateSummary(c).valorFinal, 0);
+        return !isNaN(periodEndDate.getTime()) && periodEndDate >= start && periodEndDate <= end;
+    });
+}, [calculations, startDate, endDate]);
+
+
+  const stats = useMemo(() => {
+    const periodCompanyBilling = filteredCalculations
+      .filter(c => c.status === CalculationStatus.ACCEPTED)
+      .reduce((sum, c) => {
+        const summary = calculateSummary(c);
+        const companyEarnings =
+          (c.vehicleRental || 0) +
+          (c.rentalTolls || 0) +
+          (c.fleetCard || 0) +
+          (c.otherExpenses || 0) +
+          summary.iva +
+          summary.slotFee;
+        return sum + companyEarnings;
+      }, 0);
 
     return {
-      weeklyGains,
-      pendingCount: calculations.filter(c => c.status === CalculationStatus.PENDING).length,
+      periodCompanyBilling,
+      pendingCount: calculations.filter(c => c.status === CalculationStatus.PENDING).length, // Global pending count
       activeDrivers: users.filter(u => u.role === UserRole.DRIVER).length,
-      periodString: `${monday.toLocaleDateString('pt-PT', {day: '2-digit', month: '2-digit'})} / ${sunday.toLocaleDateString('pt-PT', {day: '2-digit', month: '2-digit', year: 'numeric'})}`,
     };
-  }, [calculations, users]);
+  }, [filteredCalculations, calculations, users]);
 
   const recentActivity = useMemo(() => {
     return [...calculations]
@@ -138,6 +185,8 @@ const AdminDashboard: React.FC = () => {
   }, [calculations]);
 
   const handleShowDetails = (calc: Calculation) => {
+    // FIX: Store the current view before navigating to details so the "Back" button works correctly.
+    setFromView(view);
     setSelectedCalculation(calc);
     setView('details');
   };
@@ -163,27 +212,41 @@ const AdminDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total Ganhos (Semana)" value={`€${stats.weeklyGains.toFixed(2)}`} subtext="Soma dos valores aceites" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>} />
-          <StatCard title="Cálculos Pendentes" value={String(stats.pendingCount)} subtext="a necessitar de ação" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
+          <StatCard title="Total Faturado (Empresa)" value={`€${stats.periodCompanyBilling.toFixed(2)}`} subtext="Faturação no período selecionado" icon={
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+          } />
+          <StatCard title="Cálculos Pendentes" value={String(stats.pendingCount)} subtext="Total a necessitar de ação" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
           <StatCard title="Motoristas Ativos" value={String(stats.activeDrivers)} subtext="Total de motoristas" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.122-1.274-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.122-1.274.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} />
-          <StatCard title="Período de Calculo" value={stats.periodString} subtext="Segunda a Domingo" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
+          <Card className="flex flex-col justify-between">
+              <h4 className="text-sm font-medium text-gray-400 mb-2">Período de Análise</h4>
+              <div className="space-y-2">
+                  <div>
+                      <label htmlFor="startDate" className="block text-xs text-gray-500">De</label>
+                      <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-1 px-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                  </div>
+                  <div>
+                      <label htmlFor="endDate" className="block text-xs text-gray-500">Até</label>
+                      <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-1 px-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                  </div>
+              </div>
+          </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-              <Card>
+              <Card className="mb-6">
                   <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
                   <div className="flex gap-4">
                       <Button onClick={() => setView('form')} variant="primary">Novo Cálculo</Button>
                       <Button onClick={() => setView('reports')} variant="secondary">Ver Relatórios</Button>
                   </div>
               </Card>
-              <div className="mt-6">
-                  {renderHistoryList(true)}
-              </div>
+              {renderHistoryList(true, filteredCalculations)}
           </div>
           <Card>
-            <h3 className="text-lg font-semibold mb-4">Atividade Recente</h3>
+            <h3 className="text-lg font-semibold mb-4">Atividade Recente (Global)</h3>
             <ul className="space-y-4">
                 {recentActivity.map(calc => {
                     let activityText = `Novo cálculo para ${calc.driverName}.`;
@@ -220,9 +283,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const renderHistoryList = (isDashboardView = false) => (
+  const renderHistoryList = (isDashboardView = false, calcsToRender: Calculation[]) => (
     <Card>
-        <h3 className="text-xl font-semibold mb-4">Histórico de Cálculos</h3>
+        <h3 className="text-xl font-semibold mb-4">Histórico de Cálculos (Período Selecionado)</h3>
         {error && (
           <div className="p-4 mb-4 text-sm text-red-400 bg-red-900/50 border border-red-600 rounded-lg" role="alert">
             <p className="font-bold">Erro: {error.split('Link:')[0]}</p>
@@ -233,9 +296,11 @@ const AdminDashboard: React.FC = () => {
         <div className="md:hidden">
             {loading ? (
                 <p className="text-center py-10 text-gray-400">A carregar...</p>
+            ) : calcsToRender.length === 0 ? (
+                <p className="text-center py-10 text-gray-400">Nenhum cálculo encontrado para o período selecionado.</p>
             ) : (
                 <div className="space-y-4">
-                    {calculations.slice(0, isDashboardView ? 5 : undefined).map(calc => (
+                    {calcsToRender.slice(0, isDashboardView ? 5 : undefined).map(calc => (
                         <div key={calc.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                             <div className="flex justify-between items-start gap-4">
                                 <div>
@@ -267,7 +332,9 @@ const AdminDashboard: React.FC = () => {
             <tbody className="bg-gray-900 divide-y divide-gray-800">
               {loading ? (
                 <tr><td colSpan={4} className="text-center py-10 text-gray-400">A carregar...</td></tr>
-              ) : (calculations.slice(0, isDashboardView ? 5 : undefined).map(calc => (
+              ) : calcsToRender.length === 0 ? (
+                <tr><td colSpan={4} className="text-center py-10 text-gray-400">Nenhum cálculo encontrado para o período selecionado.</td></tr>
+              ) : (calcsToRender.slice(0, isDashboardView ? 5 : undefined).map(calc => (
                 <tr key={calc.id} className="hover:bg-gray-700/50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{calc.driverName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{`${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}`}</td>
@@ -281,7 +348,7 @@ const AdminDashboard: React.FC = () => {
           </table>
         </div>
         
-        {isDashboardView && calculations.length > 5 && <div className="text-center mt-4"><Button variant="secondary" onClick={() => setView('history')}>Ver todo o histórico</Button></div>}
+        {isDashboardView && filteredCalculations.length > 5 && <div className="text-center mt-4"><Button variant="secondary" onClick={() => setView('history')}>Ver todo o histórico do período</Button></div>}
     </Card>
   );
 
@@ -289,18 +356,18 @@ const AdminDashboard: React.FC = () => {
     switch (view) {
       case 'dashboard': return renderDashboardHome();
       case 'form': return <CalculationForm calculationToEdit={calculationToEdit} onClose={() => { setView('dashboard'); setCalculationToEdit(null); }} />;
-      case 'history': return renderHistoryList();
+      case 'history': return renderHistoryList(false, filteredCalculations);
       case 'reports': return <ReportsView onBack={() => setView('dashboard')} />;
       case 'details':
         if (!selectedCalculation) return renderDashboardHome();
         return (
           <div>
-            <Button onClick={() => { setView('dashboard'); setSelectedCalculation(null); }} className="mb-4">&larr; Voltar ao Dashboard</Button>
+            {/* FIX: The original comparison `view === 'history'` was always false inside the 'details' view case, causing a type error and a logic bug. This now correctly navigates back to the previous view using the `fromView` state. */}
+            <Button onClick={() => { setView(fromView); setSelectedCalculation(null); }} className="mb-4">&larr; Voltar</Button>
             <CalculationView calculation={selectedCalculation} />
              {! (selectedCalculation.status === CalculationStatus.ACCEPTED) &&
                 <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4 flex justify-center items-center gap-4 flex-wrap">
                     <Button onClick={() => handleEdit(selectedCalculation)} variant="primary">Editar Cálculo</Button>
-                    <Button onClick={() => updateCalculationStatus(selectedCalculation.id, CalculationStatus.ACCEPTED)} variant="success">Aceitar e Finalizar</Button>
                 </div>
              }
           </div>
