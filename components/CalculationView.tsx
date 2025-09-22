@@ -161,6 +161,16 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
         }
     });
 
+    // Find and fix the truncated element for other expenses notes
+    const truncatedElement = clone.querySelector<HTMLElement>('.truncate');
+    if (truncatedElement) {
+      truncatedElement.classList.remove('truncate');
+      truncatedElement.style.whiteSpace = 'normal';
+      truncatedElement.style.overflow = 'visible';
+      truncatedElement.style.textOverflow = 'clip';
+      truncatedElement.style.wordBreak = 'break-word';
+    }
+
     // Generate canvas from the modified clone
     const canvas = await html2canvas(clone, { 
       scale: 2, // Higher scale for better quality

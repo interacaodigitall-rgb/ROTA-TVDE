@@ -107,8 +107,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
     clone.style.position = 'absolute';
     clone.style.left = '-9999px';
     clone.style.top = '0px';
-    clone.style.width = '700px'; // Use a fixed width for consistent PDF rendering
+    clone.style.width = '800px'; // Increased width for better table rendering
     clone.style.backgroundColor = 'white';
+    clone.style.fontSize = '12px'; // Base font size
     
     document.body.appendChild(clone);
     
@@ -118,6 +119,32 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
         el.style.backgroundColor = 'transparent';
     });
     
+    // Desktop Table: Reduce font size and highlight the final invoicing value cell
+    const table = clone.querySelector('table');
+    if (table) {
+        table.style.fontSize = '10px';
+        const tableRows = table.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            const lastCell = row.querySelector('td:last-child');
+            if (lastCell) {
+                (lastCell as HTMLElement).style.fontWeight = 'bold';
+                (lastCell as HTMLElement).style.backgroundColor = '#E8F5E9'; // Light green background
+            }
+        });
+    }
+
+    // Mobile Cards: Highlight the final invoicing value row
+    const mobileCards = clone.querySelectorAll('.md\\:hidden .bg-gray-900\\/50');
+    mobileCards.forEach(card => {
+        const invoicingRow = card.querySelector<HTMLElement>('.border-t');
+        if (invoicingRow) {
+            invoicingRow.style.backgroundColor = '#E8F5E9'; // Light green background
+            invoicingRow.style.padding = '8px';
+            invoicingRow.style.marginTop = '4px';
+            invoicingRow.style.borderRadius = '4px';
+        }
+    });
+
     // Replace date inputs with simple text to ensure they render correctly in the PDF.
     const startDateInput = clone.querySelector<HTMLInputElement>('#startDate');
     const endDateInput = clone.querySelector<HTMLInputElement>('#endDate');
