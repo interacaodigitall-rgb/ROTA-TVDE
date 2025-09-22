@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <!-- Favicon and App Icons -->
-    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZhY2MxNSIvPjx0ZXh0IHg9IjUwIiB5PSI2NSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjUwIiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+UjU8L3RleHQ+PC9zdmc+" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZhY2MxNSIvPjx0ZXh0IHg9IjUwIiB5PSI2NSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjUwIiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+UjU8L3RleHQ+PC9zdmc+">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icon.svg">
 
     <!-- PWA Manifest -->
-<link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#111827">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ROTA TVDE 5.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -49,7 +50,7 @@
       if ('serviceWorker' in navigator) {
         const swCode = `
           const CACHE_NAME = 'rota-tvde-cache-v1';
-          const urlsToCache = ['/', '/index.html'];
+          const urlsToCache = ['/', '/index.html', '/icon.svg', '/manifest.json'];
           self.addEventListener('install', event => {
             event.waitUntil(
               caches.open(CACHE_NAME).then(cache => {
@@ -81,17 +82,6 @@
       }
     </script>
 
-    <script type="module" src="index.js"></script>
-    <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js")
-      .then(registration => {
-        console.log("Service Worker registrado com sucesso:", registration.scope);
-      })
-      .catch(error => {
-        console.error("Falha ao registrar Service Worker:", error);
-      });
-  }
-</script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
