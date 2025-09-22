@@ -12,5 +12,11 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "categories": [
+    "business",
+    "entertainment",
+    "navigation",
+    "productivity"
   ]
 }
