@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCalculations } from '../hooks/useCalculations';
@@ -38,6 +37,8 @@ const initialFormData = {
   boltRides: '0', boltTips: '0', boltTolls: '0',
   vehicleRental: '0', fleetCard: '0', rentalTolls: '0', otherExpenses: '0',
   otherExpensesNotes: '',
+  isIvaExempt: false,
+  isSlotExempt: false,
 };
 
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -78,6 +79,8 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         rentalTolls: String(calculationToEdit.rentalTolls || '0'),
         otherExpenses: String(calculationToEdit.otherExpenses || '0'),
         otherExpensesNotes: String(calculationToEdit.otherExpensesNotes || ''),
+        isIvaExempt: !!calculationToEdit.isIvaExempt,
+        isSlotExempt: !!calculationToEdit.isSlotExempt,
       });
     } else {
       setDriverId('');
@@ -93,8 +96,13 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   }, [selectedDriver, isEditMode]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+        const { checked } = e.target as HTMLInputElement;
+        setFormData(prev => ({ ...prev, [name]: checked }));
+    } else {
+        setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
   
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -141,6 +149,8 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       ...numericFormData,
       otherExpensesNotes: formData.otherExpensesNotes,
       vehicleRental: calculationType === CalculationType.FROTA ? numericFormData.vehicleRental : 0,
+      isIvaExempt: formData.isIvaExempt,
+      isSlotExempt: formData.isSlotExempt,
     };
     
     if (isEditMode && calculationToEdit) {
@@ -246,6 +256,16 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                         className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white"
                         placeholder="Ex: Multa de estacionamento, lavagem, etc."
                     />
+                </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 pt-4 border-t border-gray-700">
+                <div className="flex items-center">
+                    <input id="isIvaExempt" name="isIvaExempt" type="checkbox" checked={formData.isIvaExempt} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                    <label htmlFor="isIvaExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de IVA 6%</label>
+                </div>
+                <div className="flex items-center">
+                    <input id="isSlotExempt" name="isSlotExempt" type="checkbox" checked={formData.isSlotExempt} onChange={handleInputChange} disabled={calculationType !== CalculationType.SLOT} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500 disabled:opacity-50" />
+                    <label htmlFor="isSlotExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de Slot 4%</label>
                 </div>
             </div>
         </div>

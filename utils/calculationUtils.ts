@@ -1,4 +1,3 @@
-
 import { Calculation, CalculationType } from '../types';
 
 export const calculateSummary = (calculation: Calculation) => {
@@ -19,8 +18,8 @@ export const calculateSummary = (calculation: Calculation) => {
   const totalPlatformTolls = uberTolls + boltTolls;
   const totalGanhos = totalRides + totalTips + totalPlatformTolls;
 
-  const slotFee = calculation.type === CalculationType.SLOT ? totalGanhos * 0.04 : 0;
-  const iva = totalGanhos * 0.06;
+  const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? totalGanhos * 0.04 : 0;
+  const iva = !calculation.isIvaExempt ? totalGanhos * 0.06 : 0;
   const totalDeducoes = vehicleRental + slotFee + iva + fleetCard + rentalTolls + otherExpenses;
 
   const refundedTips = totalTips;

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Calculation, CalculationStatus, User, UserRole } from '../types';
 import Button from './ui/Button';
@@ -261,8 +260,20 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
           <p className="font-bold mb-2">┌─ DEDUÇÕES ───────────┐</p>
           <div className="pl-4 pr-4 space-y-1">
               <CalculationLine label="Aluguer Veículo:" value={formatCurrency(calculation.vehicleRental)} />
-              <CalculationLine label="Slot 4%:" value={formatCurrency(slotFee)} />
-              <CalculationLine label="IVA 6%:" value={formatCurrency(iva)} />
+              <div className="flex justify-between items-start gap-2">
+                <span className="flex-shrink-0">{"Slot 4%:".padEnd(20, ' ')}</span>
+                <span className="text-right break-words">
+                  {calculation.isSlotExempt && <span className="text-xs text-gray-400">(Isento) </span>}
+                  {formatCurrency(slotFee)}
+                </span>
+              </div>
+              <div className="flex justify-between items-start gap-2">
+                <span className="flex-shrink-0">{"IVA 6%:".padEnd(20, ' ')}</span>
+                <span className="text-right break-words">
+                  {calculation.isIvaExempt && <span className="text-xs text-gray-400">(Isento) </span>}
+                  {formatCurrency(iva)}
+                </span>
+              </div>
               <CalculationLine label="Cartão Frota:" value={formatCurrency(calculation.fleetCard)} />
               <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(calculation.rentalTolls)} />
               <div>

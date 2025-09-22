@@ -1,4 +1,3 @@
-
 export enum UserRole {
   ADMIN = 'ADMIN',
   DRIVER = 'DRIVER',
@@ -57,6 +56,8 @@ export interface Calculation {
   rentalTolls: number;
   otherExpenses: number;
   otherExpensesNotes?: string; // Reason for other expenses
+  isIvaExempt?: boolean;
+  isSlotExempt?: boolean;
 
   // Metadados
   revisionNotes?: string;
