@@ -36,8 +36,7 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-                <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center font-bold text-black text-xl">R5</div>
-                <div className="ml-4">
+                <div>
                     <h1 className="text-lg font-bold text-gray-100">Área do Motorista</h1>
                     <p className="text-sm text-gray-400">ROTA TVDE 5.0</p>
                 </div>
