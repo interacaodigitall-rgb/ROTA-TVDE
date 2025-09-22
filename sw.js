@@ -1,9 +1,9 @@
 // sw.js
-const CACHE_NAME = 'rota-tvde-cache-v2';
+const CACHE_NAME = 'rota-tvde-cache-v3';
 const APP_SHELL_URLS = [
   '/',
   '/index.html',
-  '/icon.svg',
+  '/icons/icon.svg',
   '/manifest.json',
   '/index.tsx', // Assuming this is how the bundled JS is served in this environment
   'https://cdn.tailwindcss.com',

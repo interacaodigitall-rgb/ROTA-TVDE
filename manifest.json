@@ -1,24 +1,16 @@
 {
-  "name": "ROTA TVDE 5.0",
-  "short_name": "ROTA 5.0",
-  "start_url": "rotatvde50.vercel.app",
+  "name": "ROTA TVDE 5.0 Calculator",
+  "short_name": "ROTA TVDE 5.0",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#111827",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "./icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "./icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
-  ],
-  "description": "ROTA TVDE 5.0 é uma plataforma moderna e intuitiva desenvolvida para gestores de frota e motoristas TVDE.\nCom uma interface simples e responsiva, o sistema permite gerir de forma prática a faturação, motoristas, cálculos pendentes e toda a operação em tempo real.\n\n🔑 Funcionalidades principais\n\n🔐 Login seguro com autenticação via Firebase.\n\n📊 Dashboard do Administrador com visão geral da empresa.\n\n💶 Gestão de faturação – acompanhe receitas e resultados no período selecionado.\n\n🧮 Cálculos automáticos de valores pendentes.\n\n👨‍✈️ Gestão de motoristas – visualize motoristas ativos e status de cada um.\n\n🚘 Gestão da frota de forma simples e organizada.",
-  "id": "ROTA-TVDE 5.0",
-  "dir": "auto"
+  ]
 }
