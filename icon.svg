@@ -1,3 +1,6 @@
-<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M80 10H20C14.4772 10 10 14.4772 10 20V80C10 85.5228 14.4772 90 20 90H80C85.5228 90 90 85.5228 90 80V20C90 14.4772 85.5228 10 80 10ZM20 32H80V40H20V32ZM80 51.5C66.6667 46.5 33.3333 46.5 20 51.5V59.5C33.3333 54.5 66.6667 54.5 80 59.5V51.5ZM80 69.5C66.6667 64.5 33.3333 64.5 20 69.5V77.5C33.3333 72.5 66.6667 72.5 80 77.5V69.5Z" fill="#22D3EE"/>
-</svg>
+# criar pasta de ícones (se não existir)
+mkdir -p icons
+
+# gerar 192 e 512 (ImageMagick v7 usa 'magick')
+magick icon.svg -resize 192x192 icons/icon-192.png
+magick icon.svg -resize 512x512 icons/icon-512.png
