@@ -2,29 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <!-- Favicon and App Icons -->
-    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" href="./icons/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#111827">
 
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ROTA TVDE 5.0</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/"
-  }
-}
-</script>
-</head>
+
+    <!-- React via Importmap (esm.sh é mais estável que aistudiocdn) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19",
+        "react-dom": "https://esm.sh/react-dom@19"
+      }
+    }
+    </script>
+  </head>
   <body class="bg-gray-900 text-white">
     <div id="root"></div>
+
+    <!-- Libs auxiliares -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -37,7 +44,7 @@
           apiKey: "AIzaSyCCv7pV872bRnSdo7t24nGyVVg2yhJ_L_A",
           authDomain: "meus-calculosv1.firebaseapp.com",
           projectId: "meus-calculosv1",
-          storageBucket: "meus-calculosv1.firebasestorage.app",
+          storageBucket: "meus-calculosv1.appspot.com", // corrigido
           messagingSenderId: "694044520930",
           appId: "1:694044520930:web:d870f447d0e4303b2149bb",
           measurementId: "G-MVBJF9C0N3"
@@ -49,7 +56,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('./sw.js') // caminho relativo para GitHub Pages
             .then(registration => {
               console.log('ServiceWorker registration successful with scope: ', registration.scope);
             })
@@ -60,6 +67,7 @@
       }
     </script>
 
-    <script type="module" src="/index.tsx"></script>
+    <!-- React App -->
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>
