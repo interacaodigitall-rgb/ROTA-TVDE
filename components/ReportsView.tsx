@@ -93,7 +93,8 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
       },
       {}
     );
-    return Object.values(groupedByDriver).sort((a,b) => a.driverName.localeCompare(b.driverName));
+    // FIX: Explicitly typed parameters 'a' and 'b' to resolve error "Property 'driverName' does not exist on type 'unknown'".
+    return Object.values(groupedByDriver).sort((a: ReportRow, b: ReportRow) => a.driverName.localeCompare(b.driverName));
   }, [calculations, startDate, endDate, driverId]);
 
   const handleDownloadReportPdf = async () => {

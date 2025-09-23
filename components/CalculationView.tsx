@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Calculation, CalculationStatus, User, UserRole } from '../types';
+import { Calculation, CalculationStatus, User, UserRole, CalculationType } from '../types';
 import Button from './ui/Button';
 import { useCalculations } from '../hooks/useCalculations';
 import { useAuth } from '../hooks/useAuth';
@@ -109,7 +109,13 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
     refundedTolls,
     totalDevolucoes,
     valorFinal,
+    totalPlatformTolls,
   } = calculateSummary(calculation);
+  
+  const rentalTollsForDisplay =
+    calculation.type === CalculationType.FROTA
+      ? (calculation.rentalTolls || 0) + totalPlatformTolls
+      : (calculation.rentalTolls || 0);
 
   const statusColor = {
     [CalculationStatus.PENDING]: 'text-yellow-400',
@@ -285,7 +291,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                 </span>
               </div>
               <CalculationLine label="Cartão Frota:" value={formatCurrency(calculation.fleetCard)} />
-              <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(calculation.rentalTolls)} />
+              <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(rentalTollsForDisplay)} />
               <div>
                  <CalculationLine label="Outras Despesas:" value={formatCurrency(calculation.otherExpenses)} />
                  {calculation.otherExpensesNotes && (

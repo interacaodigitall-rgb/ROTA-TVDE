@@ -3,7 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import Button from './ui/Button';
 import { useIbans } from '../hooks/useIbans';
 
-const InfoCard: React.FC<{ title: string; icon: JSX.Element; children: React.ReactNode; borderColor: string; }> = ({ title, icon, children, borderColor }) => (
+// FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
+const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; borderColor: string; }> = ({ title, icon, children, borderColor }) => (
   <div className={`border border-gray-700 rounded-lg p-6 bg-gray-800 border-t-4 ${borderColor}`}>
     <div className="flex items-center mb-4">
       {icon}

@@ -49,8 +49,9 @@ const getWeekRange = () => {
 
 const toInputFormat = (date: Date) => date.toISOString().split('T')[0];
 
+// FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const NavLink: React.FC<{
-  icon: JSX.Element;
+  icon: React.ReactNode;
   label: string;
   isActive: boolean;
   onClick: () => void;
@@ -104,8 +105,8 @@ const SidebarContent: React.FC<{
     </>
 );
 
-
-const StatCard: React.FC<{ title: string; value: string; subtext: string; icon: JSX.Element }> = ({ title, value, subtext, icon }) => (
+// FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
+const StatCard: React.FC<{ title: string; value: string; subtext: string; icon: React.ReactNode }> = ({ title, value, subtext, icon }) => (
     <Card className="flex flex-col justify-between">
         <div className="flex justify-between items-start">
             <h4 className="text-sm font-medium text-gray-400">{title}</h4>
@@ -137,7 +138,6 @@ const AdminDashboard: React.FC = () => {
   const filteredCalculations = useMemo(() => {
     if (!startDate || !endDate) return calculations;
     
-    // Helper to parse YYYY-MM-DD string as a local date
     const parseInputDate = (dateString: string): Date => {
         const [year, month, day] = dateString.split('-').map(Number);
         return new Date(year, month - 1, day);
@@ -149,10 +149,18 @@ const AdminDashboard: React.FC = () => {
     end.setHours(23, 59, 59, 999);
 
     return calculations.filter(c => {
-        const periodEndDate = toDate(c.periodEnd);
-        return !isNaN(periodEndDate.getTime()) && periodEndDate >= start && periodEndDate <= end;
+        const calcStart = toDate(c.periodStart);
+        const calcEnd = toDate(c.periodEnd);
+
+        if (isNaN(calcStart.getTime()) || isNaN(calcEnd.getTime())) {
+            return false;
+        }
+        
+        // An overlap occurs if (StartA <= EndB) and (EndA >= StartB)
+        const hasOverlap = calcStart <= end && calcEnd >= start;
+        return hasOverlap;
     });
-}, [calculations, startDate, endDate]);
+  }, [calculations, startDate, endDate]);
 
 
   const stats = useMemo(() => {
