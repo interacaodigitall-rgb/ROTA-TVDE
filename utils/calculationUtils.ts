@@ -21,21 +21,21 @@ export const calculateSummary = (calculation: Calculation) => {
   const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? totalGanhos * 0.04 : 0;
   const iva = !calculation.isIvaExempt ? totalGanhos * 0.06 : 0;
   
-  // For FROTA drivers, tolls collected from platforms are a deduction.
-  // For SLOT drivers, they are refunded, so they are not part of the deductions.
+  // For FROTA drivers, platform tolls are company revenue and are deducted.
+  // For SLOT drivers, they belong to the driver and are refunded, not deducted.
   const platformTollsAsDeduction = calculation.type === CalculationType.FROTA ? totalPlatformTolls : 0;
 
   const totalDeducoes = vehicleRental + slotFee + iva + fleetCard + rentalTolls + otherExpenses + platformTollsAsDeduction;
 
+  // Tips are always refunded to the driver.
   const refundedTips = totalTips;
+  // Platform tolls are only refunded to SLOT drivers.
   const refundedTolls = calculation.type === CalculationType.SLOT ? totalPlatformTolls : 0;
   const totalDevolucoes = refundedTips + refundedTolls;
   
-  // The final value is the sum of all earnings minus the sum of all deductions.
-  // For SLOT drivers, tolls are in `totalGanhos` and not in `totalDeducoes`, so they are kept.
-  // For FROTA drivers, tolls are in `totalGanhos` and also added to `totalDeducoes`, making them a wash.
-  // This formula works for both cases and keeps the final value correct while making deductions explicit.
-  const valorFinal = (totalRides + totalTips + totalPlatformTolls) - totalDeducoes;
+  // The final value is the total earnings minus total deductions.
+  // This single formula works for both driver types because the deductions are handled conditionally.
+  const valorFinal = totalGanhos - totalDeducoes;
 
   return {
     totalRides,
