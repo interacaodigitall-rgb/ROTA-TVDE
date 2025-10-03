@@ -92,8 +92,40 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   }, [calculationToEdit, isEditMode]);
 
   useEffect(() => {
-    if (!isEditMode) {
-      setDriverName(selectedDriver?.name || '');
+    if (selectedDriver && !isEditMode) {
+      setDriverName(selectedDriver.name || '');
+
+      // Apply default values from user profile for a new calculation
+      const newDefaults = {
+          isIvaExempt: selectedDriver.isIvaExempt || false,
+          isSlotExempt: false,
+          vehicleRental: '0',
+      };
+
+      if (selectedDriver.type === CalculationType.FROTA) {
+          newDefaults.vehicleRental = String(selectedDriver.defaultRentalValue || '0');
+      } else if (selectedDriver.type === CalculationType.SLOT) {
+          if (selectedDriver.slotType === 'FIXED') {
+              // For fixed slot, we use the vehicleRental field and disable the percentage slot fee
+              newDefaults.vehicleRental = String(selectedDriver.slotFixedValue || '0');
+              newDefaults.isSlotExempt = true; 
+          }
+      }
+      
+      // Use a functional update to avoid stale state issues, merging with existing form data
+      setFormData(prev => ({
+          ...prev,
+          ...newDefaults,
+      }));
+    } else if (!selectedDriver && !isEditMode) {
+      // Clear defaults if driver is deselected
+      setDriverName('');
+      setFormData(prev => ({
+          ...prev,
+          isIvaExempt: false,
+          isSlotExempt: false,
+          vehicleRental: '0',
+      }));
     }
   }, [selectedDriver, isEditMode]);
   
@@ -157,7 +189,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       periodEnd: formData.periodEnd,
       ...numericFormData,
       otherExpensesNotes: formData.otherExpensesNotes,
-      vehicleRental: calculationType === CalculationType.FROTA ? numericFormData.vehicleRental : 0,
+      vehicleRental: calculationType === CalculationType.FROTA || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED') ? numericFormData.vehicleRental : 0,
       isIvaExempt: formData.isIvaExempt,
       isSlotExempt: formData.isSlotExempt,
     };
@@ -275,7 +307,15 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         <div>
             <h3 className="text-lg font-medium leading-6 text-white border-b border-gray-700 pb-2 mb-4">Deduções</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                 <NumberInput label="Aluguer Veículo" name="vehicleRental" value={formData.vehicleRental} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} disabled={calculationType !== CalculationType.FROTA} />
+                 <NumberInput 
+                    label="Aluguer / Valor Fixo" 
+                    name="vehicleRental" 
+                    value={formData.vehicleRental} 
+                    onChange={handleInputChange} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur} 
+                    disabled={!(calculationType === CalculationType.FROTA || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED'))} 
+                 />
                 <NumberInput label="Cartão Frota" name="fleetCard" value={formData.fleetCard} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Portagens (Aluguer)" name="rentalTolls" value={formData.rentalTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput
@@ -310,7 +350,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                     <label htmlFor="isIvaExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de IVA 6%</label>
                 </div>
                 <div className="flex items-center">
-                    <input id="isSlotExempt" name="isSlotExempt" type="checkbox" checked={formData.isSlotExempt} onChange={handleInputChange} disabled={calculationType !== CalculationType.SLOT} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500 disabled:opacity-50" />
+                    <input id="isSlotExempt" name="isSlotExempt" type="checkbox" checked={formData.isSlotExempt} onChange={handleInputChange} disabled={calculationType !== CalculationType.SLOT || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED')} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500 disabled:opacity-50" />
                     <label htmlFor="isSlotExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de Slot 4%</label>
                 </div>
             </div>

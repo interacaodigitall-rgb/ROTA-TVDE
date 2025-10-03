@@ -34,6 +34,12 @@ export interface User {
   // Debt Management
   outstandingDebt?: number;
   debtNotes?: string;
+
+  // Calculation Defaults
+  defaultRentalValue?: number; // For FROTA
+  isIvaExempt?: boolean;
+  slotType?: 'PERCENTAGE' | 'FIXED'; // For SLOT
+  slotFixedValue?: number; // For SLOT
 }
 
 export interface Calculation {

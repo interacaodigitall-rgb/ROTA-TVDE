@@ -30,6 +30,10 @@ const initialFormState = {
     fleetCardNumber: '',
     outstandingDebt: '0',
     debtNotes: '',
+    defaultRentalValue: '0',
+    isIvaExempt: false,
+    slotType: 'PERCENTAGE' as 'PERCENTAGE' | 'FIXED',
+    slotFixedValue: '0',
 };
 
 const VehicleManagement: React.FC = () => {
@@ -41,8 +45,13 @@ const VehicleManagement: React.FC = () => {
     const allUsers = useMemo(() => [...users].sort((a, b) => a.name.localeCompare(b.name)), [users]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type } = e.target;
+        if (type === 'checkbox') {
+            const { checked } = e.target as HTMLInputElement;
+            setFormData(prev => ({...prev, [name]: checked}));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSelectForEdit = (user: User) => {
@@ -62,6 +71,10 @@ const VehicleManagement: React.FC = () => {
             fleetCardNumber: user.fleetCardNumber || '',
             outstandingDebt: String(user.outstandingDebt || '0'),
             debtNotes: user.debtNotes || '',
+            defaultRentalValue: String(user.defaultRentalValue || '0'),
+            isIvaExempt: user.isIvaExempt || false,
+            slotType: user.slotType || 'PERCENTAGE',
+            slotFixedValue: String(user.slotFixedValue || '0'),
         });
     };
     
@@ -90,7 +103,12 @@ const VehicleManagement: React.FC = () => {
                 return;
             }
 
-            const result = await addUser({ ...formData, outstandingDebt: parseFloat(formData.outstandingDebt) || 0 });
+            const result = await addUser({ 
+                ...formData, 
+                outstandingDebt: parseFloat(formData.outstandingDebt) || 0,
+                defaultRentalValue: parseFloat(formData.defaultRentalValue) || 0,
+                slotFixedValue: parseFloat(formData.slotFixedValue) || 0,
+            });
             if (result.success) {
                 alert('Utilizador adicionado com sucesso!');
                 handleCancel();
@@ -103,6 +121,8 @@ const VehicleManagement: React.FC = () => {
             const dataToUpdate = {
                 ...updatableData,
                 outstandingDebt: parseFloat(formData.outstandingDebt) || 0,
+                defaultRentalValue: parseFloat(formData.defaultRentalValue) || 0,
+                slotFixedValue: parseFloat(formData.slotFixedValue) || 0,
             };
             await updateUser(editingDriver.id, dataToUpdate);
             alert('Dados do utilizador atualizados com sucesso!');
@@ -159,9 +179,38 @@ const VehicleManagement: React.FC = () => {
                                                     <option value={CalculationType.SLOT}>Slot</option>
                                                 </select>
                                             </div>
-                                            {/* Only show the editable name field when editing a driver */}
                                             {!isAddingNewUser && (
                                                  <VehicleInput label="Nome Completo do Condutor" id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                                            )}
+                                            <hr className="border-gray-600" />
+                                            <h4 className="text-lg font-semibold text-white">Configurações Financeiras</h4>
+                                            
+                                            <div className="flex items-center pt-2">
+                                                <input id="isIvaExempt" name="isIvaExempt" type="checkbox" checked={formData.isIvaExempt} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                                <label htmlFor="isIvaExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de IVA 6%</label>
+                                            </div>
+
+                                            {formData.type === CalculationType.FROTA && (
+                                                <VehicleInput label="Valor do Aluguer Semanal (€)" id="defaultRentalValue" name="defaultRentalValue" type="number" step="0.01" value={formData.defaultRentalValue} onChange={handleInputChange} />
+                                            )}
+
+                                            {formData.type === CalculationType.SLOT && (
+                                                <div className="space-y-4 rounded-md p-4 border border-gray-600 bg-gray-900/50">
+                                                    <label className="block text-sm font-medium text-gray-300">Tipo de Comissão Slot</label>
+                                                    <div className="flex flex-col sm:flex-row gap-4">
+                                                        <div className="flex items-center">
+                                                            <input id="slotTypePercentage" name="slotType" type="radio" value="PERCENTAGE" checked={formData.slotType === 'PERCENTAGE'} onChange={handleInputChange} className="h-4 w-4 border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                                            <label htmlFor="slotTypePercentage" className="ml-3 block text-sm font-medium text-gray-300">Percentagem (4%)</label>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            <input id="slotTypeFixed" name="slotType" type="radio" value="FIXED" checked={formData.slotType === 'FIXED'} onChange={handleInputChange} className="h-4 w-4 border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                                            <label htmlFor="slotTypeFixed" className="ml-3 block text-sm font-medium text-gray-300">Valor Fixo</label>
+                                                        </div>
+                                                    </div>
+                                                    {formData.slotType === 'FIXED' && (
+                                                        <VehicleInput label="Valor Fixo Semanal (€)" id="slotFixedValue" name="slotFixedValue" type="number" step="0.01" value={formData.slotFixedValue} onChange={handleInputChange} />
+                                                    )}
+                                                </div>
                                             )}
 
                                             <hr className="border-gray-600" />
