@@ -1,6 +1,7 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
   DRIVER = 'DRIVER',
+  OWNER = 'OWNER',
 }
 
 export enum CalculationType {
@@ -29,6 +30,10 @@ export interface User {
   insurancePolicy?: string;
   fleetCardCompany?: string;
   fleetCardNumber?: string;
+
+  // Debt Management
+  outstandingDebt?: number;
+  debtNotes?: string;
 }
 
 export interface Calculation {
@@ -55,6 +60,7 @@ export interface Calculation {
   fleetCard: number;
   rentalTolls: number;
   otherExpenses: number;
+  debtDeduction?: number; // For outstanding debt
   otherExpensesNotes?: string; // Reason for other expenses
   isIvaExempt?: boolean;
   isSlotExempt?: boolean;

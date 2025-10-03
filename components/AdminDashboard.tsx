@@ -173,6 +173,7 @@ const AdminDashboard: React.FC = () => {
           (c.rentalTolls || 0) +
           (c.fleetCard || 0) +
           (c.otherExpenses || 0) +
+          (c.debtDeduction || 0) +
           summary.iva +
           summary.slotFee;
         return sum + companyEarnings;
@@ -372,11 +373,9 @@ const AdminDashboard: React.FC = () => {
             {/* FIX: The original comparison `view === 'history'` was always false inside the 'details' view case, causing a type error and a logic bug. This now correctly navigates back to the previous view using the `fromView` state. */}
             <Button onClick={() => { setView(fromView); setSelectedCalculation(null); }} className="mb-4">&larr; Voltar</Button>
             <CalculationView calculation={selectedCalculation} />
-             {! (selectedCalculation.status === CalculationStatus.ACCEPTED) &&
-                <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4 flex justify-center items-center gap-4 flex-wrap">
-                    <Button onClick={() => handleEdit(selectedCalculation)} variant="primary">Editar Cálculo</Button>
-                </div>
-             }
+             <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4 flex justify-center items-center gap-4 flex-wrap">
+                 <Button onClick={() => handleEdit(selectedCalculation)} variant="primary">Editar Cálculo</Button>
+             </div>
           </div>
         );
       case 'iban': return <IbanManagement />;

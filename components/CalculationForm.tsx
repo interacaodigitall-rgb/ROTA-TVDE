@@ -36,6 +36,7 @@ const initialFormData = {
   uberRides: '0', uberTips: '0', uberTolls: '0',
   boltRides: '0', boltTips: '0', boltTolls: '0',
   vehicleRental: '0', fleetCard: '0', rentalTolls: '0', otherExpenses: '0',
+  debtDeduction: '0',
   otherExpensesNotes: '',
   isIvaExempt: false,
   isSlotExempt: false,
@@ -47,7 +48,7 @@ const toInputDate = (timestamp: any) => toDate(timestamp).toISOString().split('T
 const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationToEdit }) => {
   const { user: adminUser } = useAuth();
   const { addCalculation, updateCalculation } = useCalculations();
-  const { users } = useUsers();
+  const { users, updateUser } = useUsers();
   const isEditMode = !!calculationToEdit;
 
   const [driverId, setDriverId] = useState('');
@@ -78,6 +79,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         fleetCard: String(calculationToEdit.fleetCard || '0'),
         rentalTolls: String(calculationToEdit.rentalTolls || '0'),
         otherExpenses: String(calculationToEdit.otherExpenses || '0'),
+        debtDeduction: String(calculationToEdit.debtDeduction || '0'),
         otherExpensesNotes: String(calculationToEdit.otherExpensesNotes || ''),
         isIvaExempt: !!calculationToEdit.isIvaExempt,
         isSlotExempt: !!calculationToEdit.isSlotExempt,
@@ -119,11 +121,17 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminUser || !driverId || !driverName || !formData.periodStart || !formData.periodEnd) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
+    }
+
+    const debtDeductionAmount = parseFloat(formData.debtDeduction) || 0;
+    if (selectedDriver?.outstandingDebt && debtDeductionAmount > selectedDriver.outstandingDebt) {
+        alert(`O valor a deduzir da dívida (€${debtDeductionAmount.toFixed(2)}) não pode ser superior à dívida pendente (€${selectedDriver.outstandingDebt.toFixed(2)}).`);
+        return;
     }
 
     const numericFormData = {
@@ -137,6 +145,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         rentalTolls: parseFloat(formData.rentalTolls) || 0,
         otherExpenses: parseFloat(formData.otherExpenses) || 0,
         vehicleRental: parseFloat(formData.vehicleRental) || 0,
+        debtDeduction: debtDeductionAmount,
     };
 
     const calculationData: any = {
@@ -154,16 +163,31 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
     };
     
     if (isEditMode && calculationToEdit) {
-        updateCalculation(calculationToEdit.id, {
+        // If editing, we need to handle the debt change carefully.
+        // We calculate the difference between the old debt deduction and the new one.
+        const oldDebtDeduction = calculationToEdit.debtDeduction || 0;
+        const debtDifference = debtDeductionAmount - oldDebtDeduction;
+        
+        await updateCalculation(calculationToEdit.id, {
             ...calculationData,
             status: CalculationStatus.PENDING, 
             revisionNotes: '',
         });
+
+        if (debtDifference !== 0 && selectedDriver) {
+            const newDebt = (selectedDriver.outstandingDebt || 0) - debtDifference;
+            await updateUser(selectedDriver.id, { outstandingDebt: newDebt });
+        }
+
     } else {
-        addCalculation({
+        await addCalculation({
             ...calculationData,
             status: CalculationStatus.PENDING,
         });
+        if (debtDeductionAmount > 0 && selectedDriver) {
+            const newDebt = (selectedDriver.outstandingDebt || 0) - debtDeductionAmount;
+            await updateUser(selectedDriver.id, { outstandingDebt: newDebt });
+        }
     }
     
     onClose();
@@ -173,6 +197,16 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
     <Card>
       <form onSubmit={handleSubmit} className="space-y-8">
         <h2 className="text-2xl font-bold text-center">{isEditMode ? 'Editar Cálculo' : 'Criar Novo Cálculo'}</h2>
+        
+        {selectedDriver && selectedDriver.outstandingDebt > 0 && (
+            <div className="p-4 text-sm text-yellow-200 bg-yellow-900/50 border border-yellow-700 rounded-lg">
+                <p className="font-bold">Atenção: Dívida Pendente</p>
+                <p>Este motorista tem uma dívida de <span className="font-bold">€{selectedDriver.outstandingDebt.toFixed(2)}</span>.</p>
+                {selectedDriver.debtNotes && <p className="mt-1 text-xs">Notas: {selectedDriver.debtNotes}</p>}
+                <p className="mt-2">Pode usar o campo "Dedução de Dívida" abaixo para abater este valor no cálculo atual.</p>
+            </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div>
@@ -244,7 +278,19 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                  <NumberInput label="Aluguer Veículo" name="vehicleRental" value={formData.vehicleRental} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} disabled={calculationType !== CalculationType.FROTA} />
                 <NumberInput label="Cartão Frota" name="fleetCard" value={formData.fleetCard} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Portagens (Aluguer)" name="rentalTolls" value={formData.rentalTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
-                <NumberInput label="Outras Despesas" name="otherExpenses" value={formData.otherExpenses} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput
+                    label="Dedução de Dívida"
+                    name="debtDeduction"
+                    value={formData.debtDeduction}
+                    onChange={handleInputChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    disabled={!selectedDriver || !selectedDriver.outstandingDebt || selectedDriver.outstandingDebt <= 0}
+                    max={selectedDriver?.outstandingDebt}
+                />
+                <div className="md:col-span-3">
+                    <NumberInput label="Outras Despesas" name="otherExpenses" value={formData.otherExpenses} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                </div>
                 <div className="md:col-span-4">
                     <label htmlFor="otherExpensesNotes" className="block text-sm font-medium text-gray-300">Motivo para Outras Despesas</label>
                     <input

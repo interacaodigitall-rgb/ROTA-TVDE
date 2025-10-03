@@ -61,7 +61,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
     }
     try {
-        await db.collection('users').doc(id).update(updates);
+        // Ensure numeric fields are stored as numbers, not strings
+        const safeUpdates: any = { ...updates };
+        if (safeUpdates.outstandingDebt) {
+            safeUpdates.outstandingDebt = parseFloat(safeUpdates.outstandingDebt);
+        }
+        await db.collection('users').doc(id).update(safeUpdates);
     } catch (error) {
         console.error("Error updating user: ", error);
     }
@@ -94,7 +99,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const userProfile: Omit<User, 'id' | 'password'> = {
                 ...profileData,
                 email,
-                role: UserRole.DRIVER, // Force role to driver
             };
             await db.collection('users').doc(createdFirebaseUser.uid).set(userProfile);
             return { success: true };

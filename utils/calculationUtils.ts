@@ -12,6 +12,7 @@ export const calculateSummary = (calculation: Calculation) => {
   const fleetCard = calculation.fleetCard || 0;
   const rentalTolls = calculation.rentalTolls || 0;
   const otherExpenses = calculation.otherExpenses || 0;
+  const debtDeduction = calculation.debtDeduction || 0;
 
   const totalRides = uberRides + boltRides;
   const totalTips = uberTips + boltTips;
@@ -25,7 +26,7 @@ export const calculateSummary = (calculation: Calculation) => {
   // For SLOT drivers, they belong to the driver and are refunded, not deducted.
   const platformTollsAsDeduction = calculation.type === CalculationType.FROTA ? totalPlatformTolls : 0;
 
-  const totalDeducoes = vehicleRental + slotFee + iva + fleetCard + rentalTolls + otherExpenses + platformTollsAsDeduction;
+  const totalDeducoes = vehicleRental + slotFee + iva + fleetCard + rentalTolls + otherExpenses + debtDeduction + platformTollsAsDeduction;
 
   // Tips are always refunded to the driver.
   const refundedTips = totalTips;

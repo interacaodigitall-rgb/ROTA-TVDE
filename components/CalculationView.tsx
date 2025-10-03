@@ -292,6 +292,9 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
               </div>
               <CalculationLine label="Cartão Frota:" value={formatCurrency(calculation.fleetCard)} />
               <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(rentalTollsForDisplay)} />
+              {calculation.debtDeduction > 0 && (
+                <CalculationLine label="Dedução de Dívida:" value={formatCurrency(calculation.debtDeduction)} />
+              )}
               <div>
                  <CalculationLine label="Outras Despesas:" value={formatCurrency(calculation.otherExpenses)} />
                  {calculation.otherExpensesNotes && (
