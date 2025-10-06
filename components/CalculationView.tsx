@@ -107,6 +107,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
     totalDeducoes,
     refundedTips,
     refundedTolls,
+    refundedAdjustments,
     totalDevolucoes,
     valorFinal,
     totalPlatformTolls,
@@ -262,9 +263,11 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
             <CalculationLine label="Uber Corridas:" value={formatCurrency(calculation.uberRides)} />
             <CalculationLine label="Uber Gorjetas:" value={formatCurrency(calculation.uberTips)} />
             <CalculationLine label="Uber Portagens:" value={formatCurrency(calculation.uberTolls)} />
+            {!!calculation.uberPreviousPeriodAdjustments && <CalculationLine label="Uber Ajustes:" value={formatCurrency(calculation.uberPreviousPeriodAdjustments)} />}
             <CalculationLine label="Bolt Corridas:" value={formatCurrency(calculation.boltRides)} />
             <CalculationLine label="Bolt Gorjetas:" value={formatCurrency(calculation.boltTips)} />
             <CalculationLine label="Bolt Portagens:" value={formatCurrency(calculation.boltTolls)} />
+            {!!calculation.boltPreviousPeriodAdjustments && <CalculationLine label="Bolt Ajustes:" value={formatCurrency(calculation.boltPreviousPeriodAdjustments)} />}
           </div>
           <p className="font-bold mt-2">├──────────────────────┤</p>
           <p className="font-bold pl-4 pr-4"> TOTAL GANHOS: {formatCurrency(totalGanhos)}</p>
@@ -314,6 +317,9 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
           <p className="font-bold mb-2">┌─ DEVOLUÇÕES ─────────┐</p>
           <div className="pl-4 pr-4 space-y-1">
               <CalculationLine label="Gorjetas:" value={formatCurrency(refundedTips)} />
+              {refundedAdjustments > 0 && (
+                <CalculationLine label="Ajustes Per. Ant.:" value={formatCurrency(refundedAdjustments)} />
+              )}
               <CalculationLine label="Portagens:" value={formatCurrency(refundedTolls)} />
           </div>
           <p className="font-bold mt-2">├──────────────────────┤</p>

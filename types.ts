@@ -57,9 +57,11 @@ export interface Calculation {
   uberRides: number;
   uberTips: number;
   uberTolls: number;
+  uberPreviousPeriodAdjustments?: number;
   boltRides: number;
   boltTips: number;
   boltTolls: number;
+  boltPreviousPeriodAdjustments?: number;
 
   // Deduções
   vehicleRental: number;

@@ -28,23 +28,34 @@ const toDate = (timestamp: any): Date => {
 };
 
 /**
- * Calculates the start (Monday) and end (Sunday) of the current week based on local time.
+ * Calculates the start (Monday) and end (Sunday) of the previous week based on local time.
+ * The week is considered to run from Monday to Sunday.
+ * This is the default period for analysis, as payments are typically for the preceding week.
  * @returns An object with `monday` and `sunday` Date objects.
  */
-const getWeekRange = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + diffToMonday);
-    monday.setHours(0, 0, 0, 0);
+const getPreviousWeekRange = () => {
+    const today = new Date();
 
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
+    // Get day of week where Monday is 1 and Sunday is 7
+    const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
+
+    // Calculate the date of the most recent Monday
+    const mondayOfThisWeek = new Date(today);
+    mondayOfThisWeek.setDate(today.getDate() - (dayOfWeek - 1));
     
-    return { monday, sunday };
+    // The previous week's Sunday is the day before this week's Monday
+    const sundayOfLastWeek = new Date(mondayOfThisWeek);
+    sundayOfLastWeek.setDate(mondayOfThisWeek.getDate() - 1);
+
+    // The previous week's Monday is 6 days before its Sunday
+    const mondayOfLastWeek = new Date(sundayOfLastWeek);
+    mondayOfLastWeek.setDate(sundayOfLastWeek.getDate() - 6);
+
+    // Set times for the full day range
+    mondayOfLastWeek.setHours(0, 0, 0, 0);
+    sundayOfLastWeek.setHours(23, 59, 59, 999);
+    
+    return { monday: mondayOfLastWeek, sunday: sundayOfLastWeek };
 };
 
 const toInputFormat = (date: Date) => date.toISOString().split('T')[0];
@@ -131,7 +142,7 @@ const AdminDashboard: React.FC = () => {
   const [calculationToEdit, setCalculationToEdit] = useState<Calculation | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const { monday, sunday } = useMemo(() => getWeekRange(), []);
+  const { monday, sunday } = useMemo(() => getPreviousWeekRange(), []);
   const [startDate, setStartDate] = useState(toInputFormat(monday));
   const [endDate, setEndDate] = useState(toInputFormat(sunday));
   

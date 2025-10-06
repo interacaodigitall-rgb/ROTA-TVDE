@@ -33,8 +33,8 @@ const NumberInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { labe
 const initialFormData = {
   periodStart: '',
   periodEnd: '',
-  uberRides: '0', uberTips: '0', uberTolls: '0',
-  boltRides: '0', boltTips: '0', boltTolls: '0',
+  uberRides: '0', uberTips: '0', uberTolls: '0', uberPreviousPeriodAdjustments: '0',
+  boltRides: '0', boltTips: '0', boltTolls: '0', boltPreviousPeriodAdjustments: '0',
   vehicleRental: '0', fleetCard: '0', rentalTolls: '0', otherExpenses: '0',
   debtDeduction: '0',
   otherExpensesNotes: '',
@@ -66,15 +66,21 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
     if (isEditMode && calculationToEdit) {
       setDriverId(calculationToEdit.driverId);
       setDriverName(calculationToEdit.driverName);
+
+      const uberGross = (calculationToEdit.uberRides || 0) + (calculationToEdit.uberTips || 0) + (calculationToEdit.uberTolls || 0) + (calculationToEdit.uberPreviousPeriodAdjustments || 0);
+      const boltGross = (calculationToEdit.boltRides || 0) + (calculationToEdit.boltTips || 0) + (calculationToEdit.boltTolls || 0) + (calculationToEdit.boltPreviousPeriodAdjustments || 0);
+
       setFormData({
         periodStart: toInputDate(calculationToEdit.periodStart),
         periodEnd: toInputDate(calculationToEdit.periodEnd),
-        uberRides: String(calculationToEdit.uberRides || '0'),
+        uberRides: String(uberGross),
         uberTips: String(calculationToEdit.uberTips || '0'),
         uberTolls: String(calculationToEdit.uberTolls || '0'),
-        boltRides: String(calculationToEdit.boltRides || '0'),
+        uberPreviousPeriodAdjustments: String(calculationToEdit.uberPreviousPeriodAdjustments || '0'),
+        boltRides: String(boltGross),
         boltTips: String(calculationToEdit.boltTips || '0'),
         boltTolls: String(calculationToEdit.boltTolls || '0'),
+        boltPreviousPeriodAdjustments: String(calculationToEdit.boltPreviousPeriodAdjustments || '0'),
         vehicleRental: String(calculationToEdit.vehicleRental || '0'),
         fleetCard: String(calculationToEdit.fleetCard || '0'),
         rentalTolls: String(calculationToEdit.rentalTolls || '0'),
@@ -166,13 +172,33 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         return;
     }
 
+    const uberGross = parseFloat(formData.uberRides) || 0;
+    const uberTips = parseFloat(formData.uberTips) || 0;
+    const uberTolls = parseFloat(formData.uberTolls) || 0;
+    const boltGross = parseFloat(formData.boltRides) || 0;
+    const boltTips = parseFloat(formData.boltTips) || 0;
+    const boltTolls = parseFloat(formData.boltTolls) || 0;
+    const uberPreviousPeriodAdjustments = parseFloat(formData.uberPreviousPeriodAdjustments) || 0;
+    const boltPreviousPeriodAdjustments = parseFloat(formData.boltPreviousPeriodAdjustments) || 0;
+
+    if (uberGross < (uberTips + uberTolls + uberPreviousPeriodAdjustments)) {
+        alert('A soma das gorjetas, portagens e ajustes da Uber não pode ser superior ao valor total das corridas Uber.');
+        return;
+    }
+    if (boltGross < (boltTips + boltTolls + boltPreviousPeriodAdjustments)) {
+        alert('A soma das gorjetas, portagens e ajustes da Bolt não pode ser superior ao valor total das corridas Bolt.');
+        return;
+    }
+
     const numericFormData = {
-        uberRides: parseFloat(formData.uberRides) || 0,
-        uberTips: parseFloat(formData.uberTips) || 0,
-        uberTolls: parseFloat(formData.uberTolls) || 0,
-        boltRides: parseFloat(formData.boltRides) || 0,
-        boltTips: parseFloat(formData.boltTips) || 0,
-        boltTolls: parseFloat(formData.boltTolls) || 0,
+        uberRides: uberGross - uberTips - uberTolls - uberPreviousPeriodAdjustments,
+        uberTips: uberTips,
+        uberTolls: uberTolls,
+        uberPreviousPeriodAdjustments: uberPreviousPeriodAdjustments,
+        boltRides: boltGross - boltTips - boltTolls - boltPreviousPeriodAdjustments,
+        boltTips: boltTips,
+        boltTolls: boltTolls,
+        boltPreviousPeriodAdjustments: boltPreviousPeriodAdjustments,
         fleetCard: parseFloat(formData.fleetCard) || 0,
         rentalTolls: parseFloat(formData.rentalTolls) || 0,
         otherExpenses: parseFloat(formData.otherExpenses) || 0,
@@ -294,13 +320,15 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
 
         <div>
             <h3 className="text-lg font-medium leading-6 text-white border-b border-gray-700 pb-2 mb-4">Ganhos</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <NumberInput label="Uber Corridas" name="uberRides" value={formData.uberRides} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Uber Gorjetas" name="uberTips" value={formData.uberTips} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Uber Portagens" name="uberTolls" value={formData.uberTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Uber Ajustes" name="uberPreviousPeriodAdjustments" value={formData.uberPreviousPeriodAdjustments} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Bolt Corridas" name="boltRides" value={formData.boltRides} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Bolt Gorjetas" name="boltTips" value={formData.boltTips} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Bolt Portagens" name="boltTolls" value={formData.boltTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                <NumberInput label="Bolt Ajustes" name="boltPreviousPeriodAdjustments" value={formData.boltPreviousPeriodAdjustments} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
             </div>
         </div>
 

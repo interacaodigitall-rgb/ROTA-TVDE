@@ -5,9 +5,11 @@ export const calculateSummary = (calculation: Calculation) => {
   const uberRides = calculation.uberRides || 0;
   const uberTips = calculation.uberTips || 0;
   const uberTolls = calculation.uberTolls || 0;
+  const uberPreviousPeriodAdjustments = calculation.uberPreviousPeriodAdjustments || 0;
   const boltRides = calculation.boltRides || 0;
   const boltTips = calculation.boltTips || 0;
   const boltTolls = calculation.boltTolls || 0;
+  const boltPreviousPeriodAdjustments = calculation.boltPreviousPeriodAdjustments || 0;
   const vehicleRental = calculation.vehicleRental || 0;
   const fleetCard = calculation.fleetCard || 0;
   const rentalTolls = calculation.rentalTolls || 0;
@@ -17,7 +19,11 @@ export const calculateSummary = (calculation: Calculation) => {
   const totalRides = uberRides + boltRides;
   const totalTips = uberTips + boltTips;
   const totalPlatformTolls = uberTolls + boltTolls;
-  const totalGanhos = totalRides + totalTips + totalPlatformTolls;
+  const totalAdjustments = uberPreviousPeriodAdjustments + boltPreviousPeriodAdjustments;
+  
+  // Total Ganhos includes everything that is subject to company fees (Slot/IVA)
+  // Adjustments are now treated like tips - they are part of the gross earnings.
+  const totalGanhos = totalRides + totalTips + totalPlatformTolls + totalAdjustments;
 
   const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? totalGanhos * 0.04 : 0;
   const iva = !calculation.isIvaExempt ? totalGanhos * 0.06 : 0;
@@ -26,16 +32,18 @@ export const calculateSummary = (calculation: Calculation) => {
   // For SLOT drivers, they belong to the driver and are refunded, not deducted.
   const platformTollsAsDeduction = calculation.type === CalculationType.FROTA ? totalPlatformTolls : 0;
 
+  // Adjustments are no longer part of the deductions.
   const totalDeducoes = vehicleRental + slotFee + iva + fleetCard + rentalTolls + otherExpenses + debtDeduction + platformTollsAsDeduction;
 
   // Tips are always refunded to the driver.
   const refundedTips = totalTips;
   // Platform tolls are only refunded to SLOT drivers.
   const refundedTolls = calculation.type === CalculationType.SLOT ? totalPlatformTolls : 0;
-  const totalDevolucoes = refundedTips + refundedTolls;
+  // Adjustments are refunded to the driver, just like tips.
+  const refundedAdjustments = totalAdjustments;
+  const totalDevolucoes = refundedTips + refundedTolls + refundedAdjustments;
   
   // The final value is the total earnings minus total deductions.
-  // This single formula works for both driver types because the deductions are handled conditionally.
   const valorFinal = totalGanhos - totalDeducoes;
 
   return {
@@ -48,6 +56,7 @@ export const calculateSummary = (calculation: Calculation) => {
     totalDeducoes,
     refundedTips,
     refundedTolls,
+    refundedAdjustments,
     totalDevolucoes,
     valorFinal,
   };
