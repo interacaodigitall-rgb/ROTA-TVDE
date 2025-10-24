@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCalculations } from '../hooks/useCalculations';
-import { Calculation, CalculationStatus, CalculationType, UserRole } from '../types';
+import { Calculation, CalculationStatus, CalculationType, UserRole, PercentageType, FuelType } from '../types';
 import Button from './ui/Button';
 import Card from './ui/Card';
 import { useUsers } from '../hooks/useUsers';
@@ -40,6 +40,7 @@ const initialFormData = {
   otherExpensesNotes: '',
   isIvaExempt: false,
   isSlotExempt: false,
+  fuelType: '',
 };
 
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -89,6 +90,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         otherExpensesNotes: String(calculationToEdit.otherExpensesNotes || ''),
         isIvaExempt: !!calculationToEdit.isIvaExempt,
         isSlotExempt: !!calculationToEdit.isSlotExempt,
+        fuelType: calculationToEdit.fuelType || '',
       });
     } else {
       setDriverId('');
@@ -102,13 +104,14 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       setDriverName(selectedDriver.name || '');
 
       // Apply default values from user profile for a new calculation
-      const newDefaults = {
+      const newDefaults: Partial<typeof initialFormData> = {
           isIvaExempt: selectedDriver.isIvaExempt || false,
           isSlotExempt: false,
           vehicleRental: '0',
+          fuelType: '',
       };
 
-      if (selectedDriver.type === CalculationType.FROTA) {
+      if (selectedDriver.type === CalculationType.FROTA || selectedDriver.type === CalculationType.PERCENTAGE) {
           newDefaults.vehicleRental = String(selectedDriver.defaultRentalValue || '0');
       } else if (selectedDriver.type === CalculationType.SLOT) {
           if (selectedDriver.slotType === 'FIXED') {
@@ -131,11 +134,12 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
           isIvaExempt: false,
           isSlotExempt: false,
           vehicleRental: '0',
+          fuelType: '',
       }));
     }
   }, [selectedDriver, isEditMode]);
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
         const { checked } = e.target as HTMLInputElement;
@@ -164,6 +168,11 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
     if (!adminUser || !driverId || !driverName || !formData.periodStart || !formData.periodEnd) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
+    }
+
+    if (selectedDriver?.type === CalculationType.PERCENTAGE && !formData.fuelType) {
+        alert('Por favor, selecione o tipo de combustível para cálculos de percentagem.');
+        return;
     }
 
     const debtDeductionAmount = parseFloat(formData.debtDeduction) || 0;
@@ -215,9 +224,11 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       periodEnd: formData.periodEnd,
       ...numericFormData,
       otherExpensesNotes: formData.otherExpensesNotes,
-      vehicleRental: calculationType === CalculationType.FROTA || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED') ? numericFormData.vehicleRental : 0,
+      vehicleRental: calculationType === CalculationType.FROTA || calculationType === CalculationType.PERCENTAGE || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED') ? numericFormData.vehicleRental : 0,
       isIvaExempt: formData.isIvaExempt,
       isSlotExempt: formData.isSlotExempt,
+      fuelType: selectedDriver?.type === CalculationType.PERCENTAGE ? formData.fuelType : undefined,
+      percentageType: selectedDriver?.type === CalculationType.PERCENTAGE ? selectedDriver.percentageType : undefined,
     };
     
     if (isEditMode && calculationToEdit) {
@@ -264,6 +275,27 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                 <p className="mt-2">Pode usar o campo "Dedução de Dívida" abaixo para abater este valor no cálculo atual.</p>
             </div>
         )}
+
+        {selectedDriver && selectedDriver.type === CalculationType.PERCENTAGE && (
+            <div className="p-4 bg-gray-900/50 rounded-md border border-cyan-500">
+                <h4 className="font-bold text-cyan-300">Cálculo de Percentagem</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400">Tipo de Partilha</label>
+                        <p className="font-semibold text-lg">{selectedDriver.percentageType}</p>
+                    </div>
+                    <div>
+                        <label htmlFor="fuelType" className="block text-sm font-medium text-gray-300">Tipo de Combustível</label>
+                        <select id="fuelType" name="fuelType" value={formData.fuelType} onChange={handleInputChange} required className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                            <option value="">Selecione...</option>
+                            <option value={FuelType.DIESEL}>Diesel</option>
+                            <option value={FuelType.ELECTRIC}>Elétrico</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        )}
+
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -342,7 +374,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                     onChange={handleInputChange} 
                     onFocus={handleFocus} 
                     onBlur={handleBlur} 
-                    disabled={!(calculationType === CalculationType.FROTA || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED'))} 
+                    disabled={!(calculationType === CalculationType.FROTA || calculationType === CalculationType.PERCENTAGE || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED'))} 
                  />
                 <NumberInput label="Cartão Frota" name="fleetCard" value={formData.fleetCard} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 <NumberInput label="Portagens (Aluguer)" name="rentalTolls" value={formData.rentalTolls} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Calculation, CalculationStatus, User, UserRole, CalculationType } from '../types';
+import { Calculation, CalculationStatus, User, UserRole, CalculationType, PercentageType } from '../types';
 import Button from './ui/Button';
 import { useCalculations } from '../hooks/useCalculations';
 import { useAuth } from '../hooks/useAuth';
@@ -100,24 +100,8 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
   const admin = findUserById(calculation.adminId);
   const driver = findUserById(calculation.driverId);
   
-  const {
-    totalGanhos,
-    slotFee,
-    iva,
-    totalDeducoes,
-    refundedTips,
-    refundedTolls,
-    refundedAdjustments,
-    totalDevolucoes,
-    valorFinal,
-    totalPlatformTolls,
-  } = calculateSummary(calculation);
+  const summary = calculateSummary(calculation);
   
-  const rentalTollsForDisplay =
-    calculation.type === CalculationType.FROTA
-      ? (calculation.rentalTolls || 0) + totalPlatformTolls
-      : (calculation.rentalTolls || 0);
-
   const statusColor = {
     [CalculationStatus.PENDING]: 'text-yellow-400',
     [CalculationStatus.ACCEPTED]: 'text-green-400',
@@ -226,6 +210,181 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
 
   const hasVehicleInfo = driver && (driver.vehicleModel || driver.insurancePolicy || driver.fleetCardNumber);
 
+  const renderStandardView = () => {
+    const {
+      totalGanhos,
+      slotFee,
+      iva,
+      totalDeducoes,
+      refundedTips,
+      refundedTolls,
+      refundedAdjustments,
+      totalDevolucoes,
+      valorFinal,
+      totalPlatformTolls,
+    } = summary;
+
+    const rentalTollsForDisplay =
+      calculation.type === CalculationType.FROTA
+        ? (calculation.rentalTolls || 0) + totalPlatformTolls
+        : (calculation.rentalTolls || 0);
+
+    return (
+        <>
+            {/* Ganhos */}
+            <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
+                <p className="font-bold mb-2">┌─ GANHOS ─────────────┐</p>
+                <div className="pl-4 pr-4 space-y-1">
+                    <CalculationLine label="Uber Corridas:" value={formatCurrency(calculation.uberRides)} />
+                    <CalculationLine label="Uber Gorjetas:" value={formatCurrency(calculation.uberTips)} />
+                    <CalculationLine label="Uber Portagens:" value={formatCurrency(calculation.uberTolls)} />
+                    {!!calculation.uberPreviousPeriodAdjustments && <CalculationLine label="Uber Ajustes:" value={formatCurrency(calculation.uberPreviousPeriodAdjustments)} />}
+                    <CalculationLine label="Bolt Corridas:" value={formatCurrency(calculation.boltRides)} />
+                    <CalculationLine label="Bolt Gorjetas:" value={formatCurrency(calculation.boltTips)} />
+                    <CalculationLine label="Bolt Portagens:" value={formatCurrency(calculation.boltTolls)} />
+                    {!!calculation.boltPreviousPeriodAdjustments && <CalculationLine label="Bolt Ajustes:" value={formatCurrency(calculation.boltPreviousPeriodAdjustments)} />}
+                </div>
+                <p className="font-bold mt-2">├──────────────────────┤</p>
+                <p className="font-bold pl-4 pr-4"> TOTAL GANHOS: {formatCurrency(totalGanhos)}</p>
+                <p className="font-bold mb-2">└──────────────────────┘</p>
+            </div>
+
+            {/* Deduções */}
+            <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
+                <p className="font-bold mb-2">┌─ DEDUÇÕES ───────────┐</p>
+                <div className="pl-4 pr-4 space-y-1">
+                    <CalculationLine label="Aluguer Veículo:" value={formatCurrency(calculation.vehicleRental)} />
+                    <div className="flex justify-between items-start gap-2">
+                        <span className="flex-shrink-0">{"Slot 4%:".padEnd(20, ' ')}</span>
+                        <span className="text-right break-words">
+                            {calculation.isSlotExempt && <span className="text-xs text-gray-400">(Isento) </span>}
+                            {formatCurrency(slotFee)}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-start gap-2">
+                        <span className="flex-shrink-0">{"IVA 6%:".padEnd(20, ' ')}</span>
+                        <span className="text-right break-words">
+                            {calculation.isIvaExempt && <span className="text-xs text-gray-400">(Isento) </span>}
+                            {formatCurrency(iva)}
+                        </span>
+                    </div>
+                    <CalculationLine label="Cartão Frota:" value={formatCurrency(calculation.fleetCard)} />
+                    <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(rentalTollsForDisplay)} />
+                    {calculation.debtDeduction > 0 && (
+                        <CalculationLine label="Dedução de Dívida:" value={formatCurrency(calculation.debtDeduction)} />
+                    )}
+                    <div>
+                        <CalculationLine label="Outras Despesas:" value={formatCurrency(calculation.otherExpenses)} />
+                        {calculation.otherExpensesNotes && (
+                            <div className="text-right text-xs text-gray-400 pr-1 truncate">
+                                ({calculation.otherExpensesNotes})
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <p className="font-bold mt-2">├──────────────────────┤</p>
+                <p className="font-bold pl-4 pr-4"> TOTAL DEDUÇÕES: {formatCurrency(totalDeducoes)}</p>
+                <p className="font-bold mb-2">└──────────────────────┘</p>
+            </div>
+
+            {/* Devoluções */}
+            <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
+                <p className="font-bold mb-2">┌─ DEVOLUÇÕES ─────────┐</p>
+                <div className="pl-4 pr-4 space-y-1">
+                    <CalculationLine label="Gorjetas:" value={formatCurrency(refundedTips)} />
+                    {refundedAdjustments > 0 && (
+                        <CalculationLine label="Ajustes Per. Ant.:" value={formatCurrency(refundedAdjustments)} />
+                    )}
+                    <CalculationLine label="Portagens:" value={formatCurrency(refundedTolls)} />
+                </div>
+                <p className="font-bold mt-2">├──────────────────────┤</p>
+                <p className="font-bold pl-4 pr-4"> TOTAL DEVOLUÇÕES: {formatCurrency(totalDevolucoes)}</p>
+                <p className="font-bold mb-2">└──────────────────────┘</p>
+            </div>
+
+            <div className="border-y-4 border-double border-gray-600 py-4 my-4 text-center">
+                <p className="text-lg font-bold">VALOR FINAL: {formatCurrency(valorFinal)}</p>
+            </div>
+        </>
+    );
+  };
+
+  const renderPercentageView = () => {
+    const {
+        valorFinal,
+        totalEarnings,
+        refundedTips,
+        driverShare,
+        driverCosts,
+        netToSplit,
+        fleetCardExcess,
+        totalCompanyCosts,
+    } = summary;
+
+    return (
+        <>
+            {/* Ganhos */}
+            <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
+                <p className="font-bold mb-2">┌─ RESUMO DE GANHOS ────────┐</p>
+                <div className="pl-4 pr-4 space-y-1">
+                    <CalculationLine label="Ganhos Brutos (Base):" value={formatCurrency(totalEarnings)} />
+                    <CalculationLine label="Gorjetas (100% Motorista):" value={formatCurrency(refundedTips)} />
+                </div>
+                <p className="font-bold mb-2">└───────────────────────────┘</p>
+            </div>
+
+            {calculation.percentageType === PercentageType.FIFTY_FIFTY && (
+                <>
+                    <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
+                        <p className="font-bold mb-2">┌─ DIVISÃO 50/50 ──────────┐</p>
+                        <div className="pl-4 pr-4 space-y-1">
+                            <CalculationLine label="Ganhos Brutos:" value={formatCurrency(totalEarnings)} />
+                            <p className="font-bold mt-2">├──────────────────────────┤</p>
+                            <CalculationLine label="→ Parte Motorista (50%):" value={formatCurrency(driverShare)} />
+                            <CalculationLine label="(-) Custos Motorista:" value={formatCurrency(driverCosts > 0 ? -driverCosts : 0)} />
+                            <p className="text-xs text-gray-400 pl-4"> (IVA 50% + parte Cartão Frota)</p>
+                            <CalculationLine label="(+) Gorjetas:" value={formatCurrency(refundedTips)} />
+                            {(calculation.debtDeduction || 0) > 0 && (
+                                <CalculationLine label="(-) Dedução de Dívida:" value={formatCurrency(-calculation.debtDeduction)} />
+                            )}
+                        </div>
+                        <p className="font-bold mb-2">└───────────────────────────┘</p>
+                    </div>
+                </>
+            )}
+
+            {calculation.percentageType === PercentageType.SIXTY_FORTY && (
+                 <>
+                    <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
+                        <p className="font-bold mb-2">┌─ CÁLCULO 60/40 ──────────┐</p>
+                        <div className="pl-4 pr-4 space-y-1">
+                            <CalculationLine label="Ganhos Brutos:" value={formatCurrency(totalEarnings)} />
+                            <CalculationLine label="(-) Custos da Frota:" value={formatCurrency(totalCompanyCosts > 0 ? -totalCompanyCosts : 0)} />
+                            <p className="text-xs text-gray-400 pl-4"> (IVA + Cartão Frota + Aluguer + etc.)</p>
+                            <p className="font-bold mt-2">├──────────────────────────┤</p>
+                            <CalculationLine label="(=) Valor Líquido a Dividir:" value={formatCurrency(netToSplit)} />
+                            <p className="font-bold mt-2">├──────────────────────────┤</p>
+                            <CalculationLine label="→ Parte Motorista (40%):" value={formatCurrency(netToSplit * 0.4)} />
+                            {fleetCardExcess > 0 && (
+                                <CalculationLine label="(-) Excesso Cartão Frota:" value={formatCurrency(-fleetCardExcess)} />
+                            )}
+                            <CalculationLine label="(+) Gorjetas:" value={formatCurrency(refundedTips)} />
+                             {(calculation.debtDeduction || 0) > 0 && (
+                                <CalculationLine label="(-) Dedução de Dívida:" value={formatCurrency(-calculation.debtDeduction)} />
+                            )}
+                        </div>
+                        <p className="font-bold mb-2">└───────────────────────────┘</p>
+                    </div>
+                </>
+            )}
+
+            <div className="border-y-4 border-double border-gray-600 py-4 my-4 text-center">
+                <p className="text-lg font-bold">VALOR FINAL A PAGAR: {formatCurrency(valorFinal)}</p>
+            </div>
+        </>
+    )
+  }
+
   return (
     <>
       <div ref={printRef} className="bg-gray-800 border border-gray-700 shadow-2xl rounded-lg p-6 font-mono text-sm text-gray-200 max-w-md mx-auto">
@@ -255,81 +414,8 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                 <p className="font-bold mb-2">└──────────────────────┘</p>
             </div>
         )}
-
-        {/* Ganhos */}
-        <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
-          <p className="font-bold mb-2">┌─ GANHOS ─────────────┐</p>
-          <div className="pl-4 pr-4 space-y-1">
-            <CalculationLine label="Uber Corridas:" value={formatCurrency(calculation.uberRides)} />
-            <CalculationLine label="Uber Gorjetas:" value={formatCurrency(calculation.uberTips)} />
-            <CalculationLine label="Uber Portagens:" value={formatCurrency(calculation.uberTolls)} />
-            {!!calculation.uberPreviousPeriodAdjustments && <CalculationLine label="Uber Ajustes:" value={formatCurrency(calculation.uberPreviousPeriodAdjustments)} />}
-            <CalculationLine label="Bolt Corridas:" value={formatCurrency(calculation.boltRides)} />
-            <CalculationLine label="Bolt Gorjetas:" value={formatCurrency(calculation.boltTips)} />
-            <CalculationLine label="Bolt Portagens:" value={formatCurrency(calculation.boltTolls)} />
-            {!!calculation.boltPreviousPeriodAdjustments && <CalculationLine label="Bolt Ajustes:" value={formatCurrency(calculation.boltPreviousPeriodAdjustments)} />}
-          </div>
-          <p className="font-bold mt-2">├──────────────────────┤</p>
-          <p className="font-bold pl-4 pr-4"> TOTAL GANHOS: {formatCurrency(totalGanhos)}</p>
-          <p className="font-bold mb-2">└──────────────────────┘</p>
-        </div>
         
-        {/* Deduções */}
-        <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
-          <p className="font-bold mb-2">┌─ DEDUÇÕES ───────────┐</p>
-          <div className="pl-4 pr-4 space-y-1">
-              <CalculationLine label="Aluguer Veículo:" value={formatCurrency(calculation.vehicleRental)} />
-              <div className="flex justify-between items-start gap-2">
-                <span className="flex-shrink-0">{"Slot 4%:".padEnd(20, ' ')}</span>
-                <span className="text-right break-words">
-                  {calculation.isSlotExempt && <span className="text-xs text-gray-400">(Isento) </span>}
-                  {formatCurrency(slotFee)}
-                </span>
-              </div>
-              <div className="flex justify-between items-start gap-2">
-                <span className="flex-shrink-0">{"IVA 6%:".padEnd(20, ' ')}</span>
-                <span className="text-right break-words">
-                  {calculation.isIvaExempt && <span className="text-xs text-gray-400">(Isento) </span>}
-                  {formatCurrency(iva)}
-                </span>
-              </div>
-              <CalculationLine label="Cartão Frota:" value={formatCurrency(calculation.fleetCard)} />
-              <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(rentalTollsForDisplay)} />
-              {calculation.debtDeduction > 0 && (
-                <CalculationLine label="Dedução de Dívida:" value={formatCurrency(calculation.debtDeduction)} />
-              )}
-              <div>
-                 <CalculationLine label="Outras Despesas:" value={formatCurrency(calculation.otherExpenses)} />
-                 {calculation.otherExpensesNotes && (
-                   <div className="text-right text-xs text-gray-400 pr-1 truncate">
-                     ({calculation.otherExpensesNotes})
-                   </div>
-                 )}
-              </div>
-          </div>
-          <p className="font-bold mt-2">├──────────────────────┤</p>
-          <p className="font-bold pl-4 pr-4"> TOTAL DEDUÇÕES: {formatCurrency(totalDeducoes)}</p>
-          <p className="font-bold mb-2">└──────────────────────┘</p>
-        </div>
-
-        {/* Devoluções */}
-        <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
-          <p className="font-bold mb-2">┌─ DEVOLUÇÕES ─────────┐</p>
-          <div className="pl-4 pr-4 space-y-1">
-              <CalculationLine label="Gorjetas:" value={formatCurrency(refundedTips)} />
-              {refundedAdjustments > 0 && (
-                <CalculationLine label="Ajustes Per. Ant.:" value={formatCurrency(refundedAdjustments)} />
-              )}
-              <CalculationLine label="Portagens:" value={formatCurrency(refundedTolls)} />
-          </div>
-          <p className="font-bold mt-2">├──────────────────────┤</p>
-          <p className="font-bold pl-4 pr-4"> TOTAL DEVOLUÇÕES: {formatCurrency(totalDevolucoes)}</p>
-          <p className="font-bold mb-2">└──────────────────────┘</p>
-        </div>
-
-        <div className="border-y-4 border-double border-gray-600 py-4 my-4 text-center">
-          <p className="text-lg font-bold">VALOR FINAL: {formatCurrency(valorFinal)}</p>
-        </div>
+        {summary.isPercentage ? renderPercentageView() : renderStandardView()}
 
         {calculation.revisionNotes && (
           <div className="mt-4 p-3 bg-yellow-900/50 border border-dashed border-yellow-600 rounded-md">

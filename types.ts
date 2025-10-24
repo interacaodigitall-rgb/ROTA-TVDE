@@ -7,6 +7,7 @@ export enum UserRole {
 export enum CalculationType {
   SLOT = 'SLOT',
   FROTA = 'FROTA',
+  PERCENTAGE = 'PERCENTAGE',
 }
 
 export enum CalculationStatus {
@@ -14,6 +15,17 @@ export enum CalculationStatus {
   ACCEPTED = 'Aceito',
   REVISION_REQUESTED = 'Revisão Solicitada',
 }
+
+export enum FuelType {
+  DIESEL = 'DIESEL',
+  ELECTRIC = 'ELECTRIC',
+}
+
+export enum PercentageType {
+  FIFTY_FIFTY = '50/50',
+  SIXTY_FORTY = '60/40',
+}
+
 
 export interface User {
   id: string;
@@ -40,6 +52,7 @@ export interface User {
   isIvaExempt?: boolean;
   slotType?: 'PERCENTAGE' | 'FIXED'; // For SLOT
   slotFixedValue?: number; // For SLOT
+  percentageType?: PercentageType; // For PERCENTAGE
 }
 
 export interface Calculation {
@@ -75,6 +88,8 @@ export interface Calculation {
 
   // Metadados
   revisionNotes?: string;
+  percentageType?: PercentageType;
+  fuelType?: FuelType;
 }
 
 export interface Iban {

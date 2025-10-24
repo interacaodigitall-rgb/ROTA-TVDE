@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import { useUsers } from '../hooks/useUsers';
-import { User, UserRole, CalculationType } from '../types';
+import { User, UserRole, CalculationType, PercentageType } from '../types';
 
 const VehicleInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
     <div>
@@ -34,6 +33,7 @@ const initialFormState = {
     isIvaExempt: false,
     slotType: 'PERCENTAGE' as 'PERCENTAGE' | 'FIXED',
     slotFixedValue: '0',
+    percentageType: PercentageType.FIFTY_FIFTY,
 };
 
 const VehicleManagement: React.FC = () => {
@@ -75,6 +75,7 @@ const VehicleManagement: React.FC = () => {
             isIvaExempt: user.isIvaExempt || false,
             slotType: user.slotType || 'PERCENTAGE',
             slotFixedValue: String(user.slotFixedValue || '0'),
+            percentageType: user.percentageType || PercentageType.FIFTY_FIFTY,
         });
     };
     
@@ -177,6 +178,7 @@ const VehicleManagement: React.FC = () => {
                                                 <select id="type" name="type" value={formData.type} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
                                                     <option value={CalculationType.FROTA}>Frota</option>
                                                     <option value={CalculationType.SLOT}>Slot</option>
+                                                    <option value={CalculationType.PERCENTAGE}>Percentagem</option>
                                                 </select>
                                             </div>
                                             {!isAddingNewUser && (
@@ -192,6 +194,17 @@ const VehicleManagement: React.FC = () => {
 
                                             {formData.type === CalculationType.FROTA && (
                                                 <VehicleInput label="Valor do Aluguer Semanal (€)" id="defaultRentalValue" name="defaultRentalValue" type="number" step="0.01" value={formData.defaultRentalValue} onChange={handleInputChange} />
+                                            )}
+
+                                            {formData.type === CalculationType.PERCENTAGE && (
+                                                 <div className="space-y-4 rounded-md p-4 border border-gray-600 bg-gray-900/50">
+                                                    <label htmlFor="percentageType" className="block text-sm font-medium text-gray-300">Tipo de Partilha</label>
+                                                    <select id="percentageType" name="percentageType" value={formData.percentageType} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                                                        <option value={PercentageType.FIFTY_FIFTY}>50/50</option>
+                                                        <option value={PercentageType.SIXTY_FORTY}>60% Frota / 40% Motorista</option>
+                                                    </select>
+                                                    <VehicleInput label="Valor do Aluguer (para 60/40)" id="defaultRentalValue" name="defaultRentalValue" type="number" step="0.01" value={formData.defaultRentalValue} onChange={handleInputChange} />
+                                                 </div>
                                             )}
 
                                             {formData.type === CalculationType.SLOT && (
