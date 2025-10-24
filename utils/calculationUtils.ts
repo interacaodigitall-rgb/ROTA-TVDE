@@ -16,60 +16,44 @@ export const calculateSummary = (calculation: Calculation): any => {
   const otherExpenses = calculation.otherExpenses || 0;
   const debtDeduction = calculation.debtDeduction || 0;
 
-  const totalRides = uberRides + boltRides;
+  // --- CORE LOGIC REFACTORED BASED ON USER FEEDBACK ---
+  // "uberRides" and "boltRides" are the GROSS earnings from platforms.
+  const totalGrossEarnings = uberRides + boltRides;
+
+  // The other fields are breakdowns of the gross amount.
   const totalTips = uberTips + boltTips;
   const totalPlatformTolls = uberTolls + boltTolls;
   const totalAdjustments = uberPreviousPeriodAdjustments + boltPreviousPeriodAdjustments;
 
-  // Default IVA calculation (on rides only), used for Percentage type.
-  // It will be recalculated for Frota/Slot types later.
-  let iva = !calculation.isIvaExempt ? totalRides * 0.06 : 0;
+  // --- VAT (IVA) Calculation ---
+  // As per user screenshot and clarification, IVA is calculated on the total gross earnings from platforms for all types.
+  const iva = !calculation.isIvaExempt ? totalGrossEarnings * 0.06 : 0;
 
+  // --- PERCENTAGE LOGIC ---
   if (calculation.type === CalculationType.PERCENTAGE) {
-    // This is the core amount from rides & adjustments, subject to splitting.
-    const baseEarnings = totalRides + totalAdjustments;
+    // The amount to be split is the gross earnings minus non-splittable items (tips and tolls).
+    const baseEarnings = totalGrossEarnings - totalTips - totalPlatformTolls;
     
     // Tips are a direct pass-through to the driver.
     const refundedTips = totalTips;
-    // NEW RULE: Tolls from platforms now belong to the company, not the driver.
-    // This variable is used in the final value calculation, so it must be 0.
+    // Tolls are a company revenue/pass-through, not refunded to the driver.
     const refundedTolls = 0;
 
     const isDiesel = calculation.fuelType === FuelType.DIESEL;
     const isElectric = calculation.fuelType === FuelType.ELECTRIC;
     
-    // 50/50 LOGIC (New)
     if (calculation.percentageType === PercentageType.FIFTY_FIFTY) {
-        // "potToSplit" is the net value after deducting shared costs from base earnings.
         let potToSplit = baseEarnings;
-
-        // 1. Deduct full IVA from the pot.
         potToSplit -= iva;
 
-        // 2. Handle fleet card costs.
-        // The cost up to the limit is shared (deducted from the pot before splitting).
         const fleetCardLimit = isDiesel ? 120 : (isElectric ? 70 : 0);
         const fleetCardCostToSplit = Math.min(fleetCard, fleetCardLimit);
-        // Any excess is a direct cost to the driver.
         const fleetCardExcessForDriver = Math.max(0, fleetCard - fleetCardLimit);
         
-        // Deduct the splittable portion from the pot.
         potToSplit -= fleetCardCostToSplit;
 
-        // 3. Split the final pot.
         const driverShare = potToSplit * 0.5;
-
-        // 4. Calculate driver-specific costs (not shared).
-        // For 50/50, tolls are not refunded to the driver, they are a company revenue.
-        // Here we just calculate costs that are purely on the driver's side.
-        const driverSpecificCosts = 
-            fleetCardExcessForDriver + 
-            rentalTolls + 
-            otherExpenses + 
-            debtDeduction;
-
-        // 5. Calculate final payout.
-        // refundedTolls is 0 here, correctly not giving the tolls to the driver.
+        const driverSpecificCosts = fleetCardExcessForDriver + rentalTolls + otherExpenses + debtDeduction;
         const valorFinal = driverShare + refundedTips - driverSpecificCosts;
 
         return {
@@ -78,17 +62,16 @@ export const calculateSummary = (calculation: Calculation): any => {
             baseEarnings,
             refundedTips,
             refundedTolls,
-            totalPlatformTolls, // For display purposes only
+            totalPlatformTolls,
             iva,
             potToSplit,
             driverShare,
-            fleetCardCostToSplit, // For display
-            driverCosts: driverSpecificCosts, // For display
+            fleetCardCostToSplit,
+            driverCosts: driverSpecificCosts,
             valorFinal,
         };
     }
 
-    // 60/40 LOGIC
     if (calculation.percentageType === PercentageType.SIXTY_FORTY) {
         let companyAssumesFleetCard = 0;
         let driverExcessFleetCard = 0;
@@ -103,11 +86,8 @@ export const calculateSummary = (calculation: Calculation): any => {
         
         const totalCompanyCosts = iva + companyAssumesFleetCard + vehicleRental + rentalTolls + otherExpenses;
         const netToSplit = baseEarnings - totalCompanyCosts;
-
         const driverShareRaw = netToSplit * 0.4;
-        
-        // refundedTolls is 0 here, correctly not giving the tolls to the driver.
-        const valorFinal = driverShareRaw - driverExcessFleetCard + refundedTips + refundedTolls - debtDeduction;
+        const valorFinal = driverShareRaw - driverExcessFleetCard + refundedTips - debtDeduction;
 
         return {
             isPercentage: true,
@@ -115,51 +95,51 @@ export const calculateSummary = (calculation: Calculation): any => {
             baseEarnings,
             refundedTips,
             refundedTolls,
-            totalPlatformTolls, // For display purposes only
+            totalPlatformTolls,
             totalCompanyCosts,
             netToSplit,
             driverShare: driverShareRaw,
             fleetCardExcess: driverExcessFleetCard,
             valorFinal,
-            iva, // Add iva to the return object
+            iva,
         };
     }
   }
   
-  // --- START OF STANDARD (FROTA / SLOT) LOGIC ---
-  const totalGanhos = totalRides + totalTips + totalPlatformTolls + totalAdjustments;
+  // --- STANDARD (FROTA / SLOT) LOGIC ---
+  const totalGanhos = totalGrossEarnings;
   
-  // Per user request, for Frota/Slot, IVA is now calculated on total earnings.
-  iva = !calculation.isIvaExempt ? totalGanhos * 0.06 : 0;
+  // The slot fee remains calculated on the service value, excluding pass-throughs (tips, tolls).
+  const baseParaSlot = totalGrossEarnings - totalTips - totalPlatformTolls;
+  const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? baseParaSlot * 0.04 : 0;
   
-  const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? totalGanhos * 0.04 : 0;
-  
-  // All costs that are deducted from the driver's earnings
   const driverCosts = vehicleRental + slotFee + iva + fleetCard + rentalTolls + otherExpenses + debtDeduction;
   
-  // The driver's final value is what they earned (rides, tips, adjustments) minus their costs.
-  // Platform tolls are fleet revenue and are not part of the driver's earnings for this calculation.
-  const valorFinal = (totalRides + totalTips + totalAdjustments) - driverCosts;
-  
-  // For UI display, totalDeducoes includes driver costs AND platform tolls retained by the company.
+  // As per user request, platform tolls are now part of deductions.
   const totalDeducoes = driverCosts + totalPlatformTolls;
 
+  // The final value is the total gross earnings minus all deductions.
+  // Tips are not in deductions, so they correctly remain for the driver.
+  const valorFinal = totalGanhos - totalDeducoes;
+  
+  // "Devoluções" section is for display purposes, showing what is returned to the driver.
+  // Tolls are no longer considered a "devolução" in the UI.
   const refundedTips = totalTips;
-  const refundedTolls = totalPlatformTolls; // This is for DISPLAY only in the "Devoluções" section.
+  const refundedTolls = 0; // Moved to deductions
   const refundedAdjustments = totalAdjustments;
-  const totalDevolucoes = refundedTips + refundedTolls + refundedAdjustments;
+  const totalDevolucoes = refundedTips + refundedAdjustments;
   
   return {
     isPercentage: false,
-    totalRides,
+    totalRides: baseParaSlot, // This is a better representation of "rides value"
     totalTips,
-    totalPlatformTolls,
+    totalPlatformTolls, // Still needed for display in deductions
     totalGanhos,
     slotFee,
     iva,
     totalDeducoes,
     refundedTips,
-    refundedTolls,
+    refundedTolls, // Will be 0
     refundedAdjustments,
     totalDevolucoes,
     valorFinal,

@@ -217,17 +217,11 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
       iva,
       totalDeducoes,
       refundedTips,
-      refundedTolls,
       refundedAdjustments,
       totalDevolucoes,
       valorFinal,
       totalPlatformTolls,
     } = summary;
-
-    const rentalTollsForDisplay =
-      calculation.type === CalculationType.FROTA
-        ? (calculation.rentalTolls || 0) + totalPlatformTolls
-        : (calculation.rentalTolls || 0);
 
     return (
         <>
@@ -269,7 +263,8 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                         </span>
                     </div>
                     <CalculationLine label="Cartão Frota:" value={formatCurrency(calculation.fleetCard)} />
-                    <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(rentalTollsForDisplay)} />
+                    <CalculationLine label="Portagens (Aluguer):" value={formatCurrency(calculation.rentalTolls)} />
+                    <CalculationLine label="Portagens (Plataforma):" value={formatCurrency(totalPlatformTolls)} />
                     {calculation.debtDeduction > 0 && (
                         <CalculationLine label="Dedução de Dívida:" value={formatCurrency(calculation.debtDeduction)} />
                     )}
@@ -295,7 +290,6 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                     {refundedAdjustments > 0 && (
                         <CalculationLine label="Ajustes Per. Ant.:" value={formatCurrency(refundedAdjustments)} />
                     )}
-                    <CalculationLine label="Portagens (Devolvidas pela uber e bolt):" value={formatCurrency(refundedTolls)} />
                 </div>
                 <p className="font-bold mt-2">├──────────────────────┤</p>
                 <p className="font-bold pl-4 pr-4"> TOTAL DEVOLUÇÕES: {formatCurrency(totalDevolucoes)}</p>

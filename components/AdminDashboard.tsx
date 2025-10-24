@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useMemo } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { useUsers } from '../hooks/useUsers';
@@ -29,39 +26,6 @@ const toDate = (timestamp: any): Date => {
     if (typeof timestamp.toDate === 'function') return timestamp.toDate();
     return new Date(timestamp);
 };
-
-/**
- * Calculates the start (Monday) and end (Sunday) of the previous week based on local time.
- * The week is considered to run from Monday to Sunday.
- * This is the default period for analysis, as payments are typically for the preceding week.
- * @returns An object with `monday` and `sunday` Date objects.
- */
-const getPreviousWeekRange = () => {
-    const today = new Date();
-
-    // Get day of week where Monday is 1 and Sunday is 7
-    const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
-
-    // Calculate the date of the most recent Monday
-    const mondayOfThisWeek = new Date(today);
-    mondayOfThisWeek.setDate(today.getDate() - (dayOfWeek - 1));
-    
-    // The previous week's Sunday is the day before this week's Monday
-    const sundayOfLastWeek = new Date(mondayOfThisWeek);
-    sundayOfLastWeek.setDate(mondayOfThisWeek.getDate() - 1);
-
-    // The previous week's Monday is 6 days before its Sunday
-    const mondayOfLastWeek = new Date(sundayOfLastWeek);
-    mondayOfLastWeek.setDate(sundayOfLastWeek.getDate() - 6);
-
-    // Set times for the full day range
-    mondayOfLastWeek.setHours(0, 0, 0, 0);
-    sundayOfLastWeek.setHours(23, 59, 59, 999);
-    
-    return { monday: mondayOfLastWeek, sunday: sundayOfLastWeek };
-};
-
-const toInputFormat = (date: Date) => date.toISOString().split('T')[0];
 
 // FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const NavLink: React.FC<{
@@ -145,9 +109,8 @@ const AdminDashboard: React.FC = () => {
   const [calculationToEdit, setCalculationToEdit] = useState<Calculation | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const { monday, sunday } = useMemo(() => getPreviousWeekRange(), []);
-  const [startDate, setStartDate] = useState(toInputFormat(monday));
-  const [endDate, setEndDate] = useState(toInputFormat(sunday));
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   const filteredCalculations = useMemo(() => {
     if (!startDate || !endDate) return calculations;
@@ -176,6 +139,11 @@ const AdminDashboard: React.FC = () => {
     });
   }, [calculations, startDate, endDate]);
 
+  const pendingCalculations = useMemo(() => {
+    return calculations
+      .filter(c => c.status === CalculationStatus.PENDING)
+      .sort((a, b) => toDate(a.periodStart).getTime() - toDate(b.periodStart).getTime()); // Oldest first
+  }, [calculations]);
 
   const stats = useMemo(() => {
     const periodCompanyBilling = filteredCalculations
@@ -204,6 +172,11 @@ const AdminDashboard: React.FC = () => {
     return [...calculations]
       .sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime())
       .slice(0, 5);
+  }, [calculations]);
+
+  const dashboardHistoryCalculations = useMemo(() => {
+    return [...calculations]
+      .sort((a, b) => toDate(b.periodStart).getTime() - toDate(a.periodStart).getTime());
   }, [calculations]);
 
   const handleShowDetails = (calc: Calculation) => {
@@ -272,7 +245,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total Faturado (Empresa)" value={`€${stats.periodCompanyBilling.toFixed(2)}`} subtext="Faturação no período selecionado" icon={
+          <StatCard title="Total Faturado (Empresa)" value={`€${stats.periodCompanyBilling.toFixed(2)}`} subtext={startDate && endDate ? "Faturação no período selecionado" : "Faturação de todo o período"} icon={
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
@@ -295,41 +268,71 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-              <Card className="mb-6">
-                  <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
-                  <div className="flex gap-4">
-                      <Button onClick={() => setView('form')} variant="primary">Novo Cálculo</Button>
-                      <Button onClick={() => setView('reports')} variant="secondary">Ver Relatórios</Button>
-                  </div>
-              </Card>
-              {renderHistoryList(true, filteredCalculations)}
-          </div>
-          <Card>
-            <h3 className="text-lg font-semibold mb-4">Atividade Recente (Global)</h3>
-            <ul className="space-y-4">
-                {recentActivity.map(calc => {
-                    let activityText = `Novo cálculo para ${calc.driverName}.`;
-                    if (calc.status === CalculationStatus.ACCEPTED) activityText = `Cálculo para ${calc.driverName} aceite.`;
-                    if (calc.status === CalculationStatus.REVISION_REQUESTED) activityText = `Revisão pedida para ${calc.driverName}.`;
-                    
-                    return (
-                        <li key={calc.id} className="flex items-start">
-                            <div className={`mt-1 flex-shrink-0 flex items-center justify-center h-5 w-5 rounded-full ${
-                                calc.status === CalculationStatus.ACCEPTED ? 'bg-green-500' : 
-                                calc.status === CalculationStatus.REVISION_REQUESTED ? 'bg-red-500' : 'bg-yellow-500'
-                            }`}>
-                                {calc.status === CalculationStatus.ACCEPTED ? <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg> : null}
+        <div className="lg:col-span-2 space-y-6">
+            <Card>
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-yellow-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Cálculos Pendentes de Aprovação</span>
+                </h3>
+                {loading ? (
+                  <p className="text-center py-5 text-gray-400">A carregar...</p>
+                ) : pendingCalculations.length === 0 ? (
+                    <p className="text-center py-5 text-gray-400">Não há cálculos pendentes.</p>
+                ) : (
+                    <div className="space-y-3">
+                        {pendingCalculations.map(calc => (
+                            <div key={calc.id} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex justify-between items-center gap-4 flex-wrap">
+                                <div>
+                                    <p className="font-semibold text-white">{calc.driverName}</p>
+                                    <p className="text-sm text-gray-300">{`${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}`}</p>
+                                </div>
+                                <Button onClick={() => handleShowDetails(calc)} variant="secondary" className="flex-shrink-0">
+                                    Ver e Aprovar
+                                </Button>
                             </div>
-                            <div className="ml-3">
-                                <p className="text-sm text-white">{activityText}</p>
-                                <p className="text-xs text-gray-400">{toDate(calc.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                            </div>
-                        </li>
-                    );
-                })}
-            </ul>
-          </Card>
+                        ))}
+                    </div>
+                )}
+            </Card>
+
+            {renderHistoryList(true, dashboardHistoryCalculations)}
+        </div>
+        <div className="lg:col-span-1 space-y-6">
+            <Card>
+              <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
+              <div className="flex gap-4">
+                  <Button onClick={() => handleSetView('form')} variant="primary">Novo Cálculo</Button>
+                  <Button onClick={() => handleSetView('reports')} variant="secondary">Ver Relatórios</Button>
+              </div>
+            </Card>
+            <Card>
+                <h3 className="text-lg font-semibold mb-4">Atividade Recente (Global)</h3>
+                <ul className="space-y-4">
+                    {recentActivity.map(calc => {
+                        let activityText = `Novo cálculo para ${calc.driverName}.`;
+                        if (calc.status === CalculationStatus.ACCEPTED) activityText = `Cálculo para ${calc.driverName} aceite.`;
+                        if (calc.status === CalculationStatus.REVISION_REQUESTED) activityText = `Revisão pedida para ${calc.driverName}.`;
+                        
+                        return (
+                            <li key={calc.id} className="flex items-start">
+                                <div className={`mt-1 flex-shrink-0 flex items-center justify-center h-5 w-5 rounded-full ${
+                                    calc.status === CalculationStatus.ACCEPTED ? 'bg-green-500' : 
+                                    calc.status === CalculationStatus.REVISION_REQUESTED ? 'bg-red-500' : 'bg-yellow-500'
+                                }`}>
+                                    {calc.status === CalculationStatus.ACCEPTED ? <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg> : null}
+                                </div>
+                                <div className="ml-3">
+                                    <p className="text-sm text-white">{activityText}</p>
+                                    <p className="text-xs text-gray-400">{toDate(calc.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </Card>
+        </div>
       </div>
     </div>
   );
@@ -345,7 +348,7 @@ const AdminDashboard: React.FC = () => {
 
   const renderHistoryList = (isDashboardView = false, calcsToRender: Calculation[]) => (
     <Card>
-        <h3 className="text-xl font-semibold mb-4">Histórico de Cálculos (Período Selecionado)</h3>
+        <h3 className="text-xl font-semibold mb-4">{isDashboardView ? 'Histórico de Cálculos (Global)' : (startDate && endDate ? 'Histórico de Cálculos (Período Selecionado)' : 'Histórico de Cálculos (Todo o Período)')}</h3>
         {error && (
           <div className="p-4 mb-4 text-sm text-red-400 bg-red-900/50 border border-red-600 rounded-lg" role="alert">
             <p className="font-bold">Erro: {error.split('Link:')[0]}</p>
@@ -410,7 +413,7 @@ const AdminDashboard: React.FC = () => {
           </table>
         </div>
         
-        {isDashboardView && filteredCalculations.length > 5 && <div className="text-center mt-4"><Button variant="secondary" onClick={() => setView('history')}>Ver todo o histórico do período</Button></div>}
+        {isDashboardView && calculations.length > 5 && <div className="text-center mt-4"><Button variant="secondary" onClick={() => setView('history')}>Ver todo o histórico</Button></div>}
     </Card>
   );
 

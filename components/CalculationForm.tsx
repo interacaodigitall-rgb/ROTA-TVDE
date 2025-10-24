@@ -206,9 +206,12 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       vehicleRental: calculationType === CalculationType.FROTA || calculationType === CalculationType.PERCENTAGE || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED') ? numericFormData.vehicleRental : 0,
       isIvaExempt: formData.isIvaExempt,
       isSlotExempt: formData.isSlotExempt,
-      fuelType: selectedDriver?.type === CalculationType.PERCENTAGE ? formData.fuelType : undefined,
-      percentageType: selectedDriver?.type === CalculationType.PERCENTAGE ? selectedDriver.percentageType : undefined,
     };
+
+    if (selectedDriver?.type === CalculationType.PERCENTAGE) {
+      calculationData.fuelType = formData.fuelType;
+      calculationData.percentageType = selectedDriver.percentageType;
+    }
     
     if (isEditMode && calculationToEdit) {
         // If editing, we need to handle the debt change carefully.
