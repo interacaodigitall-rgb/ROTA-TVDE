@@ -20,6 +20,7 @@ const initialFormState = {
     email: '',
     password: '',
     role: UserRole.DRIVER,
+    status: 'ACTIVE' as 'ACTIVE' | 'ARCHIVED',
     matricula: '',
     type: CalculationType.FROTA,
     vehicleModel: '',
@@ -41,8 +42,12 @@ const VehicleManagement: React.FC = () => {
     const [formData, setFormData] = useState(initialFormState);
     const [editingDriver, setEditingDriver] = useState<User | null>(null);
     const [isAddingNewUser, setIsAddingNewUser] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     const allUsers = useMemo(() => [...users].sort((a, b) => a.name.localeCompare(b.name)), [users]);
+    const visibleUsers = useMemo(() => {
+        return allUsers.filter(u => u.role !== UserRole.ADMIN && (showArchived || u.status !== 'ARCHIVED'));
+    }, [allUsers, showArchived]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -62,6 +67,7 @@ const VehicleManagement: React.FC = () => {
             email: user.email,
             password: '',
             role: user.role,
+            status: user.status || 'ACTIVE',
             matricula: user.matricula,
             type: user.type,
             vehicleModel: user.vehicleModel || '',
@@ -79,6 +85,28 @@ const VehicleManagement: React.FC = () => {
         });
     };
     
+    const handleSwapDriver = (userToSwap: User) => {
+        setIsAddingNewUser(true);
+        setEditingDriver(null);
+        setFormData({
+            ...initialFormState,
+            // Copy vehicle and contract data from the user being swapped
+            matricula: userToSwap.matricula,
+            type: userToSwap.type,
+            vehicleModel: userToSwap.vehicleModel || '',
+            insuranceCompany: userToSwap.insuranceCompany || '',
+            insurancePolicy: userToSwap.insurancePolicy || '',
+            fleetCardCompany: userToSwap.fleetCardCompany || '',
+            fleetCardNumber: userToSwap.fleetCardNumber || '',
+            defaultRentalValue: String(userToSwap.defaultRentalValue || '0'),
+            isIvaExempt: userToSwap.isIvaExempt || false,
+            slotType: userToSwap.slotType || 'PERCENTAGE',
+            slotFixedValue: String(userToSwap.slotFixedValue || '0'),
+            percentageType: userToSwap.percentageType || PercentageType.FIFTY_FIFTY,
+        });
+        alert('Formulário pré-preenchido com os dados da viatura. Por favor, insira os dados do novo motorista para criar um novo login.');
+    };
+
     const handleStartAdding = () => {
         setIsAddingNewUser(true);
         setEditingDriver(null);
@@ -105,7 +133,8 @@ const VehicleManagement: React.FC = () => {
             }
 
             const result = await addUser({ 
-                ...formData, 
+                ...formData,
+                status: 'ACTIVE',
                 outstandingDebt: parseFloat(formData.outstandingDebt) || 0,
                 defaultRentalValue: parseFloat(formData.defaultRentalValue) || 0,
                 slotFixedValue: parseFloat(formData.slotFixedValue) || 0,
@@ -161,11 +190,19 @@ const VehicleManagement: React.FC = () => {
                                             <VehicleInput label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} required />
                                         </>
                                     ) : (
-                                        <div className="p-3 bg-gray-900 rounded-lg">
-                                             {/* The name is now editable below for drivers, so we remove it from here to avoid redundancy */}
-                                             {formData.role !== UserRole.DRIVER && <p className="text-sm font-semibold text-white">{formData.name}</p>}
-                                             <p className="text-xs text-gray-400">{formData.email} ({formData.role})</p>
-                                        </div>
+                                        <>
+                                            <div className="p-3 bg-gray-900 rounded-lg">
+                                                 {formData.role !== UserRole.DRIVER && <p className="text-sm font-semibold text-white">{formData.name}</p>}
+                                                 <p className="text-xs text-gray-400">{formData.email} ({formData.role})</p>
+                                            </div>
+                                            <div>
+                                                <label htmlFor="status" className="block text-sm font-medium text-gray-300">Estado do Utilizador</label>
+                                                <select id="status" name="status" value={formData.status} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                                                    <option value="ACTIVE">Ativo</option>
+                                                    <option value="ARCHIVED">Arquivado</option>
+                                                </select>
+                                            </div>
+                                        </>
                                     )}
 
                                     {formData.role === UserRole.DRIVER && (
@@ -255,44 +292,40 @@ const VehicleManagement: React.FC = () => {
                 <div className="lg:col-span-3">
                     <Card className="h-full">
                         <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                            <h3 className="text-xl font-semibold text-white">Utilizadores Registrados</h3>
+                            <div>
+                                <h3 className="text-xl font-semibold text-white">Utilizadores Registrados</h3>
+                                <div className="flex items-center mt-2">
+                                    <input id="showArchived" name="showArchived" type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                    <label htmlFor="showArchived" className="ml-2 block text-sm font-medium text-gray-300">Mostrar utilizadores arquivados</label>
+                                </div>
+                            </div>
                              <Button onClick={handleStartAdding} variant="primary">Adicionar Novo Utilizador</Button>
                         </div>
                         {usersLoading ? (
                              <p className="text-gray-400">A carregar utilizadores...</p>
-                        ) : allUsers.length > 0 ? (
+                        ) : visibleUsers.length > 0 ? (
                             <div className="space-y-4">
-                                {allUsers.filter(u => u.role !== UserRole.ADMIN).map(user => {
+                                {visibleUsers.map(user => {
                                     const isDriver = user.role === UserRole.DRIVER;
-                                    const hasVehicleInfo = isDriver && (user.vehicleModel || user.insurancePolicy || user.fleetCardNumber);
                                     const hasDebt = isDriver && user.outstandingDebt > 0;
                                     const isEditingCurrent = editingDriver?.id === user.id;
+                                    const isArchived = user.status === 'ARCHIVED';
                                     
                                     return (
-                                        <div key={user.id} className={`p-4 rounded-lg border ${isEditingCurrent ? 'bg-blue-900/30 border-blue-600' : 'bg-gray-900/50 border-gray-700'}`}>
-                                            <div className="flex justify-between items-start gap-4">
+                                        <div key={user.id} className={`p-4 rounded-lg border transition-all duration-200 ${isEditingCurrent ? 'bg-blue-900/30 border-blue-600' : isArchived ? 'bg-gray-800/50 border-gray-700 opacity-60' : 'bg-gray-900/50 border-gray-700'}`}>
+                                            <div className="flex justify-between items-start gap-4 flex-wrap">
                                                 <div className="flex-grow">
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <p className="font-bold text-white">{user.name}</p>
+                                                        <p className={`font-bold text-white ${isArchived ? 'line-through' : ''}`}>{user.name}</p>
                                                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isDriver ? 'bg-cyan-800 text-cyan-200' : 'bg-purple-800 text-purple-200'}`}>{user.role}</span>
                                                         {isDriver && <span className="text-xs text-gray-400">({user.matricula})</span>}
-                                                        {hasDebt && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">COM DÍVIDA</span>}
+                                                        {isArchived && <span className="text-xs font-bold text-gray-400 bg-gray-700 px-2 py-0.5 rounded-full">ARQUIVADO</span>}
+                                                        {hasDebt && !isArchived && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">COM DÍVIDA</span>}
                                                     </div>
-
-                                                    {isDriver ? (
-                                                        hasVehicleInfo ? (
-                                                            <div className="mt-2 text-xs text-gray-300 space-y-1">
-                                                                <p><span className="font-semibold text-gray-500">Modelo:</span> {user.vehicleModel || 'N/A'}</p>
-                                                                <p><span className="font-semibold text-gray-500">Apólice:</span> {user.insurancePolicy || 'N/A'} ({user.insuranceCompany || 'N/A'})</p>
-                                                            </div>
-                                                        ) : (
-                                                            <p className="mt-2 text-xs text-yellow-400 italic">Nenhuma viatura associada.</p>
-                                                        )
-                                                    ) : (
-                                                        <p className="mt-2 text-xs text-gray-400 italic">Utilizador do tipo proprietário.</p>
-                                                    )}
+                                                    <p className="mt-1 text-xs text-gray-400">{user.email}</p>
                                                 </div>
-                                                <div className="flex-shrink-0">
+                                                <div className="flex-shrink-0 flex gap-2 flex-wrap">
+                                                     {isDriver && !isArchived && <Button variant="secondary" onClick={() => handleSwapDriver(user)} className="text-xs px-2 py-1">Trocar Motorista</Button>}
                                                     <Button variant={isEditingCurrent ? 'success' : 'secondary'} onClick={() => handleSelectForEdit(user)} className="text-xs px-2 py-1">
                                                         {isEditingCurrent ? 'A Editar' : 'Editar'}
                                                     </Button>

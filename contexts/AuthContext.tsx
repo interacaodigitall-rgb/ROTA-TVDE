@@ -57,7 +57,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           if (userDoc.exists) {
             const userData = { id: userDoc.id, ...userDoc.data() } as User;
-            setUser(userData);
+            if (userData.status === 'ARCHIVED') {
+              setError('A sua conta foi arquivada e não pode mais aceder ao sistema.');
+              setUser(null);
+              await auth.signOut();
+            } else {
+              setUser(userData);
+            }
           } else {
             const warningMessage = `No user profile found in Firestore for UID: ${firebaseUser.uid}`;
             console.warn(warningMessage);

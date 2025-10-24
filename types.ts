@@ -32,6 +32,7 @@ export interface User {
   email: string;
   password?: string;
   role: UserRole;
+  status?: 'ACTIVE' | 'ARCHIVED';
   name: string;
   matricula: string; 
   type: CalculationType;
