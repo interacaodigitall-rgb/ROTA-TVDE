@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Calculation, CalculationStatus, UserRole } from '../types';
 import { db, firestore } from '../firebase';
@@ -12,6 +13,7 @@ interface CalculationContextType {
   addCalculation: (calculation: Omit<Calculation, 'id'>) => Promise<void>;
   updateCalculationStatus: (id: string, status: CalculationStatus) => Promise<void>;
   updateCalculation: (id: string, updates: Partial<Omit<Calculation, 'id'>>) => Promise<void>;
+  deleteCalculation: (id: string) => Promise<void>;
 }
 
 export const CalculationContext = createContext<CalculationContextType | undefined>(undefined);
@@ -140,8 +142,20 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, [isDemo]);
 
+  const deleteCalculation = useCallback(async (id: string) => {
+    if (isDemo) {
+        setCalculations(prev => prev.filter(c => c.id !== id));
+        return;
+    }
+    try {
+      await db.collection('calculations').doc(id).delete();
+    } catch (error) {
+      console.error("Error deleting calculation: ", error);
+    }
+  }, [isDemo]);
+
   return (
-    <CalculationContext.Provider value={{ calculations, loading, error, addCalculation, updateCalculationStatus, updateCalculation }}>
+    <CalculationContext.Provider value={{ calculations, loading, error, addCalculation, updateCalculationStatus, updateCalculation, deleteCalculation }}>
       {children}
     </CalculationContext.Provider>
   );

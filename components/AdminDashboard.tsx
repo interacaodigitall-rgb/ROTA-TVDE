@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useMemo } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { useUsers } from '../hooks/useUsers';
@@ -13,6 +15,7 @@ import Card from './ui/Card';
 import { calculateSummary } from '../utils/calculationUtils';
 import IbanManagement from './IbanManagement';
 import VehicleManagement from './VehicleManagement';
+import { db, firestore } from '../firebase';
 
 type AdminView = 'dashboard' | 'form' | 'reports' | 'details' | 'history' | 'iban' | 'vehicles';
 
@@ -214,6 +217,44 @@ const AdminDashboard: React.FC = () => {
     setCalculationToEdit(calc);
     setView('form');
   };
+
+  const handleDelete = async (calc: Calculation) => {
+    if (window.confirm(`Tem a certeza que deseja apagar o cálculo para ${calc.driverName} do período ${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}? Esta ação é irreversível e irá reverter qualquer dedução de dívida associada.`)) {
+        
+        try {
+            const batch = db.batch();
+
+            // 1. Set up the calculation deletion
+            const calculationRef = db.collection('calculations').doc(calc.id);
+            batch.delete(calculationRef);
+
+            // 2. Set up the debt reversal if needed
+            if (calc.debtDeduction && calc.debtDeduction > 0) {
+                const driverRef = db.collection('users').doc(calc.driverId);
+                // FieldValue.increment is the safest way to update counters.
+                // We add back the deducted amount.
+                batch.update(driverRef, { 
+                    outstandingDebt: firestore.FieldValue.increment(calc.debtDeduction) 
+                });
+            }
+
+            // 3. Commit the atomic operation
+            await batch.commit();
+
+            alert('Cálculo apagado com sucesso!');
+
+            // If the deleted calculation was the one being viewed in 'details', go back
+            if (selectedCalculation && selectedCalculation.id === calc.id) {
+                setSelectedCalculation(null);
+                setView(fromView);
+            }
+
+        } catch (err) {
+            console.error("Falha ao apagar o cálculo:", err);
+            alert("Ocorreu um erro ao tentar apagar o cálculo. A operação foi revertida. Verifique a consola para mais detalhes.");
+        }
+    }
+  };
   
   const handleSetView = (newView: AdminView) => {
     setView(newView);
@@ -328,8 +369,9 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                                 <span className={`flex-shrink-0 px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(calc.status)}`}>{calc.status}</span>
                             </div>
-                            <div className="mt-4 text-right">
+                            <div className="mt-4 flex justify-end gap-4">
                                 <button onClick={() => handleShowDetails(calc)} className="text-blue-400 hover:text-blue-300 font-medium text-sm">Ver Detalhes</button>
+                                <button onClick={() => handleDelete(calc)} className="text-red-400 hover:text-red-300 font-medium text-sm">Excluir</button>
                             </div>
                         </div>
                     ))}
@@ -358,8 +400,9 @@ const AdminDashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{calc.driverName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{`${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}`}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(calc.status)}`}>{calc.status}</span></td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
                     <button onClick={() => handleShowDetails(calc)} className="text-blue-400 hover:text-blue-300">Ver Detalhes</button>
+                    <button onClick={() => handleDelete(calc)} className="text-red-400 hover:text-red-300">Excluir</button>
                   </td>
                 </tr>
               )))}
@@ -386,6 +429,7 @@ const AdminDashboard: React.FC = () => {
             <CalculationView calculation={selectedCalculation} />
              <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4 flex justify-center items-center gap-4 flex-wrap">
                  <Button onClick={() => handleEdit(selectedCalculation)} variant="primary">Editar Cálculo</Button>
+                 <Button onClick={() => handleDelete(selectedCalculation)} variant="danger">Excluir Cálculo</Button>
              </div>
           </div>
         );

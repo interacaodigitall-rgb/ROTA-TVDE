@@ -295,7 +295,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                     {refundedAdjustments > 0 && (
                         <CalculationLine label="Ajustes Per. Ant.:" value={formatCurrency(refundedAdjustments)} />
                     )}
-                    <CalculationLine label="Portagens:" value={formatCurrency(refundedTolls)} />
+                    <CalculationLine label="Portagens (Devolvidas pela uber e bolt):" value={formatCurrency(refundedTolls)} />
                 </div>
                 <p className="font-bold mt-2">├──────────────────────┤</p>
                 <p className="font-bold pl-4 pr-4"> TOTAL DEVOLUÇÕES: {formatCurrency(totalDevolucoes)}</p>
@@ -312,13 +312,17 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
   const renderPercentageView = () => {
     const {
         valorFinal,
-        totalEarnings,
+        baseEarnings,
         refundedTips,
         driverShare,
         driverCosts,
+        potToSplit,
         netToSplit,
         fleetCardExcess,
         totalCompanyCosts,
+        iva,
+        fleetCardCostToSplit,
+        totalPlatformTolls
     } = summary;
 
     return (
@@ -327,8 +331,10 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
             <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
                 <p className="font-bold mb-2">┌─ RESUMO DE GANHOS ────────┐</p>
                 <div className="pl-4 pr-4 space-y-1">
-                    <CalculationLine label="Ganhos Brutos (Base):" value={formatCurrency(totalEarnings)} />
+                    <CalculationLine label="Ganhos Brutos (Base):" value={formatCurrency(baseEarnings)} />
+                    <p className="text-xs text-gray-400 pl-4">(Corridas + Ajustes)</p>
                     <CalculationLine label="Gorjetas (100% Motorista):" value={formatCurrency(refundedTips)} />
+                    <CalculationLine label="Portagens (Devolvidas pela uber e bolt):" value={formatCurrency(totalPlatformTolls)} />
                 </div>
                 <p className="font-bold mb-2">└───────────────────────────┘</p>
             </div>
@@ -338,15 +344,18 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                     <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
                         <p className="font-bold mb-2">┌─ DIVISÃO 50/50 ──────────┐</p>
                         <div className="pl-4 pr-4 space-y-1">
-                            <CalculationLine label="Ganhos Brutos:" value={formatCurrency(totalEarnings)} />
+                            <CalculationLine label="Ganhos Brutos (Base):" value={formatCurrency(baseEarnings)} />
+                            <CalculationLine label="(-) IVA (6%):" value={formatCurrency(iva > 0 ? -iva : 0)} />
+                            <CalculationLine label="(-) Cartão Frota (Parte dividida):" value={formatCurrency(fleetCardCostToSplit > 0 ? -fleetCardCostToSplit : 0)} />
+                            <p className="font-bold mt-2">├──────────────────────────┤</p>
+                            <CalculationLine label="(=) Valor Líquido a Dividir:" value={formatCurrency(potToSplit)} />
                             <p className="font-bold mt-2">├──────────────────────────┤</p>
                             <CalculationLine label="→ Parte Motorista (50%):" value={formatCurrency(driverShare)} />
-                            <CalculationLine label="(-) Custos Motorista:" value={formatCurrency(driverCosts > 0 ? -driverCosts : 0)} />
-                            <p className="text-xs text-gray-400 pl-4"> (IVA 50% + parte Cartão Frota)</p>
                             <CalculationLine label="(+) Gorjetas:" value={formatCurrency(refundedTips)} />
-                            {(calculation.debtDeduction || 0) > 0 && (
-                                <CalculationLine label="(-) Dedução de Dívida:" value={formatCurrency(-calculation.debtDeduction)} />
+                            {driverCosts > 0 && (
+                                 <CalculationLine label="(-) Custos do Motorista:" value={formatCurrency(-driverCosts)} />
                             )}
+                            <p className="text-xs text-gray-400 pl-4">(Excesso Cartão, Portagens Aluguer, etc)</p>
                         </div>
                         <p className="font-bold mb-2">└───────────────────────────┘</p>
                     </div>
@@ -358,13 +367,13 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                     <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
                         <p className="font-bold mb-2">┌─ CÁLCULO 60/40 ──────────┐</p>
                         <div className="pl-4 pr-4 space-y-1">
-                            <CalculationLine label="Ganhos Brutos:" value={formatCurrency(totalEarnings)} />
+                            <CalculationLine label="Ganhos Brutos (Base):" value={formatCurrency(baseEarnings)} />
                             <CalculationLine label="(-) Custos da Frota:" value={formatCurrency(totalCompanyCosts > 0 ? -totalCompanyCosts : 0)} />
                             <p className="text-xs text-gray-400 pl-4"> (IVA + Cartão Frota + Aluguer + etc.)</p>
                             <p className="font-bold mt-2">├──────────────────────────┤</p>
                             <CalculationLine label="(=) Valor Líquido a Dividir:" value={formatCurrency(netToSplit)} />
                             <p className="font-bold mt-2">├──────────────────────────┤</p>
-                            <CalculationLine label="→ Parte Motorista (40%):" value={formatCurrency(netToSplit * 0.4)} />
+                            <CalculationLine label="→ Parte Motorista (40%):" value={formatCurrency(driverShare)} />
                             {fleetCardExcess > 0 && (
                                 <CalculationLine label="(-) Excesso Cartão Frota:" value={formatCurrency(-fleetCardExcess)} />
                             )}
