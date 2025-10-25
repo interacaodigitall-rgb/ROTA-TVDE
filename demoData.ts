@@ -210,7 +210,8 @@ export const MOCK_COMPANY_INFO = {
     name: "DEMO EMPRESA FICTÍCIA - UNIPESSOAL LDA",
     nipc: "999999999",
     address: "RUA DA SIMULAÇÃO, 123 - 1000-001 LISBOA",
-    phone: "+351 999 999 999"
+    phone: "+351 999 999 999",
+    manager: "Gerente Fictício Demo"
 }
 
 // --- MOCK RECEIPTS ---

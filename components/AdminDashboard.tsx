@@ -446,7 +446,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-gray-100 font-sans">
+    <div className="flex flex-1 text-gray-100 font-sans">
       {/* Mobile Sidebar (Overlay) */}
       <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 p-4 flex flex-col transform transition-transform duration-300 ease-in-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent user={user} logout={logout} view={view} setView={handleSetView} onLinkClick={() => setIsSidebarOpen(false)} />

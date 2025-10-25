@@ -4,6 +4,7 @@ import Button from './ui/Button';
 import { useIbans } from '../hooks/useIbans';
 import { CalculationType } from '../types';
 import Card from './ui/Card';
+import { MOCK_COMPANY_INFO } from '../demoData';
 
 // FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; borderColor: string; }> = ({ title, icon, children, borderColor }) => (
@@ -62,7 +63,7 @@ const SosModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen,
 };
 
 const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ onNavigateToCalculations }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isDemo } = useAuth();
   const { ibans, loading: ibansLoading } = useIbans();
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
 
@@ -71,7 +72,7 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
 
   return (
     <>
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
+    <div className="w-full text-gray-100 font-sans">
       {/* Header */}
       <header className="bg-gray-800 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -165,19 +166,35 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
 
              <InfoCard title="Dados para Faturação" borderColor="border-t-purple-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
                 <p className="text-sm text-gray-400">Utilize estes dados para emitir os seus recibos verdes.</p>
-                <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
-                    <div>
-                        <p className="font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+                {isDemo ? (
+                    <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
+                        <div>
+                            <p className="font-semibold">{MOCK_COMPANY_INFO.name}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">NIPC</p>
+                            <p className="font-semibold">{MOCK_COMPANY_INFO.nipc}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">GERÊNCIA</p>
+                            <p className="font-semibold">{MOCK_COMPANY_INFO.manager}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-xs text-gray-400">NIPC</p>
-                        <p className="font-semibold">517112604</p>
+                ) : (
+                    <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
+                        <div>
+                            <p className="font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">NIPC</p>
+                            <p className="font-semibold">517112604</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">GERÊNCIA</p>
+                            <p className="font-semibold">PAULO ROGÉRIO COSTA FERREIRA</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-xs text-gray-400">GERÊNCIA</p>
-                        <p className="font-semibold">PAULO ROGÉRIO COSTA FERREIRA</p>
-                    </div>
-                </div>
+                )}
             </InfoCard>
 
              <InfoCard title="Dados de Pagamento" borderColor="border-t-blue-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>}>

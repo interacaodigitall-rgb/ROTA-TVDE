@@ -22,7 +22,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+    <div className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <h1 className="text-4xl font-bold text-center text-white mb-8">
           ROTA TVDE 5.0

@@ -30,7 +30,7 @@ const DriverCalculationsList: React.FC<{
   };
   
   return (
-      <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6 lg:p-8">
+      <div className="w-full p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto">
            <Button onClick={onBack} className="mb-6">
                 &larr; Voltar às Informações
@@ -97,7 +97,7 @@ const DriverDashboard: React.FC = () => {
       case 'details':
         if (!selectedCalculation) return null;
         return (
-            <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6 lg:p-8">
+            <div className="w-full p-4 sm:p-6 lg:p-8">
                  <div className="max-w-md mx-auto">
                     <Button onClick={() => setView('list')} className="mb-4">
                         &larr; Voltar aos Meus Cálculos
@@ -112,7 +112,7 @@ const DriverDashboard: React.FC = () => {
 
       case 'reports':
         return (
-            <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6 lg:p-8">
+            <div className="w-full p-4 sm:p-6 lg:p-8">
                  <ReportsView onBack={() => setView('list')} driverId={user?.id} />
             </div>
         );
