@@ -112,67 +112,6 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
           <h2 className="text-xl font-semibold text-gray-200">Informações Importantes</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-             <InfoCard title="Dados para Faturação" borderColor="border-t-purple-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
-                <p className="text-sm text-gray-400">Utilize estes dados para emitir os seus recibos verdes.</p>
-                <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
-                    <div>
-                        <p className="font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400">NIPC</p>
-                        <p className="font-semibold">517112604</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400">GERÊNCIA</p>
-                        <p className="font-semibold">PAULO ROGÉRIO COSTA FERREIRA</p>
-                    </div>
-                </div>
-            </InfoCard>
-             <InfoCard title="Dados de Pagamento" borderColor="border-t-blue-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>}>
-                {ibansLoading ? (
-                    <p>A carregar dados...</p>
-                ) : myIban ? (
-                    <div className="space-y-3">
-                        <div>
-                            <p className="text-xs text-gray-400">Nome do Titular</p>
-                            <p className="font-semibold">{myIban.fullName}</p>
-                        </div>
-                         <div>
-                            <p className="text-xs text-gray-400">NIF</p>
-                            <p className="font-semibold">{myIban.nif}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">IBAN</p>
-                            <p className="font-semibold break-all">{myIban.iban}</p>
-                        </div>
-                        <p className="text-xs text-yellow-400 pt-2 border-t border-gray-700">Se os dados estiverem incorretos, por favor entre em contato com a administração para correção.</p>
-                    </div>
-                ) : (
-                    <p>Nenhum IBAN registado. Por favor, entre em contato com a administração.</p>
-                )}
-             </InfoCard>
-
-            <InfoCard title="Dados da Viatura" borderColor="border-t-teal-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.623 5.91l-4.62 4.62a2.121 2.121 0 01-3-3l4.62-4.62A6 6 0 0117 7z" /></svg>}>
-                {hasVehicleInfo ? (
-                    <div className="space-y-3">
-                        {user.vehicleModel && <div>
-                            <p className="text-xs text-gray-400">Modelo</p>
-                            <p className="font-semibold">{user.vehicleModel}</p>
-                        </div>}
-                         {(user.insuranceCompany || user.insurancePolicy) && <div>
-                            <p className="text-xs text-gray-400">Seguro</p>
-                            <p className="font-semibold">{user.insuranceCompany || 'N/A'} - Apólice: {user.insurancePolicy || 'N/A'}</p>
-                        </div>}
-                        {(user.fleetCardCompany || user.fleetCardNumber) && <div>
-                            <p className="text-xs text-gray-400">Cartão Frota</p>
-                            <p className="font-semibold">{user.fleetCardCompany || 'N/A'} - Nº: {user.fleetCardNumber || 'N/A'}</p>
-                        </div>}
-                    </div>
-                ) : (
-                    <p>Dados da viatura não disponíveis. Contacte a administração.</p>
-                )}
-             </InfoCard>
-
              <InfoCard title="Requisitos e Equipamentos" borderColor="border-t-orange-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
                 <div className="space-y-4">
                     <RequirementItem title="Extintor 2kg com certificado">
@@ -202,6 +141,69 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
                     </Button>
                 </div>
             </InfoCard>
+
+            <InfoCard title="Dados da Viatura" borderColor="border-t-teal-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.623 5.91l-4.62 4.62a2.121 2.121 0 01-3-3l4.62-4.62A6 6 0 0117 7z" /></svg>}>
+                {hasVehicleInfo ? (
+                    <div className="space-y-3">
+                        {user.vehicleModel && <div>
+                            <p className="text-xs text-gray-400">Modelo</p>
+                            <p className="font-semibold">{user.vehicleModel}</p>
+                        </div>}
+                         {(user.insuranceCompany || user.insurancePolicy) && <div>
+                            <p className="text-xs text-gray-400">Seguro</p>
+                            <p className="font-semibold">{user.insuranceCompany || 'N/A'} - Apólice: {user.insurancePolicy || 'N/A'}</p>
+                        </div>}
+                        {(user.fleetCardCompany || user.fleetCardNumber) && <div>
+                            <p className="text-xs text-gray-400">Cartão Frota</p>
+                            <p className="font-semibold">{user.fleetCardCompany || 'N/A'} - Nº: {user.fleetCardNumber || 'N/A'}</p>
+                        </div>}
+                    </div>
+                ) : (
+                    <p>Dados da viatura não disponíveis. Contacte a administração.</p>
+                )}
+             </InfoCard>
+
+             <InfoCard title="Dados para Faturação" borderColor="border-t-purple-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
+                <p className="text-sm text-gray-400">Utilize estes dados para emitir os seus recibos verdes.</p>
+                <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
+                    <div>
+                        <p className="font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-400">NIPC</p>
+                        <p className="font-semibold">517112604</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-400">GERÊNCIA</p>
+                        <p className="font-semibold">PAULO ROGÉRIO COSTA FERREIRA</p>
+                    </div>
+                </div>
+            </InfoCard>
+
+             <InfoCard title="Dados de Pagamento" borderColor="border-t-blue-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>}>
+                {ibansLoading ? (
+                    <p>A carregar dados...</p>
+                ) : myIban ? (
+                    <div className="space-y-3">
+                        <div>
+                            <p className="text-xs text-gray-400">Nome do Titular</p>
+                            <p className="font-semibold">{myIban.fullName}</p>
+                        </div>
+                         <div>
+                            <p className="text-xs text-gray-400">NIF</p>
+                            <p className="font-semibold">{myIban.nif}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">IBAN</p>
+                            <p className="font-semibold break-all">{myIban.iban}</p>
+                        </div>
+                        <p className="text-xs text-yellow-400 pt-2 border-t border-gray-700">Se os dados estiverem incorretos, por favor entre em contato com a administração para correção.</p>
+                    </div>
+                ) : (
+                    <p>Nenhum IBAN registado. Por favor, entre em contato com a administração.</p>
+                )}
+             </InfoCard>
+
           </div>
         </div>
       </main>
