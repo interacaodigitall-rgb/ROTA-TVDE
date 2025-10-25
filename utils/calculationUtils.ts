@@ -16,28 +16,25 @@ export const calculateSummary = (calculation: Calculation): any => {
   const otherExpenses = calculation.otherExpenses || 0;
   const debtDeduction = calculation.debtDeduction || 0;
 
-  // --- CORE LOGIC REFACTORED BASED ON USER FEEDBACK ---
-  // "uberRides" and "boltRides" are the GROSS earnings from platforms.
-  const totalGrossEarnings = uberRides + boltRides;
-
-  // The other fields are breakdowns of the gross amount.
+  // --- Base Values ---
+  const totalRides = uberRides + boltRides;
   const totalTips = uberTips + boltTips;
   const totalPlatformTolls = uberTolls + boltTolls;
   const totalAdjustments = uberPreviousPeriodAdjustments + boltPreviousPeriodAdjustments;
 
-  // --- VAT (IVA) Calculation ---
-  // As per user screenshot and clarification, IVA is calculated on the total gross earnings from platforms for all types.
-  const iva = !calculation.isIvaExempt ? totalGrossEarnings * 0.06 : 0;
+  // Gross earnings from platforms, used as the base for IVA.
+  const totalGanhosBrutos = totalRides + totalTips + totalPlatformTolls + totalAdjustments;
+
+  // --- Common Calculations ---
+  // IVA is calculated on the total gross income as requested by the user.
+  // Slot fee remains calculated on rides only.
+  const iva = !calculation.isIvaExempt ? totalGanhosBrutos * 0.06 : 0;
 
   // --- PERCENTAGE LOGIC ---
   if (calculation.type === CalculationType.PERCENTAGE) {
-    // The amount to be split is the gross earnings minus non-splittable items (tips and tolls).
-    const baseEarnings = totalGrossEarnings - totalTips - totalPlatformTolls;
-    
-    // Tips are a direct pass-through to the driver.
-    const refundedTips = totalTips;
-    // Tolls are a company revenue/pass-through, not refunded to the driver.
-    const refundedTolls = 0;
+    // baseEarnings for splitting is rides + adjustments. Tips and tolls are handled separately.
+    const baseEarnings = totalRides + totalAdjustments;
+    const refundedTips = totalTips; // Tips are a direct pass-through
 
     const isDiesel = calculation.fuelType === FuelType.DIESEL;
     const isElectric = calculation.fuelType === FuelType.ELECTRIC;
@@ -53,6 +50,8 @@ export const calculateSummary = (calculation: Calculation): any => {
         potToSplit -= fleetCardCostToSplit;
 
         const driverShare = potToSplit * 0.5;
+        // Driver's specific costs are their share of the fleet card excess, plus other items.
+        // Platform tolls are a company cost in this model and not deducted from the driver here.
         const driverSpecificCosts = fleetCardExcessForDriver + rentalTolls + otherExpenses + debtDeduction;
         const valorFinal = driverShare + refundedTips - driverSpecificCosts;
 
@@ -61,7 +60,6 @@ export const calculateSummary = (calculation: Calculation): any => {
             percentageType: calculation.percentageType,
             baseEarnings,
             refundedTips,
-            refundedTolls,
             totalPlatformTolls,
             iva,
             potToSplit,
@@ -84,7 +82,8 @@ export const calculateSummary = (calculation: Calculation): any => {
             driverExcessFleetCard = Math.max(0, fleetCard - 70);
         }
         
-        const totalCompanyCosts = iva + companyAssumesFleetCard + vehicleRental + rentalTolls + otherExpenses;
+        // Company costs also include platform tolls
+        const totalCompanyCosts = iva + companyAssumesFleetCard + vehicleRental + rentalTolls + otherExpenses + totalPlatformTolls;
         const netToSplit = baseEarnings - totalCompanyCosts;
         const driverShareRaw = netToSplit * 0.4;
         const valorFinal = driverShareRaw - driverExcessFleetCard + refundedTips - debtDeduction;
@@ -94,7 +93,6 @@ export const calculateSummary = (calculation: Calculation): any => {
             percentageType: calculation.percentageType,
             baseEarnings,
             refundedTips,
-            refundedTolls,
             totalPlatformTolls,
             totalCompanyCosts,
             netToSplit,
@@ -107,41 +105,38 @@ export const calculateSummary = (calculation: Calculation): any => {
   }
   
   // --- STANDARD (FROTA / SLOT) LOGIC ---
-  const totalGanhos = totalGrossEarnings;
   
-  // The slot fee remains calculated on the service value, excluding pass-throughs (tips, tolls).
-  const baseParaSlot = totalGrossEarnings - totalTips - totalPlatformTolls;
-  const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? baseParaSlot * 0.04 : 0;
+  // totalGanhos is the gross total from platforms, used for display.
+  const totalGanhos = totalGanhosBrutos;
   
-  const driverCosts = vehicleRental + slotFee + iva + fleetCard + rentalTolls + otherExpenses + debtDeduction;
-  
-  // As per user request, platform tolls are now part of deductions.
-  const totalDeducoes = driverCosts + totalPlatformTolls;
+  // Slot is calculated based on rides only.
+  const baseParaTaxas = totalRides;
+  const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? baseParaTaxas * 0.04 : 0;
 
-  // The final value is the total gross earnings minus all deductions.
-  // Tips are not in deductions, so they correctly remain for the driver.
+  // Total deductions includes all costs, with platform tolls acting as a pass-through debit.
+  const totalDeducoes = 
+      vehicleRental + 
+      slotFee + 
+      iva + 
+      fleetCard + 
+      rentalTolls + 
+      otherExpenses + 
+      debtDeduction +
+      totalPlatformTolls;
+
+  // Final value is the simple difference between gross earnings and total deductions.
   const valorFinal = totalGanhos - totalDeducoes;
-  
-  // "Devoluções" section is for display purposes, showing what is returned to the driver.
-  // Tolls are no longer considered a "devolução" in the UI.
-  const refundedTips = totalTips;
-  const refundedTolls = 0; // Moved to deductions
-  const refundedAdjustments = totalAdjustments;
-  const totalDevolucoes = refundedTips + refundedAdjustments;
   
   return {
     isPercentage: false,
-    totalRides: baseParaSlot, // This is a better representation of "rides value"
-    totalTips,
-    totalPlatformTolls, // Still needed for display in deductions
     totalGanhos,
+    totalDeducoes,
+    valorFinal,
+    // Return individual components for detailed view
     slotFee,
     iva,
-    totalDeducoes,
-    refundedTips,
-    refundedTolls, // Will be 0
-    refundedAdjustments,
-    totalDevolucoes,
-    valorFinal,
+    refundedTips: totalTips, // Still needed for line items, though the "Devoluções" concept is gone
+    refundedAdjustments: totalAdjustments, // Still needed for line items
+    totalPlatformTolls,
   };
 };

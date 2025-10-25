@@ -216,9 +216,6 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
       slotFee,
       iva,
       totalDeducoes,
-      refundedTips,
-      refundedAdjustments,
-      totalDevolucoes,
       valorFinal,
       totalPlatformTolls,
     } = summary;
@@ -279,20 +276,6 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                 </div>
                 <p className="font-bold mt-2">├──────────────────────┤</p>
                 <p className="font-bold pl-4 pr-4"> TOTAL DEDUÇÕES: {formatCurrency(totalDeducoes)}</p>
-                <p className="font-bold mb-2">└──────────────────────┘</p>
-            </div>
-
-            {/* Devoluções */}
-            <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
-                <p className="font-bold mb-2">┌─ DEVOLUÇÕES ─────────┐</p>
-                <div className="pl-4 pr-4 space-y-1">
-                    <CalculationLine label="Gorjetas:" value={formatCurrency(refundedTips)} />
-                    {refundedAdjustments > 0 && (
-                        <CalculationLine label="Ajustes Per. Ant.:" value={formatCurrency(refundedAdjustments)} />
-                    )}
-                </div>
-                <p className="font-bold mt-2">├──────────────────────┤</p>
-                <p className="font-bold pl-4 pr-4"> TOTAL DEVOLUÇÕES: {formatCurrency(totalDevolucoes)}</p>
                 <p className="font-bold mb-2">└──────────────────────┘</p>
             </div>
 

@@ -101,3 +101,12 @@ export interface Iban {
   nif: string;
   iban: string;
 }
+
+export interface Receipt {
+  id: string;
+  driverId: string;
+  driverName: string;
+  amount: number;
+  date: any; // Firestore Timestamp
+  notes?: string;
+}

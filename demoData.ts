@@ -1,4 +1,4 @@
-import { User, UserRole, CalculationType, Calculation, CalculationStatus, Iban } from './types';
+import { User, UserRole, CalculationType, Calculation, CalculationStatus, Iban, Receipt } from './types';
 
 // --- MOCK USERS ---
 export const MOCK_ADMIN_USER: User = {
@@ -212,3 +212,23 @@ export const MOCK_COMPANY_INFO = {
     address: "RUA DA SIMULAÇÃO, 123 - 1000-001 LISBOA",
     phone: "+351 999 999 999"
 }
+
+// --- MOCK RECEIPTS ---
+export const MOCK_RECEIPTS: Receipt[] = [
+    {
+        id: 'demo-receipt-1',
+        driverId: MOCK_FROTA_DRIVER_1.id,
+        driverName: MOCK_FROTA_DRIVER_1.name,
+        amount: 350.00,
+        date: new Date(),
+        notes: 'Recibo referente à primeira semana do mês.'
+    },
+    {
+        id: 'demo-receipt-2',
+        driverId: MOCK_SLOT_DRIVER_USER.id,
+        driverName: MOCK_SLOT_DRIVER_USER.name,
+        amount: 1200.00,
+        date: new Date(),
+        notes: 'Recibo de duas semanas.'
+    }
+];

@@ -1,11 +1,13 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
-import { CalculationStatus } from '../types';
+import { CalculationStatus, UserRole } from '../types';
 import { calculateSummary } from '../utils/calculationUtils';
 import Button from './ui/Button';
 import Card from './ui/Card';
 import { useAuth } from '../hooks/useAuth';
 import { MOCK_COMPANY_INFO } from '../demoData';
+import { useReceipts } from '../hooks/useReceipts';
+import { useUsers } from '../hooks/useUsers';
 
 // Add declarations for CDN libraries
 declare const html2canvas: any;
@@ -24,6 +26,8 @@ interface ReportRow {
   totalDeducoes: number;
   totalValorFinal: number;
   calculationCount: number;
+  totalReceipts: number;
+  pendingBalance: number;
 }
 
 const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
@@ -50,12 +54,16 @@ const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new 
 const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
   const { user, isDemo } = useAuth();
   const { calculations } = useCalculations();
+  const { receipts } = useReceipts();
+  const { users } = useUsers();
   const { startDate: defaultStart, endDate: defaultEnd } = getDefaultDateRange();
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
+  const [selectedDriverId, setSelectedDriverId] = useState('all');
   const reportPrintRef = useRef<HTMLDivElement>(null);
 
   const isDriverView = !!driverId && user?.id === driverId;
+  const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER).sort((a,b) => a.name.localeCompare(b.name)), [users]);
 
   const reportData = useMemo(() => {
     const start = new Date(startDate);
@@ -69,8 +77,16 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
           return matchesDriver && c.status === CalculationStatus.ACCEPTED && periodEndDate >= start && periodEndDate <= end;
       }
     );
+    
+    const filteredReceipts = receipts.filter(r => {
+        const receiptDate = toDate(r.date);
+        return receiptDate >= start && receiptDate <= end;
+    });
 
-    const groupedByDriver = filteredCalculations.reduce<Record<string, ReportRow>>(
+    // FIX: Explicitly type the `groupedByDriver` constant. This allows TypeScript to correctly
+    // infer the type of the accumulator in the `reduce` function without needing a cast,
+    // which resolves the downstream errors.
+    const groupedByDriver: Record<string, ReportRow> = filteredCalculations.reduce(
       (acc, calc) => {
         const summary = calculateSummary(calc);
         if (!acc[calc.driverId]) {
@@ -81,6 +97,8 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
             totalDeducoes: 0,
             totalValorFinal: 0,
             calculationCount: 0,
+            totalReceipts: 0,
+            pendingBalance: 0,
           };
         }
 
@@ -93,9 +111,26 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
       },
       {}
     );
-    // FIX: Explicitly typed parameters 'a' and 'b' to resolve error "Property 'driverName' does not exist on type 'unknown'".
-    return Object.values(groupedByDriver).sort((a: ReportRow, b: ReportRow) => a.driverName.localeCompare(b.driverName));
-  }, [calculations, startDate, endDate, driverId]);
+
+    filteredReceipts.forEach(receipt => {
+        if (groupedByDriver[receipt.driverId]) {
+            groupedByDriver[receipt.driverId].totalReceipts += receipt.amount;
+        }
+    });
+    
+    Object.values(groupedByDriver).forEach(row => {
+        row.pendingBalance = row.totalValorFinal - row.totalReceipts;
+    });
+
+    const allDriversReport = Object.values(groupedByDriver).sort((a, b) => a.driverName.localeCompare(b.driverName));
+    
+    if (selectedDriverId === 'all' || isDriverView) {
+        return allDriversReport;
+    } else {
+        return allDriversReport.filter(row => row.driverId === selectedDriverId);
+    }
+
+  }, [calculations, receipts, startDate, endDate, driverId, selectedDriverId, isDriverView]);
 
   const handleDownloadReportPdf = async () => {
     const element = reportPrintRef.current;
@@ -120,7 +155,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
         el.style.backgroundColor = 'transparent';
     });
     
-    // Desktop Table: Reduce font size and highlight the final invoicing value cell
+    // Desktop Table styling
     const table = clone.querySelector('table');
     if (table) {
         table.style.fontSize = '10px';
@@ -129,74 +164,39 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
             const lastCell = row.querySelector('td:last-child');
             if (lastCell) {
                 (lastCell as HTMLElement).style.fontWeight = 'bold';
-                (lastCell as HTMLElement).style.backgroundColor = '#E8F5E9'; // Light green background
+                (lastCell as HTMLElement).style.backgroundColor = '#FFF8E1'; // Light yellow
             }
         });
     }
 
-    // Mobile Cards: Highlight the final invoicing value row
+    // Mobile Cards styling
     const mobileCards = clone.querySelectorAll('.md\\:hidden .bg-gray-900\\/50');
     mobileCards.forEach(card => {
-        const invoicingRow = card.querySelector<HTMLElement>('.border-t');
+        const invoicingRow = card.querySelector<HTMLElement>('.border-t-2');
         if (invoicingRow) {
-            invoicingRow.style.backgroundColor = '#E8F5E9'; // Light green background
+            invoicingRow.style.backgroundColor = '#FFF8E1'; // Light yellow
             invoicingRow.style.padding = '8px';
             invoicingRow.style.marginTop = '4px';
             invoicingRow.style.borderRadius = '4px';
         }
     });
 
-    // Replace date inputs with simple text to ensure they render correctly in the PDF.
-    const startDateInput = clone.querySelector<HTMLInputElement>('#startDate');
-    const endDateInput = clone.querySelector<HTMLInputElement>('#endDate');
+    // Replace date/select inputs with static text for PDF rendering
+    const dateAndSelectInputs = clone.querySelectorAll('input[type="date"], select');
+    dateAndSelectInputs.forEach(input => {
+      const p = document.createElement('p');
+      if (input.tagName.toLowerCase() === 'select') {
+          const select = input as HTMLSelectElement;
+          p.textContent = select.options[select.selectedIndex].text;
+      } else {
+          const dateInput = input as HTMLInputElement;
+          const [year, month, day] = dateInput.value.split('-');
+          p.textContent = `${day}/${month}/${year}`;
+      }
+      p.className = 'mt-1 block w-full rounded-md py-2 px-3 sm:text-sm text-black';
+      input.parentElement?.replaceChild(p, input);
+    });
     
-    const formatDateForDisplay = (dateString: string) => {
-        const [year, month, day] = dateString.split('-');
-        return `${day}/${month}/${year}`;
-    };
-
-    if (startDateInput?.parentElement) {
-        const p = document.createElement('p');
-        p.textContent = formatDateForDisplay(startDateInput.value);
-        p.className = 'mt-1 block w-full rounded-md py-2 px-3 sm:text-sm text-black';
-        startDateInput.parentElement.replaceChild(p, startDateInput);
-    }
-    if (endDateInput?.parentElement) {
-        const p = document.createElement('p');
-        p.textContent = formatDateForDisplay(endDateInput.value);
-        p.className = 'mt-1 block w-full rounded-md py-2 px-3 sm:text-sm text-black';
-        endDateInput.parentElement.replaceChild(p, endDateInput);
-    }
-    
-    if (isDriverView) {
-        clone.style.fontSize = '12px';
-        clone.style.lineHeight = '1.4';
-        clone.style.padding = '1rem'; 
-        
-        const header = clone.querySelector<HTMLElement>('.text-center.mb-6');
-        if (header) {
-            header.style.marginBottom = '1rem';
-            header.style.paddingBottom = '0.5rem';
-        }
-
-        const dateContainer = clone.querySelector<HTMLElement>('.border-b.pb-4.mb-4');
-        if (dateContainer) {
-            dateContainer.style.marginBottom = '1rem';
-            dateContainer.style.paddingBottom = '0.5rem';
-        }
-
-        const reportCard = clone.querySelector<HTMLElement>('.bg-gray-900\\/50.p-4');
-        if(reportCard) {
-            reportCard.style.padding = '0.75rem';
-        }
-
-        const reportRows = clone.querySelectorAll<HTMLElement>('.py-2');
-        reportRows.forEach(row => {
-            row.style.paddingTop = '0.25rem';
-            row.style.paddingBottom = '0.25rem';
-        });
-    }
-
     const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff' });
     document.body.removeChild(clone);
 
@@ -211,29 +211,23 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
     const availableWidth = pdfWidth - margin * 2;
     const availableHeight = pdfHeight - margin * 2;
     
-    const imgRatio = imgProps.width / imgProps.height;
-    
     let finalWidth = availableWidth;
-    let finalHeight = finalWidth / imgRatio;
+    let finalHeight = finalWidth / imgProps.width * imgProps.height;
     
-    // Ensure the image fits within the page height
     if (finalHeight > availableHeight) {
         finalHeight = availableHeight;
-        finalWidth = finalHeight * imgRatio;
+        finalWidth = finalHeight / imgProps.height * imgProps.width;
     }
     
-    // Center horizontally
     const xOffset = margin + (availableWidth - finalWidth) / 2;
-    // Align to top
     const yOffset = margin;
     
     pdf.addImage(data, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
     
     const start = startDate.replace(/-/g, '');
     const end = endDate.replace(/-/g, '');
-    const fileName = isDriverView
-      ? `Meu_Relatorio_Faturacao_${start}_${end}.pdf`
-      : `Relatorio_Faturacao_Global_${start}_${end}.pdf`;
+    const driverName = selectedDriverId !== 'all' ? drivers.find(d => d.id === selectedDriverId)?.name.replace(/\s+/g, '_') : 'Global';
+    const fileName = `Relatorio_Faturacao_${driverName}_${start}_${end}.pdf`;
     pdf.save(fileName);
   };
   
@@ -278,10 +272,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
             </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-700 pb-4 mb-4">
               <p className="text-sm text-gray-400 md:col-span-3">
-                {isDriverView
-                  ? "Este relatório resume os seus cálculos 'Aceitos' no período selecionado. Use o 'Valor a Faturar' para emitir o recibo para a empresa."
-                  : "Este relatório resume todos os cálculos 'Aceitos' no período selecionado. O 'Valor a Faturar' é o valor líquido que o motorista deve usar para passar o recibo à empresa."
-                }
+                  Este relatório resume todos os cálculos 'Aceitos' e recibos registados no período selecionado. O 'Saldo a Faturar' é o valor que o motorista ainda deve emitir em recibo para a empresa.
               </p>
               <div>
                   <label htmlFor="startDate" className="block text-sm font-medium text-gray-300">Período de (Início)</label>
@@ -291,6 +282,15 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
                   <label htmlFor="endDate" className="block text-sm font-medium text-gray-300">Período até (Fim)</label>
                   <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
               </div>
+              {!isDriverView && (
+                 <div>
+                    <label htmlFor="driverFilter" className="block text-sm font-medium text-gray-300">Filtrar Motorista</label>
+                    <select id="driverFilter" value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                        <option value="all">Todos os Motoristas</option>
+                        {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                </div>
+              )}
           </div>
           
           {/* Mobile View - Cards */}
@@ -301,10 +301,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
                         {!isDriverView && <h4 className="font-bold text-lg text-white mb-2 pb-2 border-b border-gray-700">{row.driverName}</h4>}
                         <div className="space-y-1">
                             <ReportDataRow label="Semanas Aceites" value={String(row.calculationCount)} />
-                            <ReportDataRow label="Total Ganhos" value={formatCurrency(row.totalGanhos)} />
-                            <ReportDataRow label="Total Deduções" value={formatCurrency(row.totalDeducoes)} className="text-yellow-400" />
-                            <ReportDataRow label="Total Líquido" value={formatCurrency(row.totalValorFinal)} className="text-green-400" />
-                            <ReportDataRow label="Valor a Faturar (Recibo)" value={formatCurrency(row.totalValorFinal)} className="text-green-400 font-bold border-t border-dashed border-gray-600 mt-2 pt-2" />
+                            <ReportDataRow label="Total Líquido (Motorista)" value={formatCurrency(row.totalValorFinal)} className="text-green-400" />
+                            <ReportDataRow label="Total Recibos Emitidos" value={formatCurrency(row.totalReceipts)} className="text-blue-400" />
+                            <ReportDataRow label="Saldo a Faturar" value={formatCurrency(row.pendingBalance)} className="text-yellow-400 font-bold border-t-2 border-dashed border-gray-600 mt-2 pt-2" />
                         </div>
                     </div>
                 ))
@@ -320,10 +319,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
                 <tr>
                   {!isDriverView && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Motorista</th>}
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Semanas Aceites</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Ganhos</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Deduções</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Líquido Motorista</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider font-bold">Valor a Faturar (Recibo)</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Líquido (Motorista)</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Recibos Emitidos</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider font-bold">Saldo a Faturar</th>
                 </tr>
               </thead>
               <tbody className="bg-gray-900 divide-y divide-gray-800">
@@ -332,15 +330,14 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
                     <tr key={row.driverId} className="hover:bg-gray-700/50">
                       {!isDriverView && <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{row.driverName}</td>}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-300">{row.calculationCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-300">{formatCurrency(row.totalGanhos)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-yellow-400">{formatCurrency(row.totalDeducoes)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-400 font-semibold">{formatCurrency(row.totalValorFinal)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-400 font-bold">{formatCurrency(row.totalValorFinal)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-400">{formatCurrency(row.totalValorFinal)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-blue-400">{formatCurrency(row.totalReceipts)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-yellow-400 font-bold">{formatCurrency(row.pendingBalance)}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={isDriverView ? 5 : 6} className="text-center py-10 text-gray-400">
+                    <td colSpan={isDriverView ? 4 : 5} className="text-center py-10 text-gray-400">
                       Nenhum cálculo aceite para o período selecionado.
                     </td>
                   </tr>

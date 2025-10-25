@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import Button from './ui/Button';
 import { useIbans } from '../hooks/useIbans';
+import { CalculationType } from '../types';
+import Card from './ui/Card';
 
 // FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; borderColor: string; }> = ({ title, icon, children, borderColor }) => (
@@ -16,21 +18,59 @@ const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React
   </div>
 );
 
-const InfoListItem: React.FC<{ title: string; description: React.ReactNode }> = ({ title, description }) => (
-  <div className="list-item">
-    <p className="font-bold text-gray-200">&#8226; {title}</p>
-    <div className="ml-4 text-sm">{description}</div>
-  </div>
+const RequirementItem: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => (
+    <div>
+        <p className="font-bold text-gray-200">&#8226; {title}</p>
+        <div className="ml-5 text-sm text-gray-400 border-l border-gray-600 pl-3 mt-1">
+            {children}
+        </div>
+    </div>
 );
+
+
+const SosModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <Card className="w-full max-w-lg border-t-4 border-t-red-500" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold text-red-400 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        SOS / Contactos de Assistência
+                    </h3>
+                     <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
+                </div>
+                <div className="space-y-4 text-lg">
+                    <div className="p-4 bg-gray-900 rounded-lg">
+                        <p className="text-sm text-gray-400">Em Portugal (chamada para a rede fixa nacional)</p>
+                        <a href="tel:214405008" className="font-bold text-2xl text-white hover:text-blue-400">214 405 008</a>
+                    </div>
+                    <div className="p-4 bg-gray-900 rounded-lg">
+                        <p className="text-sm text-gray-400">No Estrangeiro</p>
+                        <a href="tel:+351214417373" className="font-bold text-2xl text-white hover:text-blue-400">+351 21 441 73 73</a>
+                    </div>
+                </div>
+                 <div className="mt-6 text-center">
+                     <Button variant="secondary" onClick={onClose}>Fechar</Button>
+                 </div>
+            </Card>
+        </div>
+    );
+};
 
 const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ onNavigateToCalculations }) => {
   const { user, logout } = useAuth();
   const { ibans, loading: ibansLoading } = useIbans();
+  const [isSosModalOpen, setIsSosModalOpen] = useState(false);
 
   const myIban = user ? ibans.find(iban => iban.driverId === user.id) : null;
   const hasVehicleInfo = user && (user.vehicleModel || user.insuranceCompany || user.insurancePolicy || user.fleetCardCompany || user.fleetCardNumber);
 
   return (
+    <>
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
       {/* Header */}
       <header className="bg-gray-800 shadow-md">
@@ -117,19 +157,41 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
                 )}
              </InfoCard>
 
-             <InfoCard title="Requisitos e Equipamentos" borderColor="border-t-red-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}>
-                <ul className="space-y-4">
-                  <InfoListItem title="Extintor 2kg com certificado" description="Deve estar dentro do prazo e fixado na viatura." />
-                  <InfoListItem title="Dístico TVDE" description="Colado no para-brisas, visível e válido." />
-                  <InfoListItem title="Aviso 'Não Fumadores'" description="Afixado visivelmente no interior do veículo." />
-                  <InfoListItem title="Documentos Pessoais" description="Carta de Condução, Cartão de Cidadão, Registo Criminal, Certificado de Motorista TVDE. Sempre válidos." />
-                  <InfoListItem title="Aplicações TVDE" description="Uber Driver e Bolt Driver instaladas e atualizadas no telemóvel." />
-                </ul>
+             <InfoCard title="Requisitos e Equipamentos" borderColor="border-t-orange-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
+                <div className="space-y-4">
+                    <RequirementItem title="Extintor 2kg com certificado">
+                        Deve estar dentro do prazo e fixado na viatura.
+                    </RequirementItem>
+                    <RequirementItem title="Dístico TVDE">
+                        Colado no para-brisas, visível e válido.
+                    </RequirementItem>
+                    <RequirementItem title="Aviso 'Não Fumadores'">
+                        Afixado visivelmente no interior do veículo.
+                    </RequirementItem>
+                    <RequirementItem title="Documentos Pessoais e Contratos">
+                        <p>Carta de Condução, Cartão de Cidadão, Registo Criminal, Certificado de Motorista TVDE (sempre válidos).</p>
+                        <p className="mt-2 font-semibold">Sempre estar acompanhado pelo contrato de aluguer ou contrato de prestação de serviços para o "SLOT".</p>
+                    </RequirementItem>
+                    <RequirementItem title="Aplicações TVDE">
+                        Uber Driver e Bolt Driver instaladas e atualizadas no telemóvel.
+                    </RequirementItem>
+                </div>
              </InfoCard>
+
+            <InfoCard title="SOS / Assistência" borderColor="border-t-red-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}>
+                <p>Em caso de emergência ou necessidade de assistência em viagem, utilize os contactos abaixo.</p>
+                <div className="mt-4">
+                    <Button variant="danger" onClick={() => setIsSosModalOpen(true)} className="w-full">
+                        Contactar Assistência
+                    </Button>
+                </div>
+            </InfoCard>
           </div>
         </div>
       </main>
     </div>
+    <SosModal isOpen={isSosModalOpen} onClose={() => setIsSosModalOpen(false)} />
+    </>
   );
 };
 
