@@ -1,39 +1,45 @@
 import { Calculation, CalculationType, FuelType, PercentageType } from '../types';
 
 export const calculateSummary = (calculation: Calculation): any => {
-  // Use default values of 0 for any potentially missing numeric fields to prevent NaN errors
-  const uberRides = calculation.uberRides || 0;
+  // Gross values from the form, as per user request.
+  const uberGross = calculation.uberRides || 0;
+  const boltGross = calculation.boltRides || 0;
+
+  // Informational components already included in the gross values.
   const uberTips = calculation.uberTips || 0;
   const uberTolls = calculation.uberTolls || 0;
   const uberPreviousPeriodAdjustments = calculation.uberPreviousPeriodAdjustments || 0;
-  const boltRides = calculation.boltRides || 0;
   const boltTips = calculation.boltTips || 0;
   const boltTolls = calculation.boltTolls || 0;
   const boltPreviousPeriodAdjustments = calculation.boltPreviousPeriodAdjustments || 0;
+  
+  // Deductions
   const vehicleRental = calculation.vehicleRental || 0;
   const fleetCard = calculation.fleetCard || 0;
   const rentalTolls = calculation.rentalTolls || 0;
   const otherExpenses = calculation.otherExpenses || 0;
   const debtDeduction = calculation.debtDeduction || 0;
 
-  // --- Base Values ---
-  const totalRides = uberRides + boltRides;
+  // --- Aggregated Values ---
+  const totalGross = uberGross + boltGross;
   const totalTips = uberTips + boltTips;
   const totalPlatformTolls = uberTolls + boltTolls;
   const totalAdjustments = uberPreviousPeriodAdjustments + boltPreviousPeriodAdjustments;
 
-  // Gross earnings from platforms, used as the base for IVA.
-  const totalGanhosBrutos = totalRides + totalTips + totalPlatformTolls + totalAdjustments;
+  // This is the "pure" rides value, calculated by subtracting the components from the gross value.
+  const totalRidesValue = totalGross - totalTips - totalPlatformTolls - totalAdjustments;
+  
+  // Gross earnings from platforms, for display and as the base for IVA.
+  const totalGanhosBrutos = totalGross;
 
   // --- Common Calculations ---
-  // IVA is calculated on the total gross income as requested by the user.
-  // Slot fee remains calculated on rides only.
+  // IVA is calculated on the total gross income.
   const iva = !calculation.isIvaExempt ? totalGanhosBrutos * 0.06 : 0;
 
   // --- PERCENTAGE LOGIC ---
   if (calculation.type === CalculationType.PERCENTAGE) {
-    // baseEarnings for splitting is rides + adjustments. Tips and tolls are handled separately.
-    const baseEarnings = totalRides + totalAdjustments;
+    // baseEarnings for splitting is the gross amount minus pass-throughs (tips and tolls). Adjustments are part of the split.
+    const baseEarnings = totalGross - totalTips - totalPlatformTolls;
     const refundedTips = totalTips; // Tips are a direct pass-through
 
     const isDiesel = calculation.fuelType === FuelType.DIESEL;
@@ -109,8 +115,8 @@ export const calculateSummary = (calculation: Calculation): any => {
   // totalGanhos is the gross total from platforms, used for display.
   const totalGanhos = totalGanhosBrutos;
   
-  // Slot is calculated based on rides only.
-  const baseParaTaxas = totalRides;
+  // Slot is calculated based on the "pure" rides value, not the gross total.
+  const baseParaTaxas = totalRidesValue;
   const slotFee = (calculation.type === CalculationType.SLOT && !calculation.isSlotExempt) ? baseParaTaxas * 0.04 : 0;
 
   // Total deductions includes all costs, with platform tolls acting as a pass-through debit.
@@ -135,8 +141,8 @@ export const calculateSummary = (calculation: Calculation): any => {
     // Return individual components for detailed view
     slotFee,
     iva,
-    refundedTips: totalTips, // Still needed for line items, though the "Devoluções" concept is gone
-    refundedAdjustments: totalAdjustments, // Still needed for line items
+    refundedTips: totalTips,
+    refundedAdjustments: totalAdjustments,
     totalPlatformTolls,
   };
 };

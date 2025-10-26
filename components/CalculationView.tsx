@@ -218,6 +218,8 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
       totalDeducoes,
       valorFinal,
       totalPlatformTolls,
+      refundedTips,
+      refundedAdjustments,
     } = summary;
 
     return (
@@ -226,19 +228,22 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
             <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
                 <p className="font-bold mb-2">┌─ GANHOS ─────────────┐</p>
                 <div className="pl-4 pr-4 space-y-1">
-                    <CalculationLine label="Uber Corridas:" value={formatCurrency(calculation.uberRides)} />
-                    <CalculationLine label="Uber Gorjetas:" value={formatCurrency(calculation.uberTips)} />
-                    <CalculationLine label="Uber Portagens:" value={formatCurrency(calculation.uberTolls)} />
-                    {!!calculation.uberPreviousPeriodAdjustments && <CalculationLine label="Uber Ajustes:" value={formatCurrency(calculation.uberPreviousPeriodAdjustments)} />}
-                    <CalculationLine label="Bolt Corridas:" value={formatCurrency(calculation.boltRides)} />
-                    <CalculationLine label="Bolt Gorjetas:" value={formatCurrency(calculation.boltTips)} />
-                    <CalculationLine label="Bolt Portagens:" value={formatCurrency(calculation.boltTolls)} />
-                    {!!calculation.boltPreviousPeriodAdjustments && <CalculationLine label="Bolt Ajustes:" value={formatCurrency(calculation.boltPreviousPeriodAdjustments)} />}
+                    <CalculationLine label="Uber Ganhos Brutos:" value={formatCurrency(calculation.uberRides)} />
+                    <CalculationLine label="Bolt Ganhos Brutos:" value={formatCurrency(calculation.boltRides)} />
+                    <div className="text-xs text-gray-400 pt-2 text-right">
+                        <p>Detalhes (valores já incluídos nos ganhos brutos):</p>
+                        <ul className="list-inside">
+                            <li>Gorjetas: {formatCurrency(refundedTips)}</li>
+                            <li>Portagens Plataforma: {formatCurrency(totalPlatformTolls)}</li>
+                            <li>Ajustes: {formatCurrency(refundedAdjustments)}</li>
+                        </ul>
+                    </div>
                 </div>
                 <p className="font-bold mt-2">├──────────────────────┤</p>
                 <p className="font-bold pl-4 pr-4"> TOTAL GANHOS: {formatCurrency(totalGanhos)}</p>
                 <p className="font-bold mb-2">└──────────────────────┘</p>
             </div>
+
 
             {/* Deduções */}
             <div className="border-t-2 border-dashed border-gray-600 pt-4 mt-4">
@@ -309,7 +314,7 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                 <p className="font-bold mb-2">┌─ RESUMO DE GANHOS ────────┐</p>
                 <div className="pl-4 pr-4 space-y-1">
                     <CalculationLine label="Ganhos Brutos (Base):" value={formatCurrency(baseEarnings)} />
-                    <p className="text-xs text-gray-400 pl-4">(Corridas + Ajustes)</p>
+                    <p className="text-xs text-gray-400 pl-4">(Ganhos Totais - Gorjetas - Portagens)</p>
                     <CalculationLine label="Gorjetas (100% Motorista):" value={formatCurrency(refundedTips)} />
                     <CalculationLine label="Portagens (Devolvidas pela uber e bolt):" value={formatCurrency(totalPlatformTolls)} />
                 </div>
