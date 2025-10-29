@@ -39,6 +39,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [isDemo]);
 
+  const loginAsDemo = useCallback((role: UserRole, type?: CalculationType) => {
+    setError(null);
+    setLoading(true);
+    let demoUser: User | null = null;
+    if (role === UserRole.ADMIN) {
+        demoUser = MOCK_ADMIN_USER;
+    } else if (role === UserRole.DRIVER) {
+        if (type === CalculationType.FROTA) {
+            demoUser = MOCK_FROTA_DRIVER_1;
+        } else {
+            demoUser = MOCK_SLOT_DRIVER_USER;
+        }
+    }
+    
+    if (demoUser) {
+        setUser(demoUser);
+        setIsDemo(true);
+    } else {
+        setError("Tipo de demonstração inválido.");
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     if (isDemo) {
         setLoading(false);
@@ -89,7 +112,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setError(null);
-    setIsDemo(false); // Ensure demo mode is off for real login
+    
+    const DEMO_ACCOUNTS = {
+      'demoad@rotatvde.pt': { role: UserRole.ADMIN, type: undefined },
+      'demofr@rotatvde.pt': { role: UserRole.DRIVER, type: CalculationType.FROTA },
+      'demosl@rotatvde.pt': { role: UserRole.DRIVER, type: CalculationType.SLOT },
+    };
+
+    const lowerCaseEmail = email.toLowerCase();
+    
+    // Check if it's a demo account login attempt
+    if (DEMO_ACCOUNTS[lowerCaseEmail] && password === '0123456') {
+      const demoAccount = DEMO_ACCOUNTS[lowerCaseEmail];
+      loginAsDemo(demoAccount.role, demoAccount.type);
+      return true;
+    }
+    
+    // If a demo email is used with the wrong password, show a specific error
+    if (DEMO_ACCOUNTS[lowerCaseEmail] && password !== '0123456') {
+        setError('Password inválida para a conta de demonstração.');
+        return false;
+    }
+
+    // Proceed with real Firebase login
+    setIsDemo(false);
     try {
       await auth.signInWithEmailAndPassword(email, password);
       // onAuthStateChanged will handle setting the user state and profile fetching.
@@ -105,30 +151,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       return false;
     }
-  }, []);
-
-  const loginAsDemo = useCallback((role: UserRole, type?: CalculationType) => {
-    setError(null);
-    setLoading(true);
-    let demoUser: User | null = null;
-    if (role === UserRole.ADMIN) {
-        demoUser = MOCK_ADMIN_USER;
-    } else if (role === UserRole.DRIVER) {
-        if (type === CalculationType.FROTA) {
-            demoUser = MOCK_FROTA_DRIVER_1;
-        } else {
-            demoUser = MOCK_SLOT_DRIVER_USER;
-        }
-    }
-    
-    if (demoUser) {
-        setUser(demoUser);
-        setIsDemo(true);
-    } else {
-        setError("Tipo de demonstração inválido.");
-    }
-    setLoading(false);
-  }, []);
+  }, [loginAsDemo]);
 
   return (
     <AuthContext.Provider value={{ user, loading, error, isDemo, login, logout, loginAsDemo }}>

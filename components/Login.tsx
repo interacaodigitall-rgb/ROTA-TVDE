@@ -4,14 +4,13 @@ import { useAuth } from '../hooks/useAuth';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Card from './ui/Card';
-import { UserRole, CalculationType } from '../types';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, error: authError, loginAsDemo } = useAuth();
+  const { login, error: authError } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,13 +92,13 @@ const Login: React.FC = () => {
               </div>
             </div>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Button type="button" onClick={() => loginAsDemo(UserRole.ADMIN)} variant="secondary" className="w-full">
+              <Button type="button" onClick={() => { setEmail('demoad@rotatvde.pt'); setPassword(''); }} variant="secondary" className="w-full">
                 Admin
               </Button>
-              <Button type="button" onClick={() => loginAsDemo(UserRole.DRIVER, CalculationType.FROTA)} variant="secondary" className="w-full">
+              <Button type="button" onClick={() => { setEmail('demofr@rotatvde.pt'); setPassword(''); }} variant="secondary" className="w-full">
                 Frota
               </Button>
-              <Button type="button" onClick={() => loginAsDemo(UserRole.DRIVER, CalculationType.SLOT)} variant="secondary" className="w-full">
+              <Button type="button" onClick={() => { setEmail('demosl@rotatvde.pt'); setPassword(''); }} variant="secondary" className="w-full">
                 Slot
               </Button>
             </div>
