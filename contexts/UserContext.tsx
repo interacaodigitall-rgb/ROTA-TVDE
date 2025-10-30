@@ -52,9 +52,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const user: User = {
             id: doc.id,
             email: data.email || '',
-            // FIX: Ensure name always has a value, falling back to 'nome', then email.
-            // This prevents errors when sorting users with missing name fields.
-            name: data.name || data.nome || data.email || `Utilizador ${doc.id}`,
+            // FIX: Ensure name is always a string by explicitly casting it.
+            // This prevents runtime errors if the underlying Firestore data for a name is a number or another non-string type,
+            // which would crash components that sort or perform string operations on user names (like .localeCompare).
+            name: String(data.name || data.nome || data.email || `Utilizador ${doc.id}`),
             matricula: data.matricula || 'N/A',
             type: data.type || CalculationType.SLOT,
             ...data, // Spread the rest of the data
