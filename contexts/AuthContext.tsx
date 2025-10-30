@@ -79,13 +79,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const userDoc = await userDocRef.get();
 
           if (userDoc.exists) {
-            const userData = { id: userDoc.id, ...userDoc.data() } as User;
-            if (userData.status === 'ARCHIVED') {
+            const docData = userDoc.data();
+            const userData: any = { id: userDoc.id, ...docData };
+
+            // Map Firestore fields ('papel', 'nome') to application fields ('role', 'name')
+            // This ensures compatibility with different database schemas.
+            const roleSource = userData.role || userData.papel;
+            if (roleSource === 'ADMIN') {
+                userData.role = UserRole.ADMIN;
+            } else if (roleSource === 'PROPRIETÁRIO' || roleSource === 'OWNER') {
+                userData.role = UserRole.OWNER;
+            } else {
+                userData.role = UserRole.DRIVER;
+            }
+            
+            if (userData.nome) {
+                userData.name = userData.nome;
+            }
+
+            const finalUser = userData as User;
+
+            if (finalUser.status === 'ARCHIVED') {
               setError('A sua conta foi arquivada e não pode mais aceder ao sistema.');
               setUser(null);
               await auth.signOut();
             } else {
-              setUser(userData);
+              setUser(finalUser);
             }
           } else {
             const warningMessage = `No user profile found in Firestore for UID: ${firebaseUser.uid}`;

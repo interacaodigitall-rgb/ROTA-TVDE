@@ -5,6 +5,7 @@ import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import DriverDashboard from './components/DriverDashboard';
 import { UserRole } from './types';
+import OwnerDashboard from './components/OwnerDashboard';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
@@ -15,7 +16,13 @@ const App: React.FC = () => {
     }
     
     // Each dashboard component is now responsible for its own full-page layout
-    return user.role === UserRole.ADMIN ? <AdminDashboard /> : <DriverDashboard />;
+    if (user.role === UserRole.ADMIN) {
+      return <AdminDashboard />;
+    }
+    if (user.role === UserRole.OWNER) {
+      return <OwnerDashboard />;
+    }
+    return <DriverDashboard />;
   };
 
   return (

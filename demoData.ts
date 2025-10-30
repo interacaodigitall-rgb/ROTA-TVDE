@@ -1,3 +1,4 @@
+
 import { User, UserRole, CalculationType, Calculation, CalculationStatus, Iban, Receipt } from './types';
 
 // --- MOCK USERS ---

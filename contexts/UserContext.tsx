@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { User, UserRole } from '../types';
+import { User, UserRole, CalculationType } from '../types';
 import { db, auth } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
 import { MOCK_USERS } from '../demoData';
@@ -36,10 +36,32 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     const unsubscribe = db.collection('users').onSnapshot(
       (snapshot: any) => {
-        const userList = snapshot.docs.map((doc: any) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as User[];
+        const userList = snapshot.docs.map((doc: any) => {
+          const data = doc.data();
+          
+          const roleSource = data.role || data.papel;
+          let role: UserRole;
+          if (roleSource === 'ADMIN') {
+              role = UserRole.ADMIN;
+          } else if (roleSource === 'PROPRIETÁRIO' || roleSource === 'OWNER') {
+              role = UserRole.OWNER;
+          } else {
+              role = UserRole.DRIVER; // Default to DRIVER
+          }
+
+          const user: User = {
+            id: doc.id,
+            email: data.email || '',
+            // FIX: Ensure name always has a value, falling back to 'nome', then email.
+            // This prevents errors when sorting users with missing name fields.
+            name: data.name || data.nome || data.email || `Utilizador ${doc.id}`,
+            matricula: data.matricula || 'N/A',
+            type: data.type || CalculationType.SLOT,
+            ...data, // Spread the rest of the data
+            role, // Overwrite role with the mapped value
+          };
+          return user;
+        }) as User[];
         setUsers(userList);
         setLoading(false);
       },

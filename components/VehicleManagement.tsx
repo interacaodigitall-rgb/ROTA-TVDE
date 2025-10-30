@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
@@ -37,7 +38,7 @@ const initialFormState = {
     percentageType: PercentageType.FIFTY_FIFTY,
 };
 
-const VehicleManagement: React.FC = () => {
+const VehicleManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false }) => {
     const { users, updateUser, addUser, loading: usersLoading } = useUsers();
     const [formData, setFormData] = useState(initialFormState);
     const [editingDriver, setEditingDriver] = useState<User | null>(null);
@@ -165,131 +166,133 @@ const VehicleManagement: React.FC = () => {
             <h2 className="text-3xl font-bold mb-6">Gestão de Utilizadores</h2>
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 {/* Form Section */}
-                <div className="lg:col-span-2">
-                    <Card>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <h3 className="text-xl font-semibold text-white">
-                                {isAddingNewUser ? 'Adicionar Novo Utilizador' : editingDriver ? `Editar ${editingDriver.name}` : 'Selecione um Utilizador'}
-                            </h3>
+                {!readOnly && (
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <h3 className="text-xl font-semibold text-white">
+                                    {isAddingNewUser ? 'Adicionar Novo Utilizador' : editingDriver ? `Editar ${editingDriver.name}` : 'Selecione um Utilizador'}
+                                </h3>
 
-                            {(!isAddingNewUser && !editingDriver) && <p className="text-gray-400">Selecione um utilizador da lista para ver ou editar os seus detalhes, ou clique em "Adicionar Novo Utilizador".</p>}
+                                {(!isAddingNewUser && !editingDriver) && <p className="text-gray-400">Selecione um utilizador da lista para ver ou editar os seus detalhes, ou clique em "Adicionar Novo Utilizador".</p>}
 
-                            {(isAddingNewUser || editingDriver) && (
-                                <>
-                                    {isAddingNewUser ? (
-                                        <>
-                                            <div>
-                                                <label htmlFor="role" className="block text-sm font-medium text-gray-300">Tipo de Utilizador</label>
-                                                <select id="role" name="role" value={formData.role} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
-                                                    <option value={UserRole.DRIVER}>Motorista</option>
-                                                    <option value={UserRole.OWNER}>Proprietário</option>
-                                                </select>
-                                            </div>
-                                            <VehicleInput label="Nome Completo" id="name" name="name" value={formData.name} onChange={handleInputChange} required />
-                                            <VehicleInput label="Email" id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
-                                            <VehicleInput label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} required />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="p-3 bg-gray-900 rounded-lg">
-                                                 {formData.role !== UserRole.DRIVER && <p className="text-sm font-semibold text-white">{formData.name}</p>}
-                                                 <p className="text-xs text-gray-400">{formData.email} ({formData.role})</p>
-                                            </div>
-                                            <div>
-                                                <label htmlFor="status" className="block text-sm font-medium text-gray-300">Estado do Utilizador</label>
-                                                <select id="status" name="status" value={formData.status} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
-                                                    <option value="ACTIVE">Ativo</option>
-                                                    <option value="ARCHIVED">Arquivado</option>
-                                                </select>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {formData.role === UserRole.DRIVER && (
-                                        <>
-                                            <hr className="border-gray-600" />
-                                            <h4 className="text-lg font-semibold text-white">Dados do Motorista</h4>
-                                            <VehicleInput label="Matrícula (Identificador)" id="matricula" name="matricula" value={formData.matricula} onChange={handleInputChange} required disabled={!isAddingNewUser} />
-                                            <div>
-                                                <label htmlFor="type" className="block text-sm font-medium text-gray-300">Tipo de Contrato</label>
-                                                <select id="type" name="type" value={formData.type} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
-                                                    <option value={CalculationType.FROTA}>Frota</option>
-                                                    <option value={CalculationType.SLOT}>Slot</option>
-                                                    <option value={CalculationType.PERCENTAGE}>Percentagem</option>
-                                                </select>
-                                            </div>
-                                            {!isAddingNewUser && (
-                                                 <VehicleInput label="Nome Completo do Condutor" id="name" name="name" value={formData.name} onChange={handleInputChange} required />
-                                            )}
-                                            <hr className="border-gray-600" />
-                                            <h4 className="text-lg font-semibold text-white">Configurações Financeiras</h4>
-                                            
-                                            <div className="flex items-center pt-2">
-                                                <input id="isIvaExempt" name="isIvaExempt" type="checkbox" checked={formData.isIvaExempt} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
-                                                <label htmlFor="isIvaExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de IVA 6%</label>
-                                            </div>
-
-                                            {formData.type === CalculationType.FROTA && (
-                                                <VehicleInput label="Valor do Aluguer Semanal (€)" id="defaultRentalValue" name="defaultRentalValue" type="number" step="0.01" value={formData.defaultRentalValue} onChange={handleInputChange} />
-                                            )}
-
-                                            {formData.type === CalculationType.PERCENTAGE && (
-                                                 <div className="space-y-4 rounded-md p-4 border border-gray-600 bg-gray-900/50">
-                                                    <label htmlFor="percentageType" className="block text-sm font-medium text-gray-300">Tipo de Partilha</label>
-                                                    <select id="percentageType" name="percentageType" value={formData.percentageType} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
-                                                        <option value={PercentageType.FIFTY_FIFTY}>50/50</option>
-                                                        <option value={PercentageType.SIXTY_FORTY}>60% Frota / 40% Motorista</option>
+                                {(isAddingNewUser || editingDriver) && (
+                                    <>
+                                        {isAddingNewUser ? (
+                                            <>
+                                                <div>
+                                                    <label htmlFor="role" className="block text-sm font-medium text-gray-300">Tipo de Utilizador</label>
+                                                    <select id="role" name="role" value={formData.role} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                                                        <option value={UserRole.DRIVER}>Motorista</option>
+                                                        <option value={UserRole.OWNER}>Proprietário</option>
                                                     </select>
-                                                    <VehicleInput label="Valor do Aluguer (para 60/40)" id="defaultRentalValue" name="defaultRentalValue" type="number" step="0.01" value={formData.defaultRentalValue} onChange={handleInputChange} />
-                                                 </div>
-                                            )}
-
-                                            {formData.type === CalculationType.SLOT && (
-                                                <div className="space-y-4 rounded-md p-4 border border-gray-600 bg-gray-900/50">
-                                                    <label className="block text-sm font-medium text-gray-300">Tipo de Comissão Slot</label>
-                                                    <div className="flex flex-col sm:flex-row gap-4">
-                                                        <div className="flex items-center">
-                                                            <input id="slotTypePercentage" name="slotType" type="radio" value="PERCENTAGE" checked={formData.slotType === 'PERCENTAGE'} onChange={handleInputChange} className="h-4 w-4 border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
-                                                            <label htmlFor="slotTypePercentage" className="ml-3 block text-sm font-medium text-gray-300">Percentagem (4%)</label>
-                                                        </div>
-                                                        <div className="flex items-center">
-                                                            <input id="slotTypeFixed" name="slotType" type="radio" value="FIXED" checked={formData.slotType === 'FIXED'} onChange={handleInputChange} className="h-4 w-4 border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
-                                                            <label htmlFor="slotTypeFixed" className="ml-3 block text-sm font-medium text-gray-300">Valor Fixo</label>
-                                                        </div>
-                                                    </div>
-                                                    {formData.slotType === 'FIXED' && (
-                                                        <VehicleInput label="Valor Fixo Semanal (€)" id="slotFixedValue" name="slotFixedValue" type="number" step="0.01" value={formData.slotFixedValue} onChange={handleInputChange} />
-                                                    )}
                                                 </div>
-                                            )}
+                                                <VehicleInput label="Nome Completo" id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                                                <VehicleInput label="Email" id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
+                                                <VehicleInput label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} required />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="p-3 bg-gray-900 rounded-lg">
+                                                    {formData.role !== UserRole.DRIVER && <p className="text-sm font-semibold text-white">{formData.name}</p>}
+                                                    <p className="text-xs text-gray-400">{formData.email} ({formData.role})</p>
+                                                </div>
+                                                <div>
+                                                    <label htmlFor="status" className="block text-sm font-medium text-gray-300">Estado do Utilizador</label>
+                                                    <select id="status" name="status" value={formData.status} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                                                        <option value="ACTIVE">Ativo</option>
+                                                        <option value="ARCHIVED">Arquivado</option>
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
 
-                                            <hr className="border-gray-600" />
-                                            <h4 className="text-lg font-semibold text-white">Dados da Viatura</h4>
-                                            <VehicleInput label="Modelo da Viatura (ex: TESLA model3 2020)" id="vehicleModel" name="vehicleModel" value={formData.vehicleModel} onChange={handleInputChange} />
-                                            <VehicleInput label="Seguradora" id="insuranceCompany" name="insuranceCompany" value={formData.insuranceCompany} onChange={handleInputChange} />
-                                            <VehicleInput label="Nº da Apólice" id="insurancePolicy" name="insurancePolicy" value={formData.insurancePolicy} onChange={handleInputChange} />
-                                            <VehicleInput label="Cartão Frota (Empresa)" id="fleetCardCompany" name="fleetCardCompany" value={formData.fleetCardCompany} onChange={handleInputChange} />
-                                            <VehicleInput label="Nº Cartão Frota" id="fleetCardNumber" name="fleetCardNumber" value={formData.fleetCardNumber} onChange={handleInputChange} />
+                                        {formData.role === UserRole.DRIVER && (
+                                            <>
+                                                <hr className="border-gray-600" />
+                                                <h4 className="text-lg font-semibold text-white">Dados do Motorista</h4>
+                                                <VehicleInput label="Matrícula (Identificador)" id="matricula" name="matricula" value={formData.matricula} onChange={handleInputChange} required disabled={!isAddingNewUser} />
+                                                <div>
+                                                    <label htmlFor="type" className="block text-sm font-medium text-gray-300">Tipo de Contrato</label>
+                                                    <select id="type" name="type" value={formData.type} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                                                        <option value={CalculationType.FROTA}>Frota</option>
+                                                        <option value={CalculationType.SLOT}>Slot</option>
+                                                        <option value={CalculationType.PERCENTAGE}>Percentagem</option>
+                                                    </select>
+                                                </div>
+                                                {!isAddingNewUser && (
+                                                    <VehicleInput label="Nome Completo do Condutor" id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                                                )}
+                                                <hr className="border-gray-600" />
+                                                <h4 className="text-lg font-semibold text-white">Configurações Financeiras</h4>
+                                                
+                                                <div className="flex items-center pt-2">
+                                                    <input id="isIvaExempt" name="isIvaExempt" type="checkbox" checked={formData.isIvaExempt} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                                    <label htmlFor="isIvaExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de IVA 6%</label>
+                                                </div>
 
-                                            <hr className="border-gray-600" />
-                                            <h4 className="text-lg font-semibold text-white">Gestão de Dívidas</h4>
-                                            <VehicleInput label="Dívida Pendente (€)" id="outstandingDebt" name="outstandingDebt" type="number" step="0.01" value={formData.outstandingDebt} onChange={handleInputChange} />
-                                            <VehicleInput label="Notas da Dívida" id="debtNotes" name="debtNotes" value={formData.debtNotes} onChange={handleInputChange} />
-                                        </>
-                                    )}
+                                                {formData.type === CalculationType.FROTA && (
+                                                    <VehicleInput label="Valor do Aluguer Semanal (€)" id="defaultRentalValue" name="defaultRentalValue" type="number" step="0.01" value={formData.defaultRentalValue} onChange={handleInputChange} />
+                                                )}
 
-                                    <div className="flex gap-4 pt-4 border-t border-gray-700">
-                                        <Button type="submit" variant="primary" className="w-full">{isAddingNewUser ? 'Criar Utilizador' : 'Salvar Alterações'}</Button>
-                                        <Button type="button" variant="secondary" onClick={handleCancel}>Cancelar</Button>
-                                    </div>
-                                </>
-                            )}
-                        </form>
-                    </Card>
-                </div>
+                                                {formData.type === CalculationType.PERCENTAGE && (
+                                                    <div className="space-y-4 rounded-md p-4 border border-gray-600 bg-gray-900/50">
+                                                        <label htmlFor="percentageType" className="block text-sm font-medium text-gray-300">Tipo de Partilha</label>
+                                                        <select id="percentageType" name="percentageType" value={formData.percentageType} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                                                            <option value={PercentageType.FIFTY_FIFTY}>50/50</option>
+                                                            <option value={PercentageType.SIXTY_FORTY}>60% Frota / 40% Motorista</option>
+                                                        </select>
+                                                        <VehicleInput label="Valor do Aluguer (para 60/40)" id="defaultRentalValue" name="defaultRentalValue" type="number" step="0.01" value={formData.defaultRentalValue} onChange={handleInputChange} />
+                                                    </div>
+                                                )}
+
+                                                {formData.type === CalculationType.SLOT && (
+                                                    <div className="space-y-4 rounded-md p-4 border border-gray-600 bg-gray-900/50">
+                                                        <label className="block text-sm font-medium text-gray-300">Tipo de Comissão Slot</label>
+                                                        <div className="flex flex-col sm:flex-row gap-4">
+                                                            <div className="flex items-center">
+                                                                <input id="slotTypePercentage" name="slotType" type="radio" value="PERCENTAGE" checked={formData.slotType === 'PERCENTAGE'} onChange={handleInputChange} className="h-4 w-4 border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                                                <label htmlFor="slotTypePercentage" className="ml-3 block text-sm font-medium text-gray-300">Percentagem (4%)</label>
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <input id="slotTypeFixed" name="slotType" type="radio" value="FIXED" checked={formData.slotType === 'FIXED'} onChange={handleInputChange} className="h-4 w-4 border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                                                <label htmlFor="slotTypeFixed" className="ml-3 block text-sm font-medium text-gray-300">Valor Fixo</label>
+                                                            </div>
+                                                        </div>
+                                                        {formData.slotType === 'FIXED' && (
+                                                            <VehicleInput label="Valor Fixo Semanal (€)" id="slotFixedValue" name="slotFixedValue" type="number" step="0.01" value={formData.slotFixedValue} onChange={handleInputChange} />
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <hr className="border-gray-600" />
+                                                <h4 className="text-lg font-semibold text-white">Dados da Viatura</h4>
+                                                <VehicleInput label="Modelo da Viatura (ex: TESLA model3 2020)" id="vehicleModel" name="vehicleModel" value={formData.vehicleModel} onChange={handleInputChange} />
+                                                <VehicleInput label="Seguradora" id="insuranceCompany" name="insuranceCompany" value={formData.insuranceCompany} onChange={handleInputChange} />
+                                                <VehicleInput label="Nº da Apólice" id="insurancePolicy" name="insurancePolicy" value={formData.insurancePolicy} onChange={handleInputChange} />
+                                                <VehicleInput label="Cartão Frota (Empresa)" id="fleetCardCompany" name="fleetCardCompany" value={formData.fleetCardCompany} onChange={handleInputChange} />
+                                                <VehicleInput label="Nº Cartão Frota" id="fleetCardNumber" name="fleetCardNumber" value={formData.fleetCardNumber} onChange={handleInputChange} />
+
+                                                <hr className="border-gray-600" />
+                                                <h4 className="text-lg font-semibold text-white">Gestão de Dívidas</h4>
+                                                <VehicleInput label="Dívida Pendente (€)" id="outstandingDebt" name="outstandingDebt" type="number" step="0.01" value={formData.outstandingDebt} onChange={handleInputChange} />
+                                                <VehicleInput label="Notas da Dívida" id="debtNotes" name="debtNotes" value={formData.debtNotes} onChange={handleInputChange} />
+                                            </>
+                                        )}
+
+                                        <div className="flex gap-4 pt-4 border-t border-gray-700">
+                                            <Button type="submit" variant="primary" className="w-full">{isAddingNewUser ? 'Criar Utilizador' : 'Salvar Alterações'}</Button>
+                                            <Button type="button" variant="secondary" onClick={handleCancel}>Cancelar</Button>
+                                        </div>
+                                    </>
+                                )}
+                            </form>
+                        </Card>
+                    </div>
+                )}
 
                 {/* List Section */}
-                <div className="lg:col-span-3">
+                <div className={readOnly ? "lg:col-span-5" : "lg:col-span-3"}>
                     <Card className="h-full">
                         <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                             <div>
@@ -299,7 +302,7 @@ const VehicleManagement: React.FC = () => {
                                     <label htmlFor="showArchived" className="ml-2 block text-sm font-medium text-gray-300">Mostrar utilizadores arquivados</label>
                                 </div>
                             </div>
-                             <Button onClick={handleStartAdding} variant="primary">Adicionar Novo Utilizador</Button>
+                             {!readOnly && <Button onClick={handleStartAdding} variant="primary">Adicionar Novo Utilizador</Button>}
                         </div>
                         {usersLoading ? (
                              <p className="text-gray-400">A carregar utilizadores...</p>
@@ -324,12 +327,14 @@ const VehicleManagement: React.FC = () => {
                                                     </div>
                                                     <p className="mt-1 text-xs text-gray-400">{user.email}</p>
                                                 </div>
-                                                <div className="flex-shrink-0 flex gap-2 flex-wrap">
-                                                     {isDriver && !isArchived && <Button variant="secondary" onClick={() => handleSwapDriver(user)} className="text-xs px-2 py-1">Trocar Motorista</Button>}
-                                                    <Button variant={isEditingCurrent ? 'success' : 'secondary'} onClick={() => handleSelectForEdit(user)} className="text-xs px-2 py-1">
-                                                        {isEditingCurrent ? 'A Editar' : 'Editar'}
-                                                    </Button>
-                                                </div>
+                                                {!readOnly && (
+                                                    <div className="flex-shrink-0 flex gap-2 flex-wrap">
+                                                        {isDriver && !isArchived && <Button variant="secondary" onClick={() => handleSwapDriver(user)} className="text-xs px-2 py-1">Trocar Motorista</Button>}
+                                                        <Button variant={isEditingCurrent ? 'success' : 'secondary'} onClick={() => handleSelectForEdit(user)} className="text-xs px-2 py-1">
+                                                            {isEditingCurrent ? 'A Editar' : 'Editar'}
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );

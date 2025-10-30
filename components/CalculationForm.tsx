@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCalculations } from '../hooks/useCalculations';
@@ -5,6 +6,7 @@ import { Calculation, CalculationStatus, CalculationType, UserRole, PercentageTy
 import Button from './ui/Button';
 import Card from './ui/Card';
 import { useUsers } from '../hooks/useUsers';
+import { db } from '../firebase';
 
 interface CalculationFormProps {
   onClose: () => void;
@@ -47,7 +49,7 @@ const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new 
 const toInputDate = (timestamp: any) => toDate(timestamp).toISOString().split('T')[0];
 
 const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationToEdit }) => {
-  const { user: adminUser } = useAuth();
+  const { user: adminUser, isDemo } = useAuth();
   const { addCalculation, updateCalculation } = useCalculations();
   const { users, updateUser } = useUsers();
   const isEditMode = !!calculationToEdit;
@@ -105,6 +107,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
           isIvaExempt: selectedDriver.isIvaExempt || false,
           isSlotExempt: false,
           vehicleRental: '0',
+          rentalTolls: '0', // Reset tolls before fetching
           fuelType: '',
       };
 
@@ -131,10 +134,32 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
           isIvaExempt: false,
           isSlotExempt: false,
           vehicleRental: '0',
+          rentalTolls: '0',
           fuelType: '',
       }));
     }
   }, [selectedDriver, isEditMode]);
+
+  useEffect(() => {
+    const fetchPrefilledTolls = async () => {
+        // Only run for new calculations and when driver/period is set, not in demo mode
+        if (driverId && formData.periodStart && !isEditMode && !isDemo) {
+            try {
+                const docRef = db.collection('prefilledTolls').doc(`${driverId}_${formData.periodStart}`);
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data && typeof data.amount === 'number') {
+                         setFormData(prev => ({ ...prev, rentalTolls: String(data.amount) }));
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching prefilled tolls:", error);
+            }
+        }
+    };
+    fetchPrefilledTolls();
+  }, [driverId, formData.periodStart, isEditMode, isDemo]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

@@ -24,7 +24,7 @@ const initialFormState = {
     iban: '',
 };
 
-const IbanManagement: React.FC = () => {
+const IbanManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false }) => {
     const { users } = useUsers();
     const { ibans, addIban, updateIban, deleteIban, loading } = useIbans();
     const [formData, setFormData] = useState(initialFormState);
@@ -93,41 +93,43 @@ const IbanManagement: React.FC = () => {
             <h2 className="text-3xl font-bold mb-6">Gestão de IBANs</h2>
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 {/* Form Section */}
-                <div className="lg:col-span-2">
-                    <Card>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <h3 className="text-xl font-semibold text-white">{editingIbanId ? 'Editar IBAN' : 'Adicionar Novo IBAN'}</h3>
-                            <div>
-                                <label htmlFor="driverId" className="block text-sm font-medium text-gray-300">Motorista</label>
-                                <select 
-                                    id="driverId" 
-                                    name="driverId" 
-                                    value={formData.driverId} 
-                                    onChange={handleInputChange} 
-                                    required 
-                                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white"
-                                >
-                                    <option value="">Selecione um motorista...</option>
-                                    {drivers.map(d => <option key={d.id} value={d.id}>{d.name} ({d.matricula})</option>)}
-                                </select>
-                            </div>
+                {!readOnly && (
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <h3 className="text-xl font-semibold text-white">{editingIbanId ? 'Editar IBAN' : 'Adicionar Novo IBAN'}</h3>
+                                <div>
+                                    <label htmlFor="driverId" className="block text-sm font-medium text-gray-300">Motorista</label>
+                                    <select 
+                                        id="driverId" 
+                                        name="driverId" 
+                                        value={formData.driverId} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white"
+                                    >
+                                        <option value="">Selecione um motorista...</option>
+                                        {drivers.map(d => <option key={d.id} value={d.id}>{d.name} ({d.matricula})</option>)}
+                                    </select>
+                                </div>
 
-                            <IbanInput label="Nome Completo (Titular da Conta)" id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} required />
-                            <IbanInput label="NIF" id="nif" name="nif" value={formData.nif} onChange={handleInputChange} required />
-                            <IbanInput label="IBAN" id="iban" name="iban" value={formData.iban} onChange={handleInputChange} required />
+                                <IbanInput label="Nome Completo (Titular da Conta)" id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} required />
+                                <IbanInput label="NIF" id="nif" name="nif" value={formData.nif} onChange={handleInputChange} required />
+                                <IbanInput label="IBAN" id="iban" name="iban" value={formData.iban} onChange={handleInputChange} required />
 
-                            <div className="flex gap-4">
-                                <Button type="submit" variant="primary" className="w-full">{editingIbanId ? 'Salvar Alterações' : 'Salvar IBAN'}</Button>
-                                {editingIbanId && (
-                                    <Button type="button" variant="secondary" onClick={handleCancelEdit}>Cancelar</Button>
-                                )}
-                            </div>
-                        </form>
-                    </Card>
-                </div>
+                                <div className="flex gap-4">
+                                    <Button type="submit" variant="primary" className="w-full">{editingIbanId ? 'Salvar Alterações' : 'Salvar IBAN'}</Button>
+                                    {editingIbanId && (
+                                        <Button type="button" variant="secondary" onClick={handleCancelEdit}>Cancelar</Button>
+                                    )}
+                                </div>
+                            </form>
+                        </Card>
+                    </div>
+                )}
 
                 {/* List Section */}
-                <div className="lg:col-span-3">
+                <div className={readOnly ? "lg:col-span-5" : "lg:col-span-3"}>
                     <Card className="h-full">
                         <h3 className="text-xl font-semibold text-white mb-4">IBANs Registrados</h3>
                         {loading ? (
@@ -143,10 +145,12 @@ const IbanManagement: React.FC = () => {
                                                 <p className="text-sm text-gray-400 font-mono">{iban.iban}</p>
                                                 <p className="text-xs text-gray-500">NIF: {iban.nif}</p>
                                             </div>
-                                            <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                                                <Button variant="secondary" onClick={() => handleEdit(iban)} className="text-xs px-2 py-1">Editar</Button>
-                                                <Button variant="danger" onClick={() => handleDelete(iban.id)} className="text-xs px-2 py-1">Apagar</Button>
-                                            </div>
+                                            {!readOnly && (
+                                                <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                                                    <Button variant="secondary" onClick={() => handleEdit(iban)} className="text-xs px-2 py-1">Editar</Button>
+                                                    <Button variant="danger" onClick={() => handleDelete(iban.id)} className="text-xs px-2 py-1">Apagar</Button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
