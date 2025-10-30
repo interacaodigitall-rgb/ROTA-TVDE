@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { useUsers } from '../hooks/useUsers';
@@ -65,7 +66,6 @@ const SidebarContent: React.FC<{
         <div className="mt-auto">
             <div className="p-3 bg-gray-900 rounded-lg">
                 <p className="text-sm font-semibold text-white">{user?.name}</p>
-                <p className="text-xs text-gray-400">{user?.role}</p>
             </div>
             <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} className="flex items-center mt-4 px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>}
@@ -120,6 +120,25 @@ const OwnerDashboard: React.FC = () => {
       activeDrivers: users.filter(u => u.role === UserRole.DRIVER).length,
     };
   }, [calculations, users]);
+
+  const historyCalculations = useMemo(() => {
+    const today = new Date();
+    const currentMonday = new Date(today);
+    const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    currentMonday.setDate(diffToMonday);
+    currentMonday.setHours(0, 0, 0, 0);
+
+    const previousMonday = new Date(currentMonday);
+    previousMonday.setDate(currentMonday.getDate() - 7);
+
+    return calculations
+        .filter(c => {
+            const calcStartDate = toDate(c.periodStart);
+            return calcStartDate >= previousMonday;
+        })
+        .sort((a, b) => toDate(b.periodStart).getTime() - toDate(a.periodStart).getTime());
+  }, [calculations]);
 
   const handleShowDetails = (calc: Calculation) => {
     setFromView(view);
@@ -200,7 +219,7 @@ const OwnerDashboard: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'dashboard': return renderDashboardHome();
-      case 'history': return renderHistoryList(false, calculations);
+      case 'history': return renderHistoryList(false, historyCalculations);
       case 'reports': return <ReportsView onBack={() => setView('dashboard')} />;
       case 'details':
         if (!selectedCalculation) return renderDashboardHome();

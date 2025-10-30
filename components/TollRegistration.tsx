@@ -4,7 +4,7 @@ import Card from './ui/Card';
 import Button from './ui/Button';
 import { useUsers } from '../hooks/useUsers';
 import { UserRole } from '../types';
-import { db } from '../firebase';
+import { db, firestore } from '../firebase';
 
 const getPreviousMonday = (date: Date) => {
     const prevMonday = new Date(date);
@@ -20,6 +20,7 @@ const TollRegistration: React.FC = () => {
     const [driverId, setDriverId] = useState('');
     const [periodStart, setPeriodStart] = useState(getPreviousMonday(new Date()));
     const [amount, setAmount] = useState('');
+    const [initialAmount, setInitialAmount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
 
@@ -29,6 +30,7 @@ const TollRegistration: React.FC = () => {
         const fetchExistingToll = async () => {
             if (!driverId || !periodStart) {
                 setAmount('');
+                setInitialAmount(0);
                 return;
             };
             
@@ -39,9 +41,12 @@ const TollRegistration: React.FC = () => {
                 const doc = await docRef.get();
                 if (doc.exists) {
                     const data = doc.data();
-                    setAmount(String(data.amount || ''));
+                    const fetchedAmount = data.amount || 0;
+                    setAmount(String(fetchedAmount));
+                    setInitialAmount(fetchedAmount);
                 } else {
                     setAmount('');
+                    setInitialAmount(0);
                 }
             } catch (error) {
                 console.error("Error fetching toll data:", error);
@@ -78,13 +83,27 @@ const TollRegistration: React.FC = () => {
                  return;
             }
 
-            const docRef = db.collection('prefilledTolls').doc(`${driverId}_${periodStart}`);
-            await docRef.set({
+            const batch = db.batch();
+            
+            const tollDocRef = db.collection('prefilledTolls').doc(`${driverId}_${periodStart}`);
+            batch.set(tollDocRef, {
                 driverId,
                 periodStart,
                 amount: tollAmount,
             });
-            setStatusMessage({ type: 'success', text: 'Valor salvo com sucesso!' });
+            
+            const debtDifference = tollAmount - initialAmount;
+            if (debtDifference !== 0) {
+                const userDocRef = db.collection('users').doc(driverId);
+                batch.update(userDocRef, {
+                    outstandingDebt: firestore.FieldValue.increment(debtDifference)
+                });
+            }
+            
+            await batch.commit();
+
+            setStatusMessage({ type: 'success', text: 'Valor salvo com sucesso e atualizado na dívida do motorista!' });
+            setInitialAmount(tollAmount);
 
         } catch (error) {
             console.error("Error saving toll data:", error);

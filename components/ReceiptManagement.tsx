@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
@@ -140,7 +139,7 @@ const ReceiptManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false })
                 {/* List Section */}
                 <div className={readOnly ? "lg:col-span-5" : "lg:col-span-3"}>
                     <Card className="h-full">
-                        <h3 className="text-xl font-semibold text-white mb-4">Recibos Registrados</h3>
+                        <h3 className="text-xl font-semibold text-white mb-4">Recibos Emitidos</h3>
                         {loading ? (
                              <p className="text-gray-400">A carregar recibos...</p>
                         ) : receipts.length > 0 ? (

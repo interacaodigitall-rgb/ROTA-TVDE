@@ -57,6 +57,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   const [driverId, setDriverId] = useState('');
   const [driverName, setDriverName] = useState('');
   const [formData, setFormData] = useState(initialFormData);
+  const [tollNotification, setTollNotification] = useState<string | null>(null);
 
   const selectedDriver = useMemo(() => users.find(u => u.id === driverId), [driverId, users]);
   const calculationType = selectedDriver?.type ?? CalculationType.SLOT;
@@ -99,6 +100,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   }, [calculationToEdit, isEditMode]);
 
   useEffect(() => {
+    setTollNotification(null); // Clear notification on driver change
     if (selectedDriver && !isEditMode) {
       setDriverName(selectedDriver.name || '');
 
@@ -142,16 +144,30 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
 
   useEffect(() => {
     const fetchPrefilledTolls = async () => {
+        setTollNotification(null); // Clear previous notification
         // Only run for new calculations and when driver/period is set, not in demo mode
         if (driverId && formData.periodStart && !isEditMode && !isDemo) {
             try {
-                const docRef = db.collection('prefilledTolls').doc(`${driverId}_${formData.periodStart}`);
+                // Normalize the selected start date to the preceding Monday to match the registration key
+                const selectedDate = new Date(formData.periodStart + 'T00:00:00');
+                const mondayDate = new Date(selectedDate);
+                const day = mondayDate.getDay();
+                // Adjust date to Monday (1 for Mon, 0 for Sun)
+                const diff = mondayDate.getDate() - day + (day === 0 ? -6 : 1); 
+                mondayDate.setDate(diff);
+                const mondayString = mondayDate.toISOString().split('T')[0];
+                
+                const docRef = db.collection('prefilledTolls').doc(`${driverId}_${mondayString}`);
                 const doc = await docRef.get();
+
                 if (doc.exists) {
                     const data = doc.data();
                     if (data && typeof data.amount === 'number') {
                          setFormData(prev => ({ ...prev, rentalTolls: String(data.amount) }));
+                         setTollNotification(`Valor de portagem de €${data.amount.toFixed(2)} pré-preenchido com base no registo do gerente.`);
                     }
+                } else {
+                    setFormData(prev => ({ ...prev, rentalTolls: '0' }));
                 }
             } catch (error) {
                 console.error("Error fetching prefilled tolls:", error);
@@ -163,6 +179,11 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+
+    if (name === 'rentalTolls') {
+        setTollNotification(null); // Clear notification on manual change
+    }
+
     if (type === 'checkbox') {
         const { checked } = e.target as HTMLInputElement;
         setFormData(prev => ({ ...prev, [name]: checked }));
@@ -377,6 +398,14 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         {/* Deduções */}
         <div>
             <h3 className="text-lg font-semibold text-white">Deduções</h3>
+            {tollNotification && (
+                <div className="mt-4 p-3 text-sm text-yellow-200 bg-yellow-900/50 border border-yellow-700 rounded-lg flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    <p>{tollNotification}</p>
+                </div>
+            )}
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <NumberInput label="Aluguer Veículo" id="vehicleRental" name="vehicleRental" value={formData.vehicleRental} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} disabled={selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'PERCENTAGE'} />
                 <NumberInput label="Cartão Frota" id="fleetCard" name="fleetCard" value={formData.fleetCard} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />

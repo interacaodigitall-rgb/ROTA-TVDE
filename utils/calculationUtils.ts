@@ -1,3 +1,4 @@
+
 import { Calculation, CalculationType, FuelType, PercentageType } from '../types';
 
 export const calculateSummary = (calculation: Calculation): any => {
@@ -73,6 +74,7 @@ export const calculateSummary = (calculation: Calculation): any => {
             fleetCardCostToSplit,
             driverCosts: driverSpecificCosts,
             valorFinal,
+            slotFee: 0, // Ensure slotFee is returned to prevent NaN
         };
     }
 
@@ -106,6 +108,7 @@ export const calculateSummary = (calculation: Calculation): any => {
             fleetCardExcess: driverExcessFleetCard,
             valorFinal,
             iva,
+            slotFee: 0, // Ensure slotFee is returned to prevent NaN
         };
     }
   }

@@ -32,23 +32,6 @@ interface ReportRow {
 
 const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
 
-const getDefaultDateRange = () => {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth(); // 0-11
-
-    // Default End Date: 20th of the current month
-    const endDate = new Date(currentYear, currentMonth, 20);
-    
-    // Default Start Date: 20th of the previous month
-    const startDate = new Date(currentYear, currentMonth - 1, 20);
-
-    return {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-    };
-};
-
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
 
 const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
@@ -56,9 +39,8 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
   const { calculations } = useCalculations();
   const { receipts } = useReceipts();
   const { users } = useUsers();
-  const { startDate: defaultStart, endDate: defaultEnd } = getDefaultDateRange();
-  const [startDate, setStartDate] = useState(defaultStart);
-  const [endDate, setEndDate] = useState(defaultEnd);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedDriverId, setSelectedDriverId] = useState('all');
   const reportPrintRef = useRef<HTMLDivElement>(null);
 
@@ -66,26 +48,49 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
   const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER).sort((a,b) => a.name.localeCompare(b.name)), [users]);
 
   const reportData = useMemo(() => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // Include the whole end day
-
-    const filteredCalculations = calculations.filter(
-      (c) => {
-          const periodEndDate = toDate(c.periodEnd);
-          const matchesDriver = driverId ? c.driverId === driverId : true;
-          return matchesDriver && c.status === CalculationStatus.ACCEPTED && periodEndDate >= start && periodEndDate <= end;
-      }
-    );
+    const filteredCalculations = calculations.filter((c) => {
+        const periodEndDate = toDate(c.periodEnd);
+    
+        // Filter conditions
+        const isAccepted = c.status === CalculationStatus.ACCEPTED;
+        const matchesDriver = driverId ? c.driverId === driverId : true;
+        
+        // Date range check
+        let inRange = true;
+        if (startDate) {
+            const start = new Date(startDate + 'T00:00:00');
+            if (!isNaN(start.getTime()) && periodEndDate < start) {
+                inRange = false;
+            }
+        }
+        if (endDate) {
+            const end = new Date(endDate + 'T23:59:59');
+            if (!isNaN(end.getTime()) && periodEndDate > end) {
+                inRange = false;
+            }
+        }
+    
+        return isAccepted && matchesDriver && inRange;
+    });
     
     const filteredReceipts = receipts.filter(r => {
         const receiptDate = toDate(r.date);
-        return receiptDate >= start && receiptDate <= end;
+        let inRange = true;
+        if (startDate) {
+            const start = new Date(startDate + 'T00:00:00');
+            if (!isNaN(start.getTime()) && receiptDate < start) {
+                inRange = false;
+            }
+        }
+        if (endDate) {
+            const end = new Date(endDate + 'T23:59:59');
+            if (!isNaN(end.getTime()) && receiptDate > end) {
+                inRange = false;
+            }
+        }
+        return inRange;
     });
 
-    // FIX: Explicitly type the `groupedByDriver` constant. This allows TypeScript to correctly
-    // infer the type of the accumulator in the `reduce` function without needing a cast,
-    // which resolves the downstream errors.
     const groupedByDriver: Record<string, ReportRow> = filteredCalculations.reduce(
       (acc, calc) => {
         const summary = calculateSummary(calc);
@@ -190,8 +195,12 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
           p.textContent = select.options[select.selectedIndex].text;
       } else {
           const dateInput = input as HTMLInputElement;
-          const [year, month, day] = dateInput.value.split('-');
-          p.textContent = `${day}/${month}/${year}`;
+          if (dateInput.value) {
+            const [year, month, day] = dateInput.value.split('-');
+            p.textContent = `${day}/${month}/${year}`;
+          } else {
+            p.textContent = "N/A";
+          }
       }
       p.className = 'mt-1 block w-full rounded-md py-2 px-3 sm:text-sm text-black';
       input.parentElement?.replaceChild(p, input);

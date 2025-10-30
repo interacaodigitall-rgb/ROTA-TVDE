@@ -56,7 +56,7 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
     let query: any;
     const collectionRef = db.collection('calculations');
 
-    if (user.role === UserRole.ADMIN) {
+    if (user.role === UserRole.ADMIN || user.role === UserRole.OWNER) {
         query = collectionRef.orderBy('date', 'desc');
     } else {
         query = collectionRef.where('driverId', '==', user.id).orderBy('date', 'desc');
