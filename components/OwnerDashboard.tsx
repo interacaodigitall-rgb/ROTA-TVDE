@@ -121,7 +121,7 @@ const OwnerDashboard: React.FC = () => {
     };
   }, [calculations, users]);
 
-  const historyCalculations = useMemo(() => {
+  const recentHistoryCalculations = useMemo(() => {
     const today = new Date();
     const currentMonday = new Date(today);
     const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
@@ -139,6 +139,11 @@ const OwnerDashboard: React.FC = () => {
         })
         .sort((a, b) => toDate(b.periodStart).getTime() - toDate(a.periodStart).getTime());
   }, [calculations]);
+  
+  const allHistoryCalculations = useMemo(() => {
+    return [...calculations].sort((a, b) => toDate(b.periodStart).getTime() - toDate(a.periodStart).getTime());
+  }, [calculations]);
+
 
   const handleShowDetails = (calc: Calculation) => {
     setFromView(view);
@@ -166,7 +171,7 @@ const OwnerDashboard: React.FC = () => {
           <StatCard title="Motoristas Ativos" value={String(stats.activeDrivers)} subtext="Total de motoristas" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.122-1.274-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.122-1.274.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} />
       </div>
        <div className="mt-8">
-        {renderHistoryList(true, calculations)}
+        {renderHistoryList(true, recentHistoryCalculations)}
       </div>
     </div>
   );
@@ -184,7 +189,35 @@ const OwnerDashboard: React.FC = () => {
     <Card>
         <h3 className="text-xl font-semibold mb-4">{isDashboardView ? 'Histórico Recente de Cálculos' : 'Histórico de Cálculos'}</h3>
         {error && <p className="text-red-400">{error}</p>}
-        <div className="overflow-x-auto">
+        
+        {/* Mobile View (Cards) */}
+        <div className="md:hidden">
+            {loading ? (
+                <p className="text-center py-10 text-gray-400">A carregar...</p>
+            ) : calcsToRender.length === 0 ? (
+                <p className="text-center py-10 text-gray-400">Nenhum cálculo encontrado.</p>
+            ) : (
+                <div className="space-y-4">
+                    {calcsToRender.slice(0, isDashboardView ? 5 : undefined).map(calc => (
+                        <div key={calc.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <div className="flex justify-between items-start gap-4">
+                                <div>
+                                    <p className="font-semibold text-white">{calc.driverName}</p>
+                                    <p className="text-sm text-gray-300">{`${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}`}</p>
+                                </div>
+                                <span className={`flex-shrink-0 px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(calc.status)}`}>{calc.status}</span>
+                            </div>
+                            <div className="mt-4 flex justify-end gap-4">
+                                <button onClick={() => handleShowDetails(calc)} className="text-blue-400 hover:text-blue-300 font-medium text-sm">Ver Detalhes</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+
+        {/* Desktop View (Table) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-700">
             <thead className="bg-gray-800">
               <tr>
@@ -219,7 +252,7 @@ const OwnerDashboard: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'dashboard': return renderDashboardHome();
-      case 'history': return renderHistoryList(false, historyCalculations);
+      case 'history': return renderHistoryList(false, allHistoryCalculations);
       case 'reports': return <ReportsView onBack={() => setView('dashboard')} />;
       case 'details':
         if (!selectedCalculation) return renderDashboardHome();
