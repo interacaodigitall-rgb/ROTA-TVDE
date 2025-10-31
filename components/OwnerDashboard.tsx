@@ -98,8 +98,13 @@ const OwnerDashboard: React.FC = () => {
   const [selectedCalculation, setSelectedCalculation] = useState<Calculation | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Per user request, limit history view to start from 20/10/2025.
+  const HISTORY_START_DATE = useMemo(() => new Date('2025-10-20T00:00:00'), []);
+
   const stats = useMemo(() => {
-    const periodCompanyBilling = calculations
+    const filteredCalculations = calculations.filter(c => toDate(c.periodStart) >= HISTORY_START_DATE);
+
+    const periodCompanyBilling = filteredCalculations
       .filter(c => c.status === CalculationStatus.ACCEPTED)
       .reduce((sum, c) => {
         const summary = calculateSummary(c);
@@ -116,10 +121,10 @@ const OwnerDashboard: React.FC = () => {
 
     return {
       periodCompanyBilling,
-      pendingCount: calculations.filter(c => c.status === CalculationStatus.PENDING).length,
+      pendingCount: filteredCalculations.filter(c => c.status === CalculationStatus.PENDING).length,
       activeDrivers: users.filter(u => u.role === UserRole.DRIVER).length,
     };
-  }, [calculations, users]);
+  }, [calculations, users, HISTORY_START_DATE]);
 
   const recentHistoryCalculations = useMemo(() => {
     const today = new Date();
@@ -135,14 +140,16 @@ const OwnerDashboard: React.FC = () => {
     return calculations
         .filter(c => {
             const calcStartDate = toDate(c.periodStart);
-            return calcStartDate >= previousMonday;
+            return calcStartDate >= previousMonday && calcStartDate >= HISTORY_START_DATE;
         })
         .sort((a, b) => toDate(b.periodStart).getTime() - toDate(a.periodStart).getTime());
-  }, [calculations]);
+  }, [calculations, HISTORY_START_DATE]);
   
   const allHistoryCalculations = useMemo(() => {
-    return [...calculations].sort((a, b) => toDate(b.periodStart).getTime() - toDate(a.periodStart).getTime());
-  }, [calculations]);
+    return calculations
+        .filter(c => toDate(c.periodStart) >= HISTORY_START_DATE)
+        .sort((a, b) => toDate(b.periodStart).getTime() - toDate(a.periodStart).getTime());
+  }, [calculations, HISTORY_START_DATE]);
 
 
   const handleShowDetails = (calc: Calculation) => {
@@ -162,7 +169,7 @@ const OwnerDashboard: React.FC = () => {
         <p className="text-gray-400">Visão geral da frota.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatCard title="Total Faturado (Empresa)" value={`€${stats.periodCompanyBilling.toFixed(2)}`} subtext="Faturação de todo o período" icon={
+          <StatCard title="Total Faturado (Empresa)" value={`€${stats.periodCompanyBilling.toFixed(2)}`} subtext={`Faturação desde ${HISTORY_START_DATE.toLocaleDateString('pt-PT')}`} icon={
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
