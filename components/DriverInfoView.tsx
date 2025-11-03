@@ -152,25 +152,14 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
   }, [calculations, receipts, user]);
 
   useEffect(() => {
-    const now = new Date();
-    const dayOfMonth = now.getDate();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // JS months are 0-indexed
-    const storageKey = `reminderDismissed_${year}-${month}`;
-
-    const hasDismissed = localStorage.getItem(storageKey);
-
-    if (dayOfMonth <= 7 && previousMonthsPendingBalance > 0 && !hasDismissed) {
+    // Show reminder modal if there's a pending balance from previous months.
+    // This will trigger every time the component loads with a pending balance.
+    if (previousMonthsPendingBalance > 0) {
         setIsReminderModalOpen(true);
     }
   }, [previousMonthsPendingBalance]);
 
   const handleCloseReminder = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const storageKey = `reminderDismissed_${year}-${month}`;
-    localStorage.setItem(storageKey, 'true');
     setIsReminderModalOpen(false);
   };
 
