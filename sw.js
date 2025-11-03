@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'rota-tvde-cache-v3';
+const CACHE_NAME = 'rota-tvde-cache-v4';
 const APP_SHELL_URLS = [
   '/',
   '/index.html',
@@ -21,7 +21,6 @@ self.addEventListener('install', event => {
         console.log('Opened cache and caching app shell');
         return cache.addAll(APP_SHELL_URLS);
       })
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -68,4 +67,10 @@ self.addEventListener('fetch', event => {
         return cachedResponse || fetchPromise;
       })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

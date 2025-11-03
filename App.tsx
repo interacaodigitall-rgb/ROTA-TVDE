@@ -6,9 +6,12 @@ import AdminDashboard from './components/AdminDashboard';
 import DriverDashboard from './components/DriverDashboard';
 import { UserRole } from './types';
 import OwnerDashboard from './components/OwnerDashboard';
+import { useServiceWorkerUpdater } from './hooks/useServiceWorkerUpdater';
+import UpdateNotification from './components/UpdateNotification';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
+  const { isUpdateAvailable, updateServiceWorker } = useServiceWorkerUpdater();
 
   const renderDashboard = () => {
     if (!user) {
@@ -27,6 +30,7 @@ const App: React.FC = () => {
 
   return (
     <div className="antialiased flex flex-col min-h-screen bg-gray-900 text-white">
+      {isUpdateAvailable && <UpdateNotification onUpdate={updateServiceWorker} />}
       <main className="flex-1 flex flex-col">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
