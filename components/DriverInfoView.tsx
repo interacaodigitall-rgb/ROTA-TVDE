@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import Button from './ui/Button';
 import { useIbans } from '../hooks/useIbans';
-import { CalculationType } from '../types';
+import { CalculationStatus, CalculationType } from '../types';
 import Card from './ui/Card';
 import { MOCK_COMPANY_INFO } from '../demoData';
+import { useCalculations } from '../hooks/useCalculations';
+import { useReceipts } from '../hooks/useReceipts';
+import { calculateSummary } from '../utils/calculationUtils';
 
 // FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; borderColor: string; }> = ({ title, icon, children, borderColor }) => (
@@ -62,13 +65,114 @@ const SosModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen,
     );
 };
 
+const ReminderModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  amount: number;
+}> = ({ isOpen, onClose, amount }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <Card className="w-full max-w-lg border-t-4 border-t-yellow-500" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold text-yellow-400 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        Lembrete de Faturação
+                    </h3>
+                     <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
+                </div>
+                <div className="space-y-4 text-gray-200">
+                    <p>Lembrete: Tem um saldo pendente de meses anteriores no valor de:</p>
+                    <p className="text-3xl font-bold text-center text-white py-4 bg-gray-900 rounded-lg">€{amount.toFixed(2)}</p>
+                    <p>Por favor, emita os recibos verdes correspondentes para regularizar a sua situação.</p>
+                </div>
+                 <div className="mt-6 text-center">
+                     <Button variant="primary" onClick={onClose}>Entendido</Button>
+                 </div>
+            </Card>
+        </div>
+    );
+};
+
 const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ onNavigateToCalculations }) => {
   const { user, logout, isDemo } = useAuth();
   const { ibans, loading: ibansLoading } = useIbans();
+  const { calculations } = useCalculations();
+  const { receipts } = useReceipts();
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
 
   const myIban = user ? ibans.find(iban => iban.driverId === user.id) : null;
   const hasVehicleInfo = user && (user.vehicleModel || user.insuranceCompany || user.insurancePolicy || user.fleetCardCompany || user.fleetCardNumber);
+  
+  const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+
+  const { pendingBalance, previousMonthsPendingBalance } = useMemo(() => {
+    if (!user) return { pendingBalance: 0, previousMonthsPendingBalance: 0 };
+
+    const acceptedCalculations = calculations.filter(
+        c => c.driverId === user.id && c.status === CalculationStatus.ACCEPTED
+    );
+
+    const userReceipts = receipts.filter(r => r.driverId === user.id);
+
+    const totalValorFinal = acceptedCalculations.reduce((sum, calc) => {
+        const summary = calculateSummary(calc);
+        return sum + (summary.valorFinal || 0);
+    }, 0);
+
+    const totalReceipts = userReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+
+    // --- Previous months balance calculation ---
+    const now = new Date();
+    const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const prevMonthsCalculations = acceptedCalculations.filter(c => 
+        toDate(c.periodEnd) < firstDayOfCurrentMonth
+    );
+
+    const prevMonthsReceipts = userReceipts.filter(r => 
+        toDate(r.date) < firstDayOfCurrentMonth
+    );
+
+    const prevMonthsTotalValorFinal = prevMonthsCalculations.reduce((sum, calc) => {
+        const summary = calculateSummary(calc);
+        return sum + (summary.valorFinal || 0);
+    }, 0);
+    
+    const prevMonthsTotalReceipts = prevMonthsReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+
+    return {
+        pendingBalance: totalValorFinal - totalReceipts,
+        previousMonthsPendingBalance: prevMonthsTotalValorFinal - prevMonthsTotalReceipts
+    };
+  }, [calculations, receipts, user]);
+
+  useEffect(() => {
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // JS months are 0-indexed
+    const storageKey = `reminderDismissed_${year}-${month}`;
+
+    const hasDismissed = localStorage.getItem(storageKey);
+
+    if (dayOfMonth <= 7 && previousMonthsPendingBalance > 0 && !hasDismissed) {
+        setIsReminderModalOpen(true);
+    }
+  }, [previousMonthsPendingBalance]);
+
+  const handleCloseReminder = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const storageKey = `reminderDismissed_${year}-${month}`;
+    localStorage.setItem(storageKey, 'true');
+    setIsReminderModalOpen(false);
+  };
 
   return (
     <>
@@ -99,14 +203,30 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
         <div className="max-w-7xl mx-auto space-y-8">
           
           {/* Welcome Card */}
-          <div className="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-             <div className="flex-grow">
-                <h2 className="text-2xl font-bold text-white">Bem-vindo, {user?.name}!</h2>
-                <p className="text-gray-400">Frota {user?.type} - Matrícula: {user?.matricula}</p>
-                <p className="text-gray-400">Contacto: (indisponível)</p>
-             </div>
-             <div className="w-full sm:w-auto">
-                <Button onClick={onNavigateToCalculations} variant="primary" className="w-full">Aceder aos Meus Cálculos</Button>
+          <div className="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col items-start gap-6">
+             <div className="flex-grow w-full">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white">Bem-vindo, {user?.name}!</h2>
+                        <p className="text-gray-400">Frota {user?.type} - Matrícula: {user?.matricula}</p>
+                    </div>
+                    <div className="w-full sm:w-auto flex-shrink-0">
+                        <Button onClick={onNavigateToCalculations} variant="primary" className="w-full">Aceder aos Meus Cálculos</Button>
+                    </div>
+                </div>
+                {pendingBalance > 0.01 && (
+                    <div className="w-full mt-6 p-4 border-l-4 border-yellow-500 bg-yellow-900/50 text-yellow-200 rounded-r-lg">
+                        <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <p className="font-bold">Aviso de Faturação Pendente</p>
+                                <p className="text-sm">Tem um saldo de <strong>€{pendingBalance.toFixed(2)}</strong> a faturar em recibos verdes.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
              </div>
           </div>
 
@@ -226,6 +346,11 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
       </main>
     </div>
     <SosModal isOpen={isSosModalOpen} onClose={() => setIsSosModalOpen(false)} />
+    <ReminderModal 
+        isOpen={isReminderModalOpen} 
+        onClose={handleCloseReminder} 
+        amount={previousMonthsPendingBalance} 
+    />
     </>
   );
 };
