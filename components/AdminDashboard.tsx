@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { useUsers } from '../hooks/useUsers';
@@ -14,8 +15,9 @@ import IbanManagement from './IbanManagement';
 import VehicleManagement from './VehicleManagement';
 import { db, firestore } from '../firebase';
 import ReceiptManagement from './ReceiptManagement';
+import AdjustmentManagement from './AdjustmentManagement';
 
-type AdminView = 'dashboard' | 'form' | 'reports' | 'details' | 'history' | 'iban' | 'vehicles' | 'receipts';
+type AdminView = 'dashboard' | 'form' | 'reports' | 'details' | 'history' | 'iban' | 'vehicles' | 'receipts' | 'adjustments';
 
 /**
  * Converts a Firestore Timestamp or JS Date into a JS Date object.
@@ -63,6 +65,7 @@ const SidebarContent: React.FC<{
         <nav className="flex-1 space-y-2">
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>} label="Dashboard" isActive={view === 'dashboard'} onClick={() => { setView('dashboard'); onLinkClick(); }} />
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>} label="Calculadora" isActive={view === 'form'} onClick={() => { setView('form'); onLinkClick(); }} />
+            <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1m0-1V4m0 2.01V5M12 20v-1m0 1v.01M12 18v-1m0-1v-1m0-1V4m0 16v-5.01M12 12h.01M12 10h.01M12 8h.01M12 6h.01M12 4h.01M12 2h.01M12 22h.01M12 20h.01M12 18h.01M12 16h.01M12 14h.01M12 12h.01M10 2h.01M8 2h.01M6 2h.01M4 2h.01M2 2h.01M2 4h.01M2 6h.01M2 8h.01M2 10h.01M2 12h.01M2 14h.01M2 16h.01M2 18h.01M2 20h.01M2 22h.01M4 22h.01M6 22h.01M8 22h.01M10 22h.01M14 22h.01M16 22h.01M18 22h.01M20 22h.01M22 22h.01M22 20h.01M22 18h.01M22 16h.01M22 14h.01M22 12h.01M22 10h.01M22 8h.01M22 6h.01M22 4h.01M20 2h.01M18 2h.01M16 2h.01M14 2h.01" /></svg>} label="Ajustes Pendentes" isActive={view === 'adjustments'} onClick={() => { setView('adjustments'); onLinkClick(); }} />
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>} label="Histórico" isActive={view === 'history'} onClick={() => { setView('history'); onLinkClick(); }} />
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>} label="Relatórios" isActive={view === 'reports'} onClick={() => { setView('reports'); onLinkClick(); }} />
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>} label="IBAN" isActive={view === 'iban'} onClick={() => { setView('iban'); onLinkClick(); }} />
@@ -441,6 +444,7 @@ const AdminDashboard: React.FC = () => {
       case 'iban': return <IbanManagement />;
       case 'receipts': return <ReceiptManagement />;
       case 'vehicles': return <VehicleManagement />;
+      case 'adjustments': return <AdjustmentManagement />;
       default: return <h2>Bem-vindo</h2>;
     }
   };

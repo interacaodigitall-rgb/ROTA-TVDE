@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Calculation, CalculationStatus, UserRole } from '../types';
 import { db, firestore } from '../firebase';
@@ -10,7 +11,7 @@ interface CalculationContextType {
   calculations: Calculation[];
   loading: boolean;
   error: string | null;
-  addCalculation: (calculation: Omit<Calculation, 'id'>) => Promise<void>;
+  addCalculation: (calculation: Omit<Calculation, 'id'>, adjustmentIdsToResolve?: string[]) => Promise<void>;
   updateCalculationStatus: (id: string, status: CalculationStatus) => Promise<void>;
   updateCalculation: (id: string, updates: Partial<Omit<Calculation, 'id'>>) => Promise<void>;
   deleteCalculation: (id: string) => Promise<void>;
@@ -86,7 +87,7 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
     return () => unsubscribe();
   }, [user, isDemo]);
 
-  const addCalculation = useCallback(async (calculation: Omit<Calculation, 'id'>) => {
+  const addCalculation = useCallback(async (calculation: Omit<Calculation, 'id'>, adjustmentIdsToResolve: string[] = []) => {
     if (isDemo) {
         const newCalc: Calculation = {
             ...calculation,
@@ -99,13 +100,29 @@ export const CalculationProvider: React.FC<{ children: ReactNode }> = ({ childre
         return;
     }
     try {
+        const batch = db.batch();
+        
+        const newCalcRef = db.collection('calculations').doc();
         const newCalculation = {
             ...calculation,
             date: firestore.FieldValue.serverTimestamp(),
             periodStart: parseLocalDate(calculation.periodStart as string),
             periodEnd: parseLocalDate(calculation.periodEnd as string),
         };
-      await db.collection('calculations').add(newCalculation);
+        batch.set(newCalcRef, newCalculation);
+
+        if (adjustmentIdsToResolve && adjustmentIdsToResolve.length > 0) {
+            adjustmentIdsToResolve.forEach(adjId => {
+                const adjRef = db.collection('pendingAdjustments').doc(adjId);
+                batch.update(adjRef, {
+                    status: 'RESOLVED',
+                    resolvedInCalculationId: newCalcRef.id,
+                });
+            });
+        }
+        
+        await batch.commit();
+
     } catch (error) {
       console.error("Error adding calculation: ", error);
     }

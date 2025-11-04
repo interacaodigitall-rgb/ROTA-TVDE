@@ -26,6 +26,10 @@ export enum PercentageType {
   SIXTY_FORTY = '60/40',
 }
 
+export enum AdjustmentStatus {
+  PENDING = 'PENDING',
+  RESOLVED = 'RESOLVED',
+}
 
 export interface User {
   id: string;
@@ -109,4 +113,15 @@ export interface Receipt {
   amount: number;
   date: any; // Firestore Timestamp
   notes?: string;
+}
+
+export interface Adjustment {
+  id: string;
+  driverId: string;
+  driverName: string;
+  amount: number; // Positive: Company owes driver.
+  notes: string;
+  dateCreated: any; // Firestore Timestamp
+  status: AdjustmentStatus;
+  resolvedInCalculationId?: string;
 }

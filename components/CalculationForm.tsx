@@ -1,12 +1,14 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCalculations } from '../hooks/useCalculations';
-import { Calculation, CalculationStatus, CalculationType, UserRole, PercentageType, FuelType } from '../types';
+import { Calculation, CalculationStatus, CalculationType, UserRole, PercentageType, FuelType, Adjustment, AdjustmentStatus } from '../types';
 import Button from './ui/Button';
 import Card from './ui/Card';
 import { useUsers } from '../hooks/useUsers';
 import { db } from '../firebase';
+import { useAdjustments } from '../hooks/useAdjustments';
 
 interface CalculationFormProps {
   onClose: () => void;
@@ -52,12 +54,15 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   const { user: adminUser, isDemo } = useAuth();
   const { addCalculation, updateCalculation } = useCalculations();
   const { users, updateUser } = useUsers();
+  const { adjustments: allAdjustments } = useAdjustments();
   const isEditMode = !!calculationToEdit;
 
   const [driverId, setDriverId] = useState('');
   const [driverName, setDriverName] = useState('');
   const [formData, setFormData] = useState(initialFormData);
   const [tollNotification, setTollNotification] = useState<string | null>(null);
+  const [adjustmentNotification, setAdjustmentNotification] = useState<string | null>(null);
+  const [adjustmentsToApply, setAdjustmentsToApply] = useState<Adjustment[]>([]);
 
   const selectedDriver = useMemo(() => users.find(u => u.id === driverId), [driverId, users]);
   const calculationType = selectedDriver?.type ?? CalculationType.SLOT;
@@ -101,6 +106,9 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
 
   useEffect(() => {
     setTollNotification(null); // Clear notification on driver change
+    setAdjustmentNotification(null);
+    setAdjustmentsToApply([]);
+
     if (selectedDriver && !isEditMode) {
       setDriverName(selectedDriver.name || '');
 
@@ -111,6 +119,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
           vehicleRental: '0',
           rentalTolls: '0', // Reset tolls before fetching
           fuelType: '',
+          uberPreviousPeriodAdjustments: '0', // Reset adjustments
       };
 
       if (selectedDriver.type === CalculationType.FROTA || selectedDriver.type === CalculationType.PERCENTAGE) {
@@ -123,11 +132,23 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
           }
       }
       
+      const pendingAdjustments = allAdjustments.filter(
+        adj => adj.driverId === selectedDriver.id && adj.status === AdjustmentStatus.PENDING
+      );
+
+      if (pendingAdjustments.length > 0) {
+        const totalAdjustment = pendingAdjustments.reduce((sum, adj) => sum + adj.amount, 0);
+        newDefaults.uberPreviousPeriodAdjustments = String(totalAdjustment);
+        setAdjustmentsToApply(pendingAdjustments);
+        setAdjustmentNotification(`Valor de €${totalAdjustment.toFixed(2)} em ajustes pendentes foi adicionado automaticamente.`);
+      }
+
       // Use a functional update to avoid stale state issues, merging with existing form data
       setFormData(prev => ({
           ...prev,
           ...newDefaults,
       }));
+
     } else if (!selectedDriver && !isEditMode) {
       // Clear defaults if driver is deselected
       setDriverName('');
@@ -138,9 +159,10 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
           vehicleRental: '0',
           rentalTolls: '0',
           fuelType: '',
+          uberPreviousPeriodAdjustments: '0',
       }));
     }
-  }, [selectedDriver, isEditMode]);
+  }, [selectedDriver, isEditMode, allAdjustments]);
 
   useEffect(() => {
     const fetchPrefilledTolls = async () => {
@@ -182,6 +204,10 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
 
     if (name === 'rentalTolls') {
         setTollNotification(null); // Clear notification on manual change
+    }
+
+    if (name === 'uberPreviousPeriodAdjustments') {
+        setAdjustmentNotification(null);
     }
 
     if (type === 'checkbox') {
@@ -277,10 +303,12 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         }
 
     } else {
+        const adjustmentIdsToResolve = adjustmentsToApply.map(adj => adj.id);
         await addCalculation({
             ...calculationData,
             status: CalculationStatus.PENDING,
-        });
+        }, adjustmentIdsToResolve);
+
         if (debtDeductionAmount > 0 && selectedDriver) {
             const newDebt = (selectedDriver.outstandingDebt || 0) - debtDeductionAmount;
             await updateUser(selectedDriver.id, { outstandingDebt: newDebt });
@@ -301,6 +329,15 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                 <p>Este motorista tem uma dívida de <span className="font-bold">€{selectedDriver.outstandingDebt.toFixed(2)}</span>.</p>
                 {selectedDriver.debtNotes && <p className="mt-1 text-xs">Notas: {selectedDriver.debtNotes}</p>}
                 <p className="mt-2">Pode usar o campo "Dedução de Dívida" abaixo para abater este valor no cálculo atual.</p>
+            </div>
+        )}
+
+        {adjustmentNotification && (
+            <div className="p-3 text-sm text-cyan-200 bg-cyan-900/50 border border-cyan-700 rounded-lg flex items-start gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <p>{adjustmentNotification}</p>
             </div>
         )}
 

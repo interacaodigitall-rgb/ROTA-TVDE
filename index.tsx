@@ -7,6 +7,7 @@ import { CalculationProvider } from './contexts/CalculationContext';
 import { UserProvider } from './contexts/UserContext';
 import { IbanProvider } from './contexts/IbanContext';
 import { ReceiptProvider } from './contexts/ReceiptContext';
+import { AdjustmentProvider } from './contexts/AdjustmentContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -20,9 +21,11 @@ root.render(
       <UserProvider>
         <IbanProvider>
           <ReceiptProvider>
-            <CalculationProvider>
-              <App />
-            </CalculationProvider>
+            <AdjustmentProvider>
+              <CalculationProvider>
+                <App />
+              </CalculationProvider>
+            </AdjustmentProvider>
           </ReceiptProvider>
         </IbanProvider>
       </UserProvider>
