@@ -6,25 +6,33 @@ export const useServiceWorkerUpdater = () => {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(registration => {
-        registration.addEventListener('updatefound', () => {
-          // A new service worker is being installed.
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed') {
-                // New worker is installed and waiting to activate.
-                if (navigator.serviceWorker.controller) {
-                    setWaitingWorker(newWorker);
-                    setIsUpdateAvailable(true);
+      const registerServiceWorker = () => {
+        // Construct the full URL to the service worker to avoid cross-origin issues
+        // in certain environments where relative paths might be resolved incorrectly.
+        const swUrl = `${location.origin}/sw.js`;
+        navigator.serviceWorker.register(swUrl).then(registration => {
+          registration.addEventListener('updatefound', () => {
+            // A new service worker is being installed.
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed') {
+                  // New worker is installed and waiting to activate.
+                  if (navigator.serviceWorker.controller) {
+                      setWaitingWorker(newWorker);
+                      setIsUpdateAvailable(true);
+                  }
                 }
-              }
-            });
-          }
+              });
+            }
+          });
+        }).catch(error => {
+          console.error('Service Worker registration failed:', error);
         });
-      }).catch(error => {
-        console.error('Service Worker registration failed:', error);
-      });
+      };
+      
+      // Defer registration until after the page has loaded to prevent race conditions.
+      window.addEventListener('load', registerServiceWorker);
 
       let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -33,6 +41,11 @@ export const useServiceWorkerUpdater = () => {
             refreshing = true;
         }
       });
+      
+      // Cleanup the event listener on component unmount.
+      return () => {
+        window.removeEventListener('load', registerServiceWorker);
+      };
     }
   }, []);
 

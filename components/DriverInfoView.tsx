@@ -85,7 +85,7 @@ const ReminderModal: React.FC<{
                      <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
                 </div>
                 <div className="space-y-4 text-gray-200">
-                    <p>Lembrete: Tem um saldo pendente de meses anteriores no valor de:</p>
+                    <p>Lembrete: Verificámos que tem um saldo pendente de meses anteriores. O seu saldo de faturação total é de:</p>
                     <p className="text-3xl font-bold text-center text-white py-4 bg-gray-900 rounded-lg">€{amount.toFixed(2)}</p>
                     <p>Por favor, emita os recibos verdes correspondentes para regularizar a sua situação.</p>
                 </div>
@@ -338,7 +338,7 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
     <ReminderModal 
         isOpen={isReminderModalOpen} 
         onClose={handleCloseReminder} 
-        amount={previousMonthsPendingBalance} 
+        amount={pendingBalance} 
     />
     </>
   );
