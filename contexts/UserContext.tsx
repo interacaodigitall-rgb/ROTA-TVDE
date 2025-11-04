@@ -11,6 +11,7 @@ interface UserContextType {
   findUserById: (id: string) => User | undefined;
   updateUser: (id: string, updates: Partial<Omit<User, 'id'>>) => Promise<void>;
   addUser: (userData: Omit<User, 'id'>) => Promise<{ success: boolean; error?: string }>;
+  deleteUser: (id: string) => Promise<void>;
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -150,9 +151,26 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [isDemo]);
 
+  const deleteUser = useCallback(async (id: string) => {
+    if (isDemo) {
+        setUsers(prev => prev.filter(u => u.id !== id));
+        return;
+    }
+    // Note: This only deletes the Firestore user profile.
+    // The Firebase Auth user will remain, but will be unable to use the app
+    // as their profile will not be found upon login.
+    // Proper auth user deletion requires admin privileges, usually via a Cloud Function.
+    try {
+        await db.collection('users').doc(id).delete();
+    } catch (error) {
+        console.error("Error deleting user profile from Firestore: ", error);
+        throw error; // Re-throw to be caught in the component
+    }
+}, [isDemo]);
+
 
   return (
-    <UserContext.Provider value={{ users, loading, findUserById, updateUser, addUser }}>
+    <UserContext.Provider value={{ users, loading, findUserById, updateUser, addUser, deleteUser }}>
       {children}
     </UserContext.Provider>
   );

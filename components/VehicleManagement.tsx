@@ -4,6 +4,7 @@ import Card from './ui/Card';
 import Button from './ui/Button';
 import { useUsers } from '../hooks/useUsers';
 import { User, UserRole, CalculationType, PercentageType } from '../types';
+import { useAuth } from '../hooks/useAuth';
 
 const VehicleInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
     <div>
@@ -38,8 +39,9 @@ const initialFormState = {
     percentageType: PercentageType.FIFTY_FIFTY,
 };
 
-const VehicleManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false }) => {
-    const { users, updateUser, addUser, loading: usersLoading } = useUsers();
+const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: boolean}> = ({ readOnly = false, hideArchivedToggle = false }) => {
+    const { users, updateUser, addUser, deleteUser, loading: usersLoading } = useUsers();
+    const { user: currentUser } = useAuth();
     const [formData, setFormData] = useState(initialFormState);
     const [editingDriver, setEditingDriver] = useState<User | null>(null);
     const [isAddingNewUser, setIsAddingNewUser] = useState(false);
@@ -47,8 +49,13 @@ const VehicleManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false })
 
     const allUsers = useMemo(() => [...users].sort((a, b) => a.name.localeCompare(b.name)), [users]);
     const visibleUsers = useMemo(() => {
+        // For manager view (hideArchivedToggle is true), always hide archived users.
+        if (hideArchivedToggle) {
+            return allUsers.filter(u => u.role !== UserRole.ADMIN && u.status !== 'ARCHIVED');
+        }
+        // For admin view, respect the checkbox.
         return allUsers.filter(u => u.role !== UserRole.ADMIN && (showArchived || u.status !== 'ARCHIVED'));
-    }, [allUsers, showArchived]);
+    }, [allUsers, showArchived, hideArchivedToggle]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -158,6 +165,21 @@ const VehicleManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false })
             await updateUser(editingDriver.id, dataToUpdate);
             alert('Dados do utilizador atualizados com sucesso!');
             handleCancel();
+        }
+    };
+    
+    const handleDeleteUser = async (userToDelete: User) => {
+        if (window.confirm(`Tem a certeza que deseja EXCLUIR permanentemente o utilizador ${userToDelete.name}? Esta ação não pode ser desfeita.`)) {
+            try {
+                await deleteUser(userToDelete.id);
+                alert('Utilizador excluído com sucesso.');
+                if (editingDriver?.id === userToDelete.id) {
+                    handleCancel();
+                }
+            } catch (error) {
+                alert('Ocorreu um erro ao excluir o utilizador.');
+                console.error(error);
+            }
         }
     };
 
@@ -297,10 +319,12 @@ const VehicleManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false })
                         <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                             <div>
                                 <h3 className="text-xl font-semibold text-white">Utilizadores Registrados</h3>
-                                <div className="flex items-center mt-2">
-                                    <input id="showArchived" name="showArchived" type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
-                                    <label htmlFor="showArchived" className="ml-2 block text-sm font-medium text-gray-300">Mostrar utilizadores arquivados</label>
-                                </div>
+                                {!hideArchivedToggle && (
+                                    <div className="flex items-center mt-2">
+                                        <input id="showArchived" name="showArchived" type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                                        <label htmlFor="showArchived" className="ml-2 block text-sm font-medium text-gray-300">Mostrar utilizadores arquivados</label>
+                                    </div>
+                                )}
                             </div>
                              {!readOnly && <Button onClick={handleStartAdding} variant="primary">Adicionar Novo Utilizador</Button>}
                         </div>
@@ -333,6 +357,9 @@ const VehicleManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false })
                                                         <Button variant={isEditingCurrent ? 'success' : 'secondary'} onClick={() => handleSelectForEdit(user)} className="text-xs px-2 py-1">
                                                             {isEditingCurrent ? 'A Editar' : 'Editar'}
                                                         </Button>
+                                                        {currentUser?.id !== user.id && currentUser?.role === UserRole.ADMIN && (
+                                                            <Button variant="danger" onClick={() => handleDeleteUser(user)} className="text-xs px-2 py-1">Apagar</Button>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>

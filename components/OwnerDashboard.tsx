@@ -15,7 +15,7 @@ import VehicleManagement from './VehicleManagement';
 import ReceiptManagement from './ReceiptManagement';
 import TollRegistration from './TollRegistration';
 
-type OwnerView = 'dashboard' | 'reports' | 'details' | 'history' | 'iban' | 'receipts' | 'users' | 'tollRegistration';
+type OwnerView = 'dashboard' | 'reports' | 'details' | 'history' | 'iban' | 'receipts' | 'tollRegistration';
 
 const toDate = (timestamp: any): Date => {
     if (!timestamp) return new Date(NaN);
@@ -61,14 +61,13 @@ const SidebarContent: React.FC<{
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>} label="Relatórios" isActive={view === 'reports'} onClick={() => { setView('reports'); onLinkClick(); }} />
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>} label="IBAN" isActive={view === 'iban'} onClick={() => { setView('iban'); onLinkClick(); }} />
             <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>} label="Recibos" isActive={view === 'receipts'} onClick={() => { setView('receipts'); onLinkClick(); }} />
-            <NavLink icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2" /></svg>} label="Utilizadores" isActive={view === 'users'} onClick={() => { setView('users'); onLinkClick(); }} />
         </nav>
         <div className="mt-auto">
             <div className="p-3 bg-gray-900 rounded-lg">
                 <p className="text-sm font-semibold text-white">{user?.name}</p>
             </div>
             <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} className="flex items-center mt-4 px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>}
                 <span className="ml-3">Terminar Sessão</span>
             </a>
         </div>
@@ -271,7 +270,6 @@ const OwnerDashboard: React.FC = () => {
         );
       case 'iban': return <IbanManagement readOnly />;
       case 'receipts': return <ReceiptManagement readOnly />;
-      case 'users': return <VehicleManagement readOnly />;
       case 'tollRegistration': return <TollRegistration />;
       default: return <h2>Bem-vindo</h2>;
     }
