@@ -9,6 +9,7 @@ import Card from './ui/Card';
 import { useUsers } from '../hooks/useUsers';
 import { db } from '../firebase';
 import { useAdjustments } from '../hooks/useAdjustments';
+import { calculateSummary } from '../utils/calculationUtils';
 
 interface CalculationFormProps {
   onClose: () => void;
@@ -52,7 +53,7 @@ const toInputDate = (timestamp: any) => toDate(timestamp).toISOString().split('T
 
 const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationToEdit }) => {
   const { user: adminUser, isDemo } = useAuth();
-  const { addCalculation, updateCalculation } = useCalculations();
+  const { addCalculation, updateCalculation, calculations: allCalculations } = useCalculations();
   const { users, updateUser } = useUsers();
   const { adjustments: allAdjustments } = useAdjustments();
   const isEditMode = !!calculationToEdit;
@@ -113,13 +114,15 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       setDriverName(selectedDriver.name || '');
 
       // Apply default values from user profile for a new calculation
-      const newDefaults: Partial<typeof initialFormData> = {
+      const newDefaults: any = {
           isIvaExempt: selectedDriver.isIvaExempt || false,
           isSlotExempt: false,
           vehicleRental: '0',
           rentalTolls: '0', // Reset tolls before fetching
           fuelType: '',
           uberPreviousPeriodAdjustments: '0', // Reset adjustments
+          otherExpenses: '0',
+          otherExpensesNotes: '',
       };
 
       if (selectedDriver.type === CalculationType.FROTA || selectedDriver.type === CalculationType.PERCENTAGE) {
@@ -143,6 +146,29 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         setAdjustmentNotification(`Valor de €${totalAdjustment.toFixed(2)} em ajustes pendentes foi adicionado automaticamente.`);
       }
 
+      // Check for negative balance from the previous week
+      const driverCalculations = allCalculations
+        .filter(c => c.driverId === selectedDriver.id)
+        .sort((a, b) => toDate(b.periodEnd).getTime() - toDate(a.periodEnd).getTime());
+    
+      const previousCalculation = driverCalculations[0];
+
+      if (previousCalculation) {
+          const previousSummary = calculateSummary(previousCalculation);
+          if (previousSummary.valorFinal < -0.01) { // Use epsilon for float safety
+              const debtAmount = Math.abs(previousSummary.valorFinal);
+              const startDateStr = toDate(previousCalculation.periodStart).toLocaleDateString('pt-PT');
+              const endDateStr = toDate(previousCalculation.periodEnd).toLocaleDateString('pt-PT');
+              const debtNote = `Saldo anterior em dívida (Semana: ${startDateStr} - ${endDateStr}).`;
+              
+              const currentOtherExpenses = parseFloat(newDefaults.otherExpenses || '0') || 0;
+              newDefaults.otherExpenses = String(currentOtherExpenses + debtAmount);
+
+              const currentNotes = newDefaults.otherExpensesNotes || '';
+              newDefaults.otherExpensesNotes = currentNotes ? `${currentNotes}\n${debtNote}` : debtNote;
+          }
+      }
+
       // Use a functional update to avoid stale state issues, merging with existing form data
       setFormData(prev => ({
           ...prev,
@@ -160,9 +186,11 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
           rentalTolls: '0',
           fuelType: '',
           uberPreviousPeriodAdjustments: '0',
+          otherExpenses: '0',
+          otherExpensesNotes: '',
       }));
     }
-  }, [selectedDriver, isEditMode, allAdjustments]);
+  }, [selectedDriver, isEditMode, allAdjustments, allCalculations]);
 
   useEffect(() => {
     const fetchPrefilledTolls = async () => {
