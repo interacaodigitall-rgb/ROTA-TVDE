@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
-import { CalculationStatus, UserRole } from '../types';
+import { CalculationStatus, UserRole, Receipt } from '../types';
 import { calculateSummary } from '../utils/calculationUtils';
 import Button from './ui/Button';
 import Card from './ui/Card';
@@ -47,110 +47,101 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
   const isDriverView = !!driverId && user?.id === driverId;
   const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER).sort((a,b) => a.name.localeCompare(b.name)), [users]);
 
-  const reportData = useMemo(() => {
+  const { reportData, driverReceiptsList } = useMemo(() => {
     let isWeeklyView = false;
-    if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        // Add 1 to include both start and end days in the count
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        // A "week" is considered 8 days or less to be flexible
-        if (diffDays <= 8) {
-            isWeeklyView = true;
-        }
-    }
-      
-    const filteredCalculations = calculations.filter((c) => {
-        const periodEndDate = toDate(c.periodEnd);
-    
-        // Filter conditions
-        const isAccepted = c.status === CalculationStatus.ACCEPTED;
-        const matchesDriver = driverId ? c.driverId === driverId : true;
-        
-        // Date range check
-        let inRange = true;
-        if (startDate) {
-            const start = new Date(startDate + 'T00:00:00');
-            if (!isNaN(start.getTime()) && periodEndDate < start) {
-                inRange = false;
-            }
-        }
-        if (endDate) {
-            const end = new Date(endDate + 'T23:59:59');
-            if (!isNaN(end.getTime()) && periodEndDate > end) {
-                inRange = false;
-            }
-        }
-    
-        return isAccepted && matchesDriver && inRange;
-    });
-    
-    const filteredReceipts = receipts.filter(r => {
-        const receiptDate = toDate(r.date);
-        let inRange = true;
-        if (startDate) {
-            const start = new Date(startDate + 'T00:00:00');
-            if (!isNaN(start.getTime()) && receiptDate < start) {
-                inRange = false;
-            }
-        }
-        if (endDate) {
-            const end = new Date(endDate + 'T23:59:59');
-            if (!isNaN(end.getTime()) && receiptDate > end) {
-                inRange = false;
-            }
-        }
-        return inRange;
-    });
+    let filteredCalculations;
+    let filteredReceipts;
 
-    // Get a unique list of all driver IDs that have EITHER a calculation OR a receipt in the period.
-    const driverIdsWithActivity = [
-        ...new Set([
-            ...filteredCalculations.map(c => c.driverId),
-            ...filteredReceipts.map(r => r.driverId)
-        ])
-    ];
+    if (isDriverView) {
+        // Driver view: ignore dates, show all-time data
+        filteredCalculations = calculations.filter(c => 
+            c.driverId === driverId && c.status === CalculationStatus.ACCEPTED
+        );
+        filteredReceipts = receipts.filter(r => r.driverId === driverId);
+    } else {
+        // Admin/Owner view: use date filters
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end.getTime() - start.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            if (diffDays <= 8) {
+                isWeeklyView = true;
+            }
+        }
+        
+        filteredCalculations = calculations.filter((c) => {
+            const periodEndDate = toDate(c.periodEnd);
+            const isAccepted = c.status === CalculationStatus.ACCEPTED;
+            let inRange = true;
+            if (startDate) {
+                const start = new Date(startDate + 'T00:00:00');
+                if (!isNaN(start.getTime()) && periodEndDate < start) inRange = false;
+            }
+            if (endDate) {
+                const end = new Date(endDate + 'T23:59:59');
+                if (!isNaN(end.getTime()) && periodEndDate > end) inRange = false;
+            }
+            return isAccepted && inRange;
+        });
+        
+        filteredReceipts = receipts.filter(r => {
+            const receiptDate = toDate(r.date);
+            let inRange = true;
+            if (startDate) {
+                const start = new Date(startDate + 'T00:00:00');
+                if (!isNaN(start.getTime()) && receiptDate < start) inRange = false;
+            }
+            if (endDate) {
+                const end = new Date(endDate + 'T23:59:59');
+                if (!isNaN(end.getTime()) && receiptDate > end) inRange = false;
+            }
+            return inRange;
+        });
+    }
+
+    const driverIdsWithActivity = [...new Set([...filteredCalculations.map(c => c.driverId), ...filteredReceipts.map(r => r.driverId)])];
     
-    // Build the report rows based on this comprehensive list of drivers.
-    const groupedData = driverIdsWithActivity.map(driverId => {
-        const driverInfo = users.find(u => u.id === driverId);
+    const groupedData = driverIdsWithActivity.map(currentDriverId => {
+        const driverInfo = users.find(u => u.id === currentDriverId);
         if (!driverInfo) return null;
 
-        const driverCalcs = filteredCalculations.filter(c => c.driverId === driverId);
-        const driverReceipts = filteredReceipts.filter(r => r.driverId === driverId);
+        const driverCalcs = filteredCalculations.filter(c => c.driverId === currentDriverId);
+        const driverReceipts = filteredReceipts.filter(r => r.driverId === currentDriverId);
 
-        const totalValorFinal = driverCalcs.reduce((sum, calc) => {
-            const summary = calculateSummary(calc);
-            return sum + (summary.valorFinal || 0);
-        }, 0);
-
+        const totalValorFinal = driverCalcs.reduce((sum, calc) => sum + (calculateSummary(calc).valorFinal || 0), 0);
         const totalReceipts = driverReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
 
-        // Conditional balance calculation
         const pendingBalance = isWeeklyView ? totalValorFinal : totalValorFinal - totalReceipts;
 
         return {
-          driverId: driverId,
+          driverId: currentDriverId,
           driverName: driverInfo.name,
           totalGanhos: 0,
           totalDeducoes: 0,
-          totalValorFinal: totalValorFinal,
+          totalValorFinal,
           calculationCount: driverCalcs.length,
-          totalReceipts: totalReceipts,
-          pendingBalance: pendingBalance,
+          totalReceipts,
+          pendingBalance,
         };
     }).filter((row): row is ReportRow => row !== null);
 
-
     const allDriversReport = groupedData.sort((a, b) => a.driverName.localeCompare(b.driverName));
     
-    if (selectedDriverId === 'all' || isDriverView) {
-        return allDriversReport;
+    let finalReportData = allDriversReport;
+    if (!isDriverView) {
+        if (selectedDriverId !== 'all') {
+            finalReportData = allDriversReport.filter(row => row.driverId === selectedDriverId);
+        }
     } else {
-        return allDriversReport.filter(row => row.driverId === selectedDriverId);
+        finalReportData = allDriversReport.filter(row => row.driverId === driverId);
     }
+    
+    const driverReceiptsList = isDriverView 
+        ? [...filteredReceipts].sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime()) 
+        : [];
 
+    return { reportData: finalReportData, driverReceiptsList };
   }, [calculations, receipts, startDate, endDate, driverId, selectedDriverId, isDriverView, users]);
 
   const handleDownloadReportPdf = async () => {
@@ -310,28 +301,34 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
                     </>
                 )}
             </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-700 pb-4 mb-4">
-              <p className="text-sm text-gray-400 md:col-span-3">
-                  Este relatório resume todos os cálculos 'Aceitos' e recibos registados no período selecionado. O 'Saldo a Faturar' é o valor que o motorista ainda deve emitir em recibo para a empresa.
-              </p>
-              <div>
-                  <label htmlFor="startDate" className="block text-sm font-medium text-gray-300">Período de (Início)</label>
-                  <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
-              </div>
-              <div>
-                  <label htmlFor="endDate" className="block text-sm font-medium text-gray-300">Período até (Fim)</label>
-                  <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
-              </div>
-              {!isDriverView && (
-                 <div>
-                    <label htmlFor="driverFilter" className="block text-sm font-medium text-gray-300">Filtrar Motorista</label>
-                    <select id="driverFilter" value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
-                        <option value="all">Todos os Motoristas</option>
-                        {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
+            {!isDriverView ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-700 pb-4 mb-4">
+                    <p className="text-sm text-gray-400 md:col-span-3">
+                        Este relatório resume todos os cálculos 'Aceitos' e recibos registados no período selecionado. O 'Saldo a Faturar' é o valor que o motorista ainda deve emitir em recibo para a empresa.
+                    </p>
+                    <div>
+                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-300">Período de (Início)</label>
+                        <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                    </div>
+                    <div>
+                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-300">Período até (Fim)</label>
+                        <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                    </div>
+                    <div>
+                        <label htmlFor="driverFilter" className="block text-sm font-medium text-gray-300">Filtrar Motorista</label>
+                        <select id="driverFilter" value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                            <option value="all">Todos os Motoristas</option>
+                            {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                        </select>
+                    </div>
                 </div>
-              )}
-          </div>
+            ) : (
+                 <div className="border-b border-gray-700 pb-4 mb-4">
+                     <p className="text-sm text-gray-400">
+                        Este é o seu resumo financeiro cumulativo. Representa todos os seus cálculos aceites e todos os recibos emitidos até à data.
+                    </p>
+                 </div>
+            )}
           
           {/* Mobile View - Cards */}
           <div className="md:hidden space-y-4">
@@ -392,6 +389,29 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
           </div>
         </div>
       </Card>
+
+      {isDriverView && (
+        <Card className="mt-8">
+            <h3 className="text-xl font-semibold text-white mb-4">Histórico de Recibos Emitidos</h3>
+            {driverReceiptsList.length > 0 ? (
+                <div className="space-y-4">
+                    {driverReceiptsList.map((receipt: Receipt) => (
+                        <div key={receipt.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                            <div className="flex justify-between items-start gap-4">
+                                <div>
+                                    <p className="text-lg font-semibold text-green-400">€{receipt.amount.toFixed(2)}</p>
+                                    <p className="text-sm text-gray-400">Data: {toDate(receipt.date).toLocaleDateString('pt-PT')}</p>
+                                    {receipt.notes && <p className="text-xs text-gray-500 mt-1">Notas: {receipt.notes}</p>}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-gray-400">Ainda não emitiu nenhum recibo.</p>
+            )}
+        </Card>
+      )}
     </div>
   );
 };
