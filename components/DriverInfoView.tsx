@@ -203,6 +203,22 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
                     </div>
                 </div>
 
+                {/* Pending Invoicing Warning (Yellow) */}
+                {pendingBalance > 0.01 && (
+                    <div className="w-full mt-6 p-4 border-l-4 border-yellow-500 bg-yellow-900/50 text-yellow-200 rounded-r-lg">
+                        <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <p className="font-bold">Aviso de Faturação Pendente</p>
+                                <p className="text-sm">Tem um saldo de <strong>€{pendingBalance.toFixed(2)}</strong> a faturar em recibos verdes.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Outstanding Debt Warning (Red) */}
                 {user && user.outstandingDebt > 0 && (
                     <div className="w-full mt-6 p-4 border-l-4 border-red-500 bg-red-900/50 text-red-200 rounded-r-lg">
                         <div className="flex items-center">
@@ -217,19 +233,8 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
                     </div>
                 )}
                 
-                {pendingBalance > 0.01 ? (
-                    <div className="w-full mt-6 p-4 border-l-4 border-yellow-500 bg-yellow-900/50 text-yellow-200 rounded-r-lg">
-                        <div className="flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div>
-                                <p className="font-bold">Aviso de Faturação Pendente</p>
-                                <p className="text-sm">Tem um saldo de <strong>€{pendingBalance.toFixed(2)}</strong> a faturar em recibos verdes.</p>
-                            </div>
-                        </div>
-                    </div>
-                ) : pendingBalance < -0.01 && (
+                {/* Negative Balance Warning (Red) */}
+                {pendingBalance < -0.01 && (
                      <div className="w-full mt-6 p-4 border-l-4 border-red-500 bg-red-900/50 text-red-200 rounded-r-lg">
                         <div className="flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
