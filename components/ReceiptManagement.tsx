@@ -3,7 +3,9 @@ import Card from './ui/Card';
 import Button from './ui/Button';
 import { useUsers } from '../hooks/useUsers';
 import { useReceipts } from '../hooks/useReceipts';
-import { Receipt, UserRole } from '../types';
+import { Receipt, UserRole, CalculationStatus } from '../types';
+import { useCalculations } from '../hooks/useCalculations';
+import { calculateSummary } from '../utils/calculationUtils';
 
 const toInputDate = (timestamp: any) => (timestamp?.toDate ? timestamp.toDate() : new Date(timestamp)).toISOString().split('T')[0];
 
@@ -17,10 +19,43 @@ const initialFormState = {
 const ReceiptManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false }) => {
     const { users } = useUsers();
     const { receipts, addReceipt, updateReceipt, deleteReceipt, loading } = useReceipts();
+    const { calculations } = useCalculations();
     const [formData, setFormData] = useState(initialFormState);
     const [editingReceiptId, setEditingReceiptId] = useState<string | null>(null);
 
     const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER).sort((a, b) => a.name.localeCompare(b.name)), [users]);
+
+    const pendingInvoiceDrivers = useMemo(() => {
+        const driverBalances = drivers.map(driver => {
+            const driverCalcs = calculations.filter(
+                c => c.driverId === driver.id && c.status === CalculationStatus.ACCEPTED
+            );
+
+            const driverReceipts = receipts.filter(
+                r => r.driverId === driver.id
+            );
+
+            const totalValorFinal = driverCalcs.reduce((sum, calc) => {
+                const summary = calculateSummary(calc);
+                return sum + (summary.valorFinal || 0);
+            }, 0);
+
+            const totalReceiptsAmount = driverReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+
+            const pendingBalance = totalValorFinal - totalReceiptsAmount;
+
+            return {
+                driverId: driver.id,
+                driverName: driver.name,
+                pendingBalance: pendingBalance
+            };
+        });
+
+        return driverBalances
+            .filter(d => d.pendingBalance > 0.01) // Filter for those who owe receipts, use epsilon for float safety
+            .sort((a, b) => a.driverName.localeCompare(b.driverName));
+
+    }, [drivers, calculations, receipts]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -166,6 +201,31 @@ const ReceiptManagement: React.FC<{readOnly?: boolean}> = ({ readOnly = false })
                         ) : (
                             <p className="text-gray-400">Nenhum recibo registrado.</p>
                         )}
+
+                        <div className="mt-8 pt-6 border-t border-gray-700">
+                            <h3 className="text-xl font-semibold text-white mb-4">Motoristas com Faturação Pendente</h3>
+                            {loading ? (
+                                <p className="text-gray-400">A calcular saldos pendentes...</p>
+                            ) : pendingInvoiceDrivers.length > 0 ? (
+                                <div className="space-y-4">
+                                    {pendingInvoiceDrivers.map(driver => (
+                                        <div key={driver.driverId} className="bg-gray-800 p-4 rounded-lg border border-yellow-700">
+                                            <div className="flex justify-between items-center gap-4">
+                                                <p className="font-bold text-white">{driver.driverName}</p>
+                                                <div className="text-right">
+                                                    <p className="text-sm text-gray-400">Valor a Faturar</p>
+                                                    <p className="text-lg font-semibold text-yellow-400">
+                                                        €{driver.pendingBalance.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-400">Nenhum motorista com faturação pendente no momento.</p>
+                            )}
+                        </div>
                     </Card>
                 </div>
             </div>

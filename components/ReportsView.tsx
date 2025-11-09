@@ -48,6 +48,19 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
   const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER).sort((a,b) => a.name.localeCompare(b.name)), [users]);
 
   const reportData = useMemo(() => {
+    let isWeeklyView = false;
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        // Add 1 to include both start and end days in the count
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        // A "week" is considered 8 days or less to be flexible
+        if (diffDays <= 8) {
+            isWeeklyView = true;
+        }
+    }
+      
     const filteredCalculations = calculations.filter((c) => {
         const periodEndDate = toDate(c.periodEnd);
     
@@ -114,6 +127,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
 
         const totalReceipts = driverReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
 
+        // Conditional balance calculation
+        const pendingBalance = isWeeklyView ? totalValorFinal : totalValorFinal - totalReceipts;
+
         return {
           driverId: driverId,
           driverName: driverInfo.name,
@@ -122,8 +138,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
           totalValorFinal: totalValorFinal,
           calculationCount: driverCalcs.length,
           totalReceipts: totalReceipts,
-          // Per user request, Saldo a Faturar should equal the Total Líquido for the period.
-          pendingBalance: totalValorFinal,
+          pendingBalance: pendingBalance,
         };
     }).filter((row): row is ReportRow => row !== null);
 
