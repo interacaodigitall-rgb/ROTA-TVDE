@@ -152,8 +152,7 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
   }, [calculations, receipts, user]);
 
   useEffect(() => {
-    // Show reminder modal if there's a pending balance from previous months.
-    // This will trigger every time the component loads with a pending balance.
+    // Show reminder modal if there's a positive pending balance from previous months.
     if (previousMonthsPendingBalance > 0) {
         setIsReminderModalOpen(true);
     }
@@ -203,7 +202,7 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
                         <Button onClick={onNavigateToCalculations} variant="primary" className="w-full">Aceder aos Meus Cálculos</Button>
                     </div>
                 </div>
-                {pendingBalance > 0.01 && (
+                {pendingBalance > 0.01 ? (
                     <div className="w-full mt-6 p-4 border-l-4 border-yellow-500 bg-yellow-900/50 text-yellow-200 rounded-r-lg">
                         <div className="flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -212,6 +211,18 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
                             <div>
                                 <p className="font-bold">Aviso de Faturação Pendente</p>
                                 <p className="text-sm">Tem um saldo de <strong>€{pendingBalance.toFixed(2)}</strong> a faturar em recibos verdes.</p>
+                            </div>
+                        </div>
+                    </div>
+                ) : pendingBalance < -0.01 && (
+                     <div className="w-full mt-6 p-4 border-l-4 border-red-500 bg-red-900/50 text-red-200 rounded-r-lg">
+                        <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div>
+                                <p className="font-bold">Aviso de Saldo Devedor</p>
+                                <p className="text-sm">Verificamos um saldo negativo de <strong>€{pendingBalance.toFixed(2)}</strong>. Este valor representa uma dívida para com a empresa e será gerido como tal.</p>
                             </div>
                         </div>
                     </div>

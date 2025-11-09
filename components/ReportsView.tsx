@@ -91,43 +91,44 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
         return inRange;
     });
 
-    const groupedByDriver: Record<string, ReportRow> = filteredCalculations.reduce(
-      (acc, calc) => {
-        const summary = calculateSummary(calc);
-        if (!acc[calc.driverId]) {
-          acc[calc.driverId] = {
-            driverId: calc.driverId,
-            driverName: calc.driverName,
-            totalGanhos: 0,
-            totalDeducoes: 0,
-            totalValorFinal: 0,
-            calculationCount: 0,
-            totalReceipts: 0,
-            pendingBalance: 0,
-          };
-        }
-
-        acc[calc.driverId].totalGanhos += summary.totalGanhos;
-        acc[calc.driverId].totalDeducoes += summary.totalDeducoes;
-        acc[calc.driverId].totalValorFinal += summary.valorFinal;
-        acc[calc.driverId].calculationCount++;
-        
-        return acc;
-      },
-      {}
-    );
-
-    filteredReceipts.forEach(receipt => {
-        if (groupedByDriver[receipt.driverId]) {
-            groupedByDriver[receipt.driverId].totalReceipts += receipt.amount;
-        }
-    });
+    // Get a unique list of all driver IDs that have EITHER a calculation OR a receipt in the period.
+    const driverIdsWithActivity = [
+        ...new Set([
+            ...filteredCalculations.map(c => c.driverId),
+            ...filteredReceipts.map(r => r.driverId)
+        ])
+    ];
     
-    Object.values(groupedByDriver).forEach(row => {
-        row.pendingBalance = row.totalValorFinal - row.totalReceipts;
-    });
+    // Build the report rows based on this comprehensive list of drivers.
+    const groupedData = driverIdsWithActivity.map(driverId => {
+        const driverInfo = users.find(u => u.id === driverId);
+        if (!driverInfo) return null;
 
-    const allDriversReport = Object.values(groupedByDriver).sort((a, b) => a.driverName.localeCompare(b.driverName));
+        const driverCalcs = filteredCalculations.filter(c => c.driverId === driverId);
+        const driverReceipts = filteredReceipts.filter(r => r.driverId === driverId);
+
+        const totalValorFinal = driverCalcs.reduce((sum, calc) => {
+            const summary = calculateSummary(calc);
+            return sum + (summary.valorFinal || 0);
+        }, 0);
+
+        const totalReceipts = driverReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+
+        return {
+          driverId: driverId,
+          driverName: driverInfo.name,
+          totalGanhos: 0,
+          totalDeducoes: 0,
+          totalValorFinal: totalValorFinal,
+          calculationCount: driverCalcs.length,
+          totalReceipts: totalReceipts,
+          // Per user request, Saldo a Faturar should equal the Total Líquido for the period.
+          pendingBalance: totalValorFinal,
+        };
+    }).filter((row): row is ReportRow => row !== null);
+
+
+    const allDriversReport = groupedData.sort((a, b) => a.driverName.localeCompare(b.driverName));
     
     if (selectedDriverId === 'all' || isDriverView) {
         return allDriversReport;
@@ -135,7 +136,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
         return allDriversReport.filter(row => row.driverId === selectedDriverId);
     }
 
-  }, [calculations, receipts, startDate, endDate, driverId, selectedDriverId, isDriverView]);
+  }, [calculations, receipts, startDate, endDate, driverId, selectedDriverId, isDriverView, users]);
 
   const handleDownloadReportPdf = async () => {
     const element = reportPrintRef.current;
@@ -168,8 +169,15 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
         tableRows.forEach(row => {
             const lastCell = row.querySelector('td:last-child');
             if (lastCell) {
-                (lastCell as HTMLElement).style.fontWeight = 'bold';
-                (lastCell as HTMLElement).style.backgroundColor = '#FFF8E1'; // Light yellow
+                const cell = lastCell as HTMLElement;
+                cell.style.fontWeight = 'bold';
+                
+                const cellText = cell.textContent || '';
+                if (cellText.includes('-')) {
+                    cell.style.color = 'red';
+                } else if (parseFloat(cellText.replace('€','')) > 0) {
+                     cell.style.backgroundColor = '#FFF8E1'; // Light yellow
+                }
             }
         });
     }
@@ -177,12 +185,20 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
     // Mobile Cards styling
     const mobileCards = clone.querySelectorAll('.md\\:hidden .bg-gray-900\\/50');
     mobileCards.forEach(card => {
-        const invoicingRow = card.querySelector<HTMLElement>('.border-t-2');
+        const invoicingRow = card.querySelector<HTMLElement>('.saldo-faturar-mobile-row');
         if (invoicingRow) {
-            invoicingRow.style.backgroundColor = '#FFF8E1'; // Light yellow
-            invoicingRow.style.padding = '8px';
-            invoicingRow.style.marginTop = '4px';
-            invoicingRow.style.borderRadius = '4px';
+            const valueSpan = invoicingRow.querySelector<HTMLElement>('span:last-child');
+            if (valueSpan) {
+                const valueText = valueSpan.textContent || '';
+                 if (valueText.includes('-')) {
+                    valueSpan.style.color = 'red';
+                } else if (parseFloat(valueText.replace('€','')) > 0) {
+                    invoicingRow.style.backgroundColor = '#FFF8E1'; // Light yellow
+                    invoicingRow.style.padding = '8px';
+                    invoicingRow.style.marginTop = '4px';
+                    invoicingRow.style.borderRadius = '4px';
+                }
+            }
         }
     });
 
@@ -310,9 +326,14 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
                         {!isDriverView && <h4 className="font-bold text-lg text-white mb-2 pb-2 border-b border-gray-700">{row.driverName}</h4>}
                         <div className="space-y-1">
                             <ReportDataRow label="Semanas Aceites" value={String(row.calculationCount)} />
-                            <ReportDataRow label="Total Líquido (Motorista)" value={formatCurrency(row.totalValorFinal)} className="text-green-400" />
-                            <ReportDataRow label="Total Recibos Emitidos" value={formatCurrency(row.totalReceipts)} className="text-blue-400" />
-                            <ReportDataRow label="Saldo a Faturar" value={formatCurrency(row.pendingBalance)} className="text-yellow-400 font-bold border-t-2 border-dashed border-gray-600 mt-2 pt-2" />
+                            <ReportDataRow label="Total Líquido (Motorista)" value={formatCurrency(row.totalValorFinal)} />
+                            <ReportDataRow label="Total Recibos Emitidos" value={formatCurrency(row.totalReceipts)} />
+                            <div className="saldo-faturar-mobile-row flex justify-between items-center py-2 font-bold border-t-2 border-dashed border-gray-600 mt-2 pt-2">
+                                <span className="text-sm text-gray-400">Saldo a Faturar</span>
+                                <span className={`font-semibold ${row.pendingBalance > 0 ? 'text-yellow-400' : row.pendingBalance < 0 ? 'text-red-400' : 'text-white'}`}>
+                                    {formatCurrency(row.pendingBalance)}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 ))
@@ -327,7 +348,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
               <thead className="bg-gray-800">
                 <tr>
                   {!isDriverView && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Motorista</th>}
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Semanas Aceites</th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">Semanas Aceites</th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Líquido (Motorista)</th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Recibos Emitidos</th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider font-bold">Saldo a Faturar</th>
@@ -339,9 +360,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
                     <tr key={row.driverId} className="hover:bg-gray-700/50">
                       {!isDriverView && <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{row.driverName}</td>}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-300">{row.calculationCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-400">{formatCurrency(row.totalValorFinal)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-blue-400">{formatCurrency(row.totalReceipts)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-yellow-400 font-bold">{formatCurrency(row.pendingBalance)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-300">{formatCurrency(row.totalValorFinal)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-300">{formatCurrency(row.totalReceipts)}</td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-bold ${row.pendingBalance > 0 ? 'text-yellow-400' : row.pendingBalance < 0 ? 'text-red-400' : 'text-white'}`}>{formatCurrency(row.pendingBalance)}</td>
                     </tr>
                   ))
                 ) : (
