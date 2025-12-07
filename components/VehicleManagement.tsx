@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
@@ -46,6 +48,7 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
     const [editingDriver, setEditingDriver] = useState<User | null>(null);
     const [isAddingNewUser, setIsAddingNewUser] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
+    const [swappingDriver, setSwappingDriver] = useState<User | null>(null);
 
     const allUsers = useMemo(() => [...users].sort((a, b) => a.name.localeCompare(b.name)), [users]);
     const visibleUsers = useMemo(() => {
@@ -94,6 +97,7 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
     };
     
     const handleSwapDriver = (userToSwap: User) => {
+        setSwappingDriver(userToSwap);
         setIsAddingNewUser(true);
         setEditingDriver(null);
         setFormData({
@@ -124,6 +128,7 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
     const handleCancel = () => {
         setIsAddingNewUser(false);
         setEditingDriver(null);
+        setSwappingDriver(null);
         setFormData(initialFormState);
     };
 
@@ -148,7 +153,13 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
                 slotFixedValue: parseFloat(formData.slotFixedValue) || 0,
             });
             if (result.success) {
-                alert('Utilizador adicionado com sucesso!');
+                if (swappingDriver) {
+                    await updateUser(swappingDriver.id, { status: 'ARCHIVED' });
+                    alert(`Utilizador ${formData.name} adicionado com sucesso. O motorista anterior, ${swappingDriver.name}, foi arquivado.`);
+                    setSwappingDriver(null);
+                } else {
+                    alert('Utilizador adicionado com sucesso!');
+                }
                 handleCancel();
             } else {
                 alert(`Erro ao adicionar utilizador: ${result.error}`);

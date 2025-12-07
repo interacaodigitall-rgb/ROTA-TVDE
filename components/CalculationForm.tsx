@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCalculations } from '../hooks/useCalculations';
@@ -68,7 +66,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   const selectedDriver = useMemo(() => users.find(u => u.id === driverId), [driverId, users]);
   const calculationType = selectedDriver?.type ?? CalculationType.SLOT;
   
-  const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER), [users]);
+  const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER && u.status !== 'ARCHIVED'), [users]);
   const nonDrivers = useMemo(() => users.filter(u => u.role !== UserRole.DRIVER && u.id !== adminUser?.id), [users, adminUser]);
 
 
