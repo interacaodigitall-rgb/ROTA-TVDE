@@ -141,14 +141,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const lowerCaseEmail = email.toLowerCase();
     
     // Check if it's a demo account login attempt
-    if (DEMO_ACCOUNTS[lowerCaseEmail] && password === '0123456') {
+    const isDemoAdminLogin = lowerCaseEmail === 'demoad@rotatvde.pt' && password === 'Minharotatvde';
+    const isOtherDemoLogin = (lowerCaseEmail === 'demofr@rotatvde.pt' || lowerCaseEmail === 'demosl@rotatvde.pt') && password === '0123456';
+
+    if (DEMO_ACCOUNTS[lowerCaseEmail] && (isDemoAdminLogin || isOtherDemoLogin)) {
       const demoAccount = DEMO_ACCOUNTS[lowerCaseEmail];
       loginAsDemo(demoAccount.role, demoAccount.type);
       return true;
     }
     
     // If a demo email is used with the wrong password, show a specific error
-    if (DEMO_ACCOUNTS[lowerCaseEmail] && password !== '0123456') {
+    if (DEMO_ACCOUNTS[lowerCaseEmail]) {
         setError('Password inválida para a conta de demonstração.');
         return false;
     }
