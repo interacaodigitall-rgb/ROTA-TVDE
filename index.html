@@ -12,39 +12,12 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ROTA TVDE 5.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <link rel="stylesheet" href="/index.css">
+  </head>
   <body class="bg-gray-900 text-white">
     <div id="root"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyCCv7pV872bRnSdo7t24nGyVVg2yhJ_L_A",
-          authDomain: "meus-calculosv1.firebaseapp.com",
-          projectId: "meus-calculosv1",
-          storageBucket: "meus-calculosv1.firebasestorage.app",
-          messagingSenderId: "694044520930",
-          appId: "1:694044520930:web:d870f447d0e4303b2149bb",
-          measurementId: "G-MVBJF9C0N3"
-        };
-        firebase.initializeApp(firebaseConfig);
-    </script>
     
     <script type="module" src="/index.tsx"></script>
   </body>

@@ -6,11 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "lint": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "firebase": "^12.10.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
