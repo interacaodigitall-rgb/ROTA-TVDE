@@ -134,17 +134,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const DEMO_ACCOUNTS = {
       'demoad@rotatvde.pt': { role: UserRole.ADMIN, type: undefined },
+      'adm@tvdecheck.pt': { role: UserRole.ADMIN, type: undefined },
       'demofr@rotatvde.pt': { role: UserRole.DRIVER, type: CalculationType.FROTA },
       'demosl@rotatvde.pt': { role: UserRole.DRIVER, type: CalculationType.SLOT },
     };
 
     const lowerCaseEmail = email.toLowerCase();
     
-    // Check if it's a demo account login attempt
-    const isDemoAdminLogin = lowerCaseEmail === 'demoad@rotatvde.pt' && password === 'Minharotatvde';
+    // Check if it's a demo or special admin login attempt
+    const isLegacyDemoAdmin = lowerCaseEmail === 'demoad@rotatvde.pt' && password === 'Minharotatvde';
+    const isSystemAdminLogin = lowerCaseEmail === 'adm@tvdecheck.pt' && password === '0123456789';
     const isOtherDemoLogin = (lowerCaseEmail === 'demofr@rotatvde.pt' || lowerCaseEmail === 'demosl@rotatvde.pt') && password === '0123456';
 
-    if (DEMO_ACCOUNTS[lowerCaseEmail] && (isDemoAdminLogin || isOtherDemoLogin)) {
+    if (DEMO_ACCOUNTS[lowerCaseEmail] && (isLegacyDemoAdmin || isSystemAdminLogin || isOtherDemoLogin)) {
       const demoAccount = DEMO_ACCOUNTS[lowerCaseEmail];
       loginAsDemo(demoAccount.role, demoAccount.type);
       return true;
