@@ -52,6 +52,9 @@ export const AdTechProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setCampaigns(list);
           } else {
             setCampaigns(MOCK_AD_CAMPAIGNS);
+            MOCK_AD_CAMPAIGNS.forEach(c => {
+              db.collection('ad_campaigns').doc(c.id).set(c).catch(() => {});
+            });
           }
         },
         (err: any) => {
@@ -71,6 +74,9 @@ export const AdTechProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setDevices(list);
           } else {
             setDevices(MOCK_AD_DEVICES);
+            MOCK_AD_DEVICES.forEach(d => {
+              db.collection('ad_devices').doc(d.id).set(d).catch(() => {});
+            });
           }
         },
         (err: any) => {

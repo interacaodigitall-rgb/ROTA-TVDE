@@ -96,11 +96,12 @@ const NavLink: React.FC<{
 const SidebarContent: React.FC<{
     user: ReturnType<typeof useAuth>['user'];
     logout: ReturnType<typeof useAuth>['logout'];
+    isDemo: boolean;
     view: AdminView;
     setView: (view: AdminView) => void;
     onLinkClick: () => void;
     currentCompanyName?: string;
-}> = ({ user, logout, view, setView, onLinkClick, currentCompanyName }) => (
+}> = ({ user, logout, isDemo, view, setView, onLinkClick, currentCompanyName }) => (
     <>
         <div className="flex flex-col mb-6 flex-shrink-0">
           <div className="flex items-center gap-2.5">
@@ -120,6 +121,21 @@ const SidebarContent: React.FC<{
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0 ml-1.5" title="Frota Ativa"></span>
             </div>
           )}
+
+          {/* Database Mode Status */}
+          <div className="mt-2.5">
+            {!isDemo ? (
+              <div className="px-2 py-1 rounded bg-emerald-950/60 border border-emerald-800/80 text-emerald-300 text-[10px] font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
+                <span>Modo Real (Firestore)</span>
+              </div>
+            ) : (
+              <div className="px-2 py-1 rounded bg-amber-950/60 border border-amber-800/80 text-amber-300 text-[10px] font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
+                <span>Modo Demonstração</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <nav className="flex-1 space-y-4 overflow-y-auto pr-1">
@@ -156,13 +172,21 @@ const SidebarContent: React.FC<{
 
         <div className="mt-auto pt-3 border-t border-slate-700/80">
             <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-700/60 flex items-center justify-between">
-                <div className="truncate">
+                <div className="truncate pr-2">
                   <p className="text-xs font-bold text-white truncate">{user?.name}</p>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">{user?.role}</p>
+                  <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5 ${
+                    user?.role === UserRole.ADMIN 
+                      ? 'bg-rose-950 text-rose-300 border border-rose-800' 
+                      : user?.role === UserRole.MANAGER 
+                        ? 'bg-indigo-950 text-indigo-300 border border-indigo-800' 
+                        : 'bg-slate-800 text-slate-300'
+                  }`}>
+                    {user?.role === UserRole.ADMIN ? 'Administrador' : user?.role === UserRole.MANAGER ? 'Gerente da Frota' : user?.role}
+                  </span>
                 </div>
                 <button 
                   onClick={(e) => { e.preventDefault(); logout(); }}
-                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors flex-shrink-0"
                   title="Terminar Sessão"
                 >
                   <LogOut className="w-4 h-4" />
@@ -193,7 +217,7 @@ const StatCard: React.FC<{ title: string; value: string; subtext: string; icon: 
 
 const AdminDashboard: React.FC = () => {
   const { calculations, loading, error } = useCalculations();
-  const { user, logout } = useAuth();
+  const { user, logout, isDemo } = useAuth();
   const { users } = useUsers();
   const { currentCompany } = useCompany();
   
@@ -340,9 +364,30 @@ const AdminDashboard: React.FC = () => {
 
   const renderDashboardHome = () => (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold">Dashboard do Administrador</h2>
-        <p className="text-gray-400">Visão geral e gestão da frota.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold">
+            {user?.role === UserRole.MANAGER ? 'Painel de Gestão Operacional (Gerente)' : 'Dashboard do Administrador'}
+          </h2>
+          <p className="text-gray-400">
+            {user?.role === UserRole.MANAGER 
+              ? 'Gestão operacional de viaturas, motoristas, cálculos e acertos semanais.' 
+              : 'Visão geral e gestão integrada da frota TVDE.'}
+          </p>
+        </div>
+        <div>
+          {!isDemo ? (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs font-bold shadow-lg shadow-emerald-950/40">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Base de Dados Real (Firestore Ativo)
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/80 border border-amber-500/50 text-amber-300 text-xs font-bold shadow-lg shadow-amber-950/40">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              Modo Demonstração (Dados Estáticos)
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -582,6 +627,7 @@ const AdminDashboard: React.FC = () => {
         <SidebarContent 
           user={user} 
           logout={logout} 
+          isDemo={isDemo}
           view={view} 
           setView={handleSetView} 
           onLinkClick={() => setIsSidebarOpen(false)} 
@@ -595,6 +641,7 @@ const AdminDashboard: React.FC = () => {
           <SidebarContent 
             user={user} 
             logout={logout} 
+            isDemo={isDemo}
             view={view} 
             setView={handleSetView} 
             onLinkClick={() => {}} 

@@ -48,7 +48,7 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [showArchived, setShowArchived] = useState(false);
     const [selectedVacantVehicleId, setSelectedVacantVehicleId] = useState('');
-
+    const [roleFilter, setRoleFilter] = useState<'ALL' | 'DRIVER' | 'MANAGEMENT' | 'OWNER'>('ALL');
 
     const allUsers = useMemo(() => [...users].sort((a, b) => a.name.localeCompare(b.name)), [users]);
     
@@ -57,11 +57,16 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
     }, [allUsers]);
 
     const visibleUsers = useMemo(() => {
-        if (hideArchivedToggle) {
-            return allUsers.filter(u => u.role !== UserRole.ADMIN && u.status !== 'ARCHIVED');
-        }
-        return allUsers.filter(u => u.role !== UserRole.ADMIN && (showArchived || u.status !== 'ARCHIVED'));
-    }, [allUsers, showArchived, hideArchivedToggle]);
+        return allUsers.filter(u => {
+            const matchesArchived = hideArchivedToggle ? u.status !== 'ARCHIVED' : (showArchived || u.status !== 'ARCHIVED');
+            if (!matchesArchived) return false;
+
+            if (roleFilter === 'DRIVER') return u.role === UserRole.DRIVER;
+            if (roleFilter === 'MANAGEMENT') return u.role === UserRole.ADMIN || u.role === UserRole.MANAGER;
+            if (roleFilter === 'OWNER') return u.role === UserRole.OWNER;
+            return true;
+        });
+    }, [allUsers, showArchived, hideArchivedToggle, roleFilter]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -300,10 +305,12 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
                                              <>
                                                 {operationMode !== 'reassign' && (
                                                     <div>
-                                                        <label htmlFor="role" className="block text-sm font-medium text-gray-300">Tipo de Utilizador</label>
+                                                        <label htmlFor="role" className="block text-sm font-medium text-gray-300">Tipo de Utilizador / Função</label>
                                                         <select id="role" name="role" value={formData.role} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
                                                             <option value={UserRole.DRIVER}>Motorista</option>
-                                                            <option value={UserRole.OWNER}>Proprietário</option>
+                                                            <option value={UserRole.MANAGER}>Gerente / Gestor da Frota</option>
+                                                            <option value={UserRole.ADMIN}>Administrador</option>
+                                                            <option value={UserRole.OWNER}>Proprietário de Viatura</option>
                                                         </select>
                                                     </div>
                                                 )}
@@ -326,6 +333,15 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
                                                 <div className="p-3 bg-gray-900 rounded-lg">
                                                     {formData.role !== UserRole.DRIVER && <p className="text-sm font-semibold text-white">{formData.name}</p>}
                                                     <p className="text-xs text-gray-400">{formData.email} ({formData.role})</p>
+                                                </div>
+                                                <div>
+                                                    <label htmlFor="editRole" className="block text-sm font-medium text-gray-300">Função / Papel</label>
+                                                    <select id="editRole" name="role" value={formData.role} onChange={handleInputChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                                                        <option value={UserRole.DRIVER}>Motorista</option>
+                                                        <option value={UserRole.MANAGER}>Gerente / Gestor da Frota</option>
+                                                        <option value={UserRole.ADMIN}>Administrador</option>
+                                                        <option value={UserRole.OWNER}>Proprietário de Viatura</option>
+                                                    </select>
                                                 </div>
                                                 <div>
                                                     <label htmlFor="status" className="block text-sm font-medium text-gray-300">Estado do Utilizador</label>
@@ -434,8 +450,41 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
                                     </div>
                                 )}
                             </div>
-                             {!readOnly && <Button onClick={() => handleOperation('add')} variant="primary">Adicionar Novo Utilizador</Button>}
+                            {!readOnly && <Button onClick={() => handleOperation('add')} variant="primary">Adicionar Novo Utilizador</Button>}
                         </div>
+
+                        {/* Filter Tabs for Roles */}
+                        <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1">
+                            <button
+                                type="button"
+                                onClick={() => setRoleFilter('ALL')}
+                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'ALL' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            >
+                                Todos ({allUsers.length})
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRoleFilter('DRIVER')}
+                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'DRIVER' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            >
+                                Motoristas ({allUsers.filter(u => u.role === UserRole.DRIVER).length})
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRoleFilter('MANAGEMENT')}
+                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'MANAGEMENT' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            >
+                                Gerentes & Admins ({allUsers.filter(u => u.role === UserRole.ADMIN || u.role === UserRole.MANAGER).length})
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRoleFilter('OWNER')}
+                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'OWNER' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            >
+                                Proprietários ({allUsers.filter(u => u.role === UserRole.OWNER).length})
+                            </button>
+                        </div>
+
                         {usersLoading ? (
                              <p className="text-gray-400">A carregar utilizadores...</p>
                         ) : visibleUsers.length > 0 ? (
@@ -446,13 +495,29 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
                                     const isSelected = selectedUser?.id === user.id;
                                     const isArchived = user.status === 'ARCHIVED';
                                     
+                                    const roleBadgeConfig = () => {
+                                        if (user.role === UserRole.ADMIN) {
+                                            return { label: 'ADMINISTRADOR', cls: 'bg-rose-900/80 text-rose-200 border border-rose-700/60' };
+                                        }
+                                        if (user.role === UserRole.MANAGER) {
+                                            return { label: 'GERENTE', cls: 'bg-indigo-900/80 text-indigo-200 border border-indigo-700/60' };
+                                        }
+                                        if (user.role === UserRole.OWNER) {
+                                            return { label: 'PROPRIETÁRIO', cls: 'bg-purple-900/80 text-purple-200 border border-purple-700/60' };
+                                        }
+                                        return { label: 'MOTORISTA', cls: 'bg-cyan-950 text-cyan-300 border border-cyan-800/60' };
+                                    };
+                                    const badge = roleBadgeConfig();
+
                                     return (
                                         <div key={user.id} className={`p-4 rounded-lg border transition-all duration-200 ${isSelected ? 'bg-blue-900/30 border-blue-600' : isArchived ? 'bg-gray-800/50 border-gray-700 opacity-60' : 'bg-gray-900/50 border-gray-700'}`}>
                                             <div className="flex justify-between items-start gap-4 flex-wrap">
                                                 <div className="flex-grow">
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         <p className={`font-bold text-white ${isArchived ? 'line-through' : ''}`}>{user.name}</p>
-                                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isDriver ? 'bg-cyan-800 text-cyan-200' : 'bg-purple-800 text-purple-200'}`}>{user.role}</span>
+                                                        <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full ${badge.cls}`}>
+                                                            {badge.label}
+                                                        </span>
                                                         {isDriver && <span className="text-xs text-gray-400">({user.matricula})</span>}
                                                         {isArchived && <span className="text-xs font-bold text-gray-400 bg-gray-700 px-2 py-0.5 rounded-full">ARQUIVADO</span>}
                                                         {hasDebt && !isArchived && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">COM DÍVIDA</span>}

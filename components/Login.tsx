@@ -81,6 +81,32 @@ const Login: React.FC = () => {
             </div>
           </form>
 
+          {/* Real Mode Quick Access for Admin & Gerente */}
+          <div className="mt-6 pt-4 border-t border-gray-700/80">
+            <p className="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
+              <span>Acesso Rápido - Modo Real (Firestore):</span>
+              <span className="text-[10px] text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">Oficial</span>
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => { setEmail('adm@tvdecheck.pt'); setPassword('0123456789'); }}
+                className="text-left p-2 rounded-lg bg-gray-750 hover:bg-gray-700 border border-gray-600 transition-colors"
+              >
+                <div className="text-xs font-bold text-white">Administrador Real</div>
+                <div className="text-[10px] text-gray-400 truncate">adm@tvdecheck.pt</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEmail('gerente@tvdecheck.pt'); setPassword('0123456789'); }}
+                className="text-left p-2 rounded-lg bg-gray-750 hover:bg-gray-700 border border-gray-600 transition-colors"
+              >
+                <div className="text-xs font-bold text-white">Gerente Real</div>
+                <div className="text-[10px] text-gray-400 truncate">gerente@tvdecheck.pt</div>
+              </button>
+            </div>
+          </div>
+
           {/* Demo Section */}
           <div className="mt-6">
             <div className="relative">
@@ -88,18 +114,18 @@ const Login: React.FC = () => {
                 <div className="w-full border-t border-gray-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-800 text-gray-400">Ou aceder à versão DEMO</span>
+                <span className="px-2 bg-gray-800 text-gray-400 text-xs">Ou aceder à versão DEMO (Dados de Teste)</span>
               </div>
             </div>
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Button type="button" onClick={() => { setEmail('demoad@rotatvde.pt'); setPassword(''); }} variant="secondary" className="w-full">
-                Admin
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <Button type="button" onClick={() => { setEmail('demoad@rotatvde.pt'); setPassword('Minharotatvde'); }} variant="secondary" className="w-full text-xs">
+                Demo Admin
               </Button>
-              <Button type="button" onClick={() => { setEmail('demofr@rotatvde.pt'); setPassword(''); }} variant="secondary" className="w-full">
-                Frota
+              <Button type="button" onClick={() => { setEmail('demofr@rotatvde.pt'); setPassword('0123456'); }} variant="secondary" className="w-full text-xs">
+                Demo Frota
               </Button>
-              <Button type="button" onClick={() => { setEmail('demosl@rotatvde.pt'); setPassword(''); }} variant="secondary" className="w-full">
-                Slot
+              <Button type="button" onClick={() => { setEmail('demosl@rotatvde.pt'); setPassword('0123456'); }} variant="secondary" className="w-full text-xs">
+                Demo Slot
               </Button>
             </div>
           </div>

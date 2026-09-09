@@ -42,8 +42,11 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
               setCurrentCompanyId(list[0]?.id || DEFAULT_COMPANY.id);
             }
           } else {
-            // Seed or keep default Asfalto Cativante
+            // Seed default Asfalto Cativante directly into Firestore
             setCompanies([DEFAULT_COMPANY]);
+            db.collection('companies').doc(DEFAULT_COMPANY.id).set(DEFAULT_COMPANY).catch((err: any) => {
+              console.warn("Could not initial-seed default company in firestore:", err);
+            });
           }
         },
         (error: any) => {

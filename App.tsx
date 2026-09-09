@@ -19,7 +19,7 @@ const App: React.FC = () => {
     }
     
     // Each dashboard component is now responsible for its own full-page layout
-    if (user.role === UserRole.ADMIN) {
+    if (user.role === UserRole.ADMIN || user.role === UserRole.MANAGER) {
       return <AdminDashboard />;
     }
     if (user.role === UserRole.OWNER) {

@@ -40,11 +40,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const userList = snapshot.docs.map((doc: any) => {
           const data = doc.data();
           
-          const roleSource = data.role || data.papel;
+          const roleSource = String(data.role || data.papel || '').toUpperCase().trim();
           let role: UserRole;
-          if (roleSource === 'ADMIN') {
+          if (roleSource === 'ADMIN' || roleSource === 'ADMINISTRADOR' || roleSource === 'SUPERADMIN') {
               role = UserRole.ADMIN;
-          } else if (roleSource === 'PROPRIETÁRIO' || roleSource === 'OWNER') {
+          } else if (roleSource === 'GERENTE' || roleSource === 'MANAGER' || roleSource === 'GESTOR' || roleSource === 'GERÊNCIA' || roleSource === 'GERENCIA') {
+              role = UserRole.MANAGER;
+          } else if (roleSource === 'PROPRIETÁRIO' || roleSource === 'PROPRIETARIO' || roleSource === 'OWNER') {
               role = UserRole.OWNER;
           } else {
               role = UserRole.DRIVER; // Default to DRIVER
