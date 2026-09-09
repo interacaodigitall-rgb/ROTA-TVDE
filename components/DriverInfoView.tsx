@@ -7,6 +7,7 @@ import Card from './ui/Card';
 import { MOCK_COMPANY_INFO } from '../demoData';
 import { useCalculations } from '../hooks/useCalculations';
 import { useReceipts } from '../hooks/useReceipts';
+import { useCompany } from '../hooks/useCompany';
 import { calculateSummary } from '../utils/calculationUtils';
 
 // FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
@@ -99,6 +100,7 @@ const ReminderModal: React.FC<{
 
 const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ onNavigateToCalculations }) => {
   const { user, logout, isDemo } = useAuth();
+  const { currentCompany } = useCompany();
   const { ibans, loading: ibansLoading } = useIbans();
   const { calculations } = useCalculations();
   const { receipts } = useReceipts();
@@ -306,35 +308,38 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
 
              <InfoCard title="Dados para Faturação" borderColor="border-t-purple-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
                 <p className="text-sm text-gray-400">Utilize estes dados para emitir os seus recibos verdes.</p>
-                {isDemo ? (
-                    <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
-                        <div>
-                            <p className="font-semibold">{MOCK_COMPANY_INFO.name}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">NIPC</p>
-                            <p className="font-semibold">{MOCK_COMPANY_INFO.nipc}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">GERÊNCIA</p>
-                            <p className="font-semibold">{MOCK_COMPANY_INFO.manager}</p>
-                        </div>
+                <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
+                    <div>
+                        <p className="font-semibold">{currentCompany.tradeName || currentCompany.name || (isDemo ? MOCK_COMPANY_INFO.name : "ASFALTO CATIVANTE - UNIPESSOAL LDA")}</p>
                     </div>
-                ) : (
-                    <div className="space-y-3 pt-3 mt-3 border-t border-gray-700">
-                        <div>
-                            <p className="font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">NIPC</p>
-                            <p className="font-semibold">517112604</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">GERÊNCIA</p>
-                            <p className="font-semibold">PAULO ROGÉRIO COSTA FERREIRA</p>
-                        </div>
+                    <div>
+                        <p className="text-xs text-gray-400">NIPC</p>
+                        <p className="font-semibold">{currentCompany.nipc || (isDemo ? MOCK_COMPANY_INFO.nipc : "517112604")}</p>
                     </div>
-                )}
+                    <div>
+                        <p className="text-xs text-gray-400">GERÊNCIA</p>
+                        <p className="font-semibold">{currentCompany.manager || (isDemo ? MOCK_COMPANY_INFO.manager : "PAULO ROGÉRIO COSTA FERREIRA")}</p>
+                    </div>
+                </div>
+            </InfoCard>
+
+            <InfoCard title="Monetização AdTech" borderColor="border-t-emerald-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}>
+                <p className="text-sm text-gray-300">Programa de ecrãs interativos para passageiros integrado na frota.</p>
+                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-3 space-y-2 mt-2">
+                    <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-400">Estado do Tablet:</span>
+                        <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Ativo & Vinculado
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-400">Ganhos AdTech Estimados:</span>
+                        <span className="font-bold text-emerald-300">€15.00 a €35.00 /sem</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 pt-1 border-t border-emerald-500/20">
+                        O bónus publicitário é creditado automaticamente no seu resumo semanal em cada ciclo de acerto.
+                    </p>
+                </div>
             </InfoCard>
 
              <InfoCard title="Dados de Pagamento" borderColor="border-t-blue-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>}>

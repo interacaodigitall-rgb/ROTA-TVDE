@@ -9,9 +9,23 @@ import { db } from '../firebase';
 import { useAdjustments } from '../hooks/useAdjustments';
 import { calculateSummary } from '../utils/calculationUtils';
 
-interface CalculationFormProps {
+export interface CalculationFormProps {
   onClose: () => void;
   calculationToEdit?: Calculation | null;
+  initialValues?: {
+    driverId?: string;
+    uberRides?: number;
+    uberTips?: number;
+    uberTolls?: number;
+    boltRides?: number;
+    boltTips?: number;
+    boltTolls?: number;
+    fleetCard?: number;
+    rentalTolls?: number;
+    periodStart?: string;
+    periodEnd?: string;
+    adTechBonus?: number;
+  } | null;
 }
 
 const NumberInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
@@ -44,12 +58,13 @@ const initialFormData = {
   isIvaExempt: false,
   isSlotExempt: false,
   fuelType: '',
+  adTechBonus: '0',
 };
 
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
 const toInputDate = (timestamp: any) => toDate(timestamp).toISOString().split('T')[0];
 
-const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationToEdit }) => {
+const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationToEdit, initialValues }) => {
   const { user: adminUser, isDemo } = useAuth();
   const { addCalculation, updateCalculation, calculations: allCalculations } = useCalculations();
   const { users, updateUser } = useUsers();
@@ -68,6 +83,31 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
   
   const drivers = useMemo(() => users.filter(u => u.role === UserRole.DRIVER && u.status !== 'ARCHIVED'), [users]);
   const nonDrivers = useMemo(() => users.filter(u => u.role !== UserRole.DRIVER && u.id !== adminUser?.id), [users, adminUser]);
+
+  useEffect(() => {
+    if (initialValues && !isEditMode) {
+      if (initialValues.driverId) {
+        setDriverId(initialValues.driverId);
+        const matched = users.find(u => u.id === initialValues.driverId);
+        if (matched) setDriverName(matched.name);
+      }
+      setFormData(prev => ({
+        ...prev,
+        periodStart: initialValues.periodStart || prev.periodStart,
+        periodEnd: initialValues.periodEnd || prev.periodEnd,
+        uberRides: initialValues.uberRides !== undefined ? String(initialValues.uberRides) : prev.uberRides,
+        uberTips: initialValues.uberTips !== undefined ? String(initialValues.uberTips) : prev.uberTips,
+        uberTolls: initialValues.uberTolls !== undefined ? String(initialValues.uberTolls) : prev.uberTolls,
+        boltRides: initialValues.boltRides !== undefined ? String(initialValues.boltRides) : prev.boltRides,
+        boltTips: initialValues.boltTips !== undefined ? String(initialValues.boltTips) : prev.boltTips,
+        boltTolls: initialValues.boltTolls !== undefined ? String(initialValues.boltTolls) : prev.boltTolls,
+        fleetCard: initialValues.fleetCard !== undefined ? String(initialValues.fleetCard) : prev.fleetCard,
+        rentalTolls: initialValues.rentalTolls !== undefined ? String(initialValues.rentalTolls) : prev.rentalTolls,
+        adTechBonus: initialValues.adTechBonus !== undefined ? String(initialValues.adTechBonus) : prev.adTechBonus,
+      }));
+    }
+  }, [initialValues, isEditMode, users]);
+
 
 
   useEffect(() => {
@@ -95,8 +135,9 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         isIvaExempt: !!calculationToEdit.isIvaExempt,
         isSlotExempt: !!calculationToEdit.isSlotExempt,
         fuelType: calculationToEdit.fuelType || '',
+        adTechBonus: String(calculationToEdit.adTechBonus || '0'),
       });
-    } else {
+    } else if (!initialValues) {
       setDriverId('');
       setDriverName('');
       setFormData(initialFormData);
@@ -290,6 +331,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         otherExpenses: parseFloat(formData.otherExpenses) || 0,
         vehicleRental: parseFloat(formData.vehicleRental) || 0,
         debtDeduction: debtDeductionAmount,
+        adTechBonus: parseFloat(formData.adTechBonus) || 0,
     };
 
     const calculationData: any = {
@@ -304,6 +346,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       vehicleRental: calculationType === CalculationType.FROTA || calculationType === CalculationType.PERCENTAGE || (selectedDriver?.type === CalculationType.SLOT && selectedDriver?.slotType === 'FIXED') ? numericFormData.vehicleRental : 0,
       isIvaExempt: formData.isIvaExempt,
       isSlotExempt: formData.isSlotExempt,
+      adTechBonus: numericFormData.adTechBonus,
     };
 
     if (selectedDriver?.type === CalculationType.PERCENTAGE) {
@@ -492,6 +535,17 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                  <div className="flex items-center">
                     <input id="isSlotExempt" name="isSlotExempt" type="checkbox" checked={formData.isSlotExempt} onChange={handleInputChange} disabled={selectedDriver?.type !== CalculationType.SLOT || selectedDriver?.slotType === 'FIXED'} className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500 disabled:opacity-50" />
                     <label htmlFor="isSlotExempt" className="ml-3 block text-sm font-medium text-gray-300">Isento de Slot (4%)</label>
+                </div>
+            </div>
+
+            {/* AdTech Mídia Embarcada Bonus */}
+            <div className="mt-4 p-3 bg-slate-800/80 border border-slate-700 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Bónus AdTech (Mídia Embarcada)</span>
+                    <p className="text-xs text-gray-400">Rendimento extra de publicidade a pagar ao motorista.</p>
+                </div>
+                <div className="w-full sm:w-44">
+                    <NumberInput label="Crédito AdTech" id="adTechBonus" name="adTechBonus" value={formData.adTechBonus} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 </div>
             </div>
         </div>

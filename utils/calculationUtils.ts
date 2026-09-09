@@ -60,7 +60,8 @@ export const calculateSummary = (calculation: Calculation): any => {
         // Driver's specific costs are their share of the fleet card excess, plus other items.
         // Platform tolls are a company cost in this model and not deducted from the driver here.
         const driverSpecificCosts = fleetCardExcessForDriver + rentalTolls + otherExpenses + debtDeduction;
-        const valorFinal = driverShare + refundedTips - driverSpecificCosts;
+        const adTechBonus = calculation.adTechBonus || 0;
+        const valorFinal = driverShare + refundedTips - driverSpecificCosts + adTechBonus;
 
         return {
             isPercentage: true,
@@ -73,6 +74,7 @@ export const calculateSummary = (calculation: Calculation): any => {
             driverShare,
             fleetCardCostToSplit,
             driverCosts: driverSpecificCosts,
+            adTechBonus,
             valorFinal,
             slotFee: 0, // Ensure slotFee is returned to prevent NaN
         };
@@ -94,7 +96,8 @@ export const calculateSummary = (calculation: Calculation): any => {
         const totalCompanyCosts = iva + companyAssumesFleetCard + vehicleRental + rentalTolls + otherExpenses + totalPlatformTolls;
         const netToSplit = baseEarnings - totalCompanyCosts;
         const driverShareRaw = netToSplit * 0.4;
-        const valorFinal = driverShareRaw - driverExcessFleetCard + refundedTips - debtDeduction;
+        const adTechBonus = calculation.adTechBonus || 0;
+        const valorFinal = driverShareRaw - driverExcessFleetCard + refundedTips - debtDeduction + adTechBonus;
 
         return {
             isPercentage: true,
@@ -106,6 +109,7 @@ export const calculateSummary = (calculation: Calculation): any => {
             netToSplit,
             driverShare: driverShareRaw,
             fleetCardExcess: driverExcessFleetCard,
+            adTechBonus,
             valorFinal,
             iva,
             slotFee: 0, // Ensure slotFee is returned to prevent NaN
@@ -133,13 +137,15 @@ export const calculateSummary = (calculation: Calculation): any => {
       debtDeduction +
       totalPlatformTolls;
 
-  // Final value is the simple difference between gross earnings and total deductions.
-  const valorFinal = totalGanhos - totalDeducoes;
+  // Final value is the simple difference between gross earnings and total deductions + any adTech bonus.
+  const adTechBonus = calculation.adTechBonus || 0;
+  const valorFinal = totalGanhos - totalDeducoes + adTechBonus;
   
   return {
     isPercentage: false,
     totalGanhos,
     totalDeducoes,
+    adTechBonus,
     valorFinal,
     // Return individual components for detailed view
     slotFee,
@@ -149,3 +155,4 @@ export const calculateSummary = (calculation: Calculation): any => {
     totalPlatformTolls,
   };
 };
+

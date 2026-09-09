@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { calculateSummary } from '../utils/calculationUtils';
 import Card from './ui/Card';
 import { useUsers } from '../hooks/useUsers';
+import { useCompany } from '../hooks/useCompany';
 import { MOCK_COMPANY_INFO } from '../demoData';
 
 // Add declarations for CDN libraries
@@ -26,25 +27,28 @@ const CalculationLine: React.FC<{ label: string; value: string }> = ({ label, va
   </div>
 );
 
-const CompanyInfo: React.FC<{ isDemo: boolean }> = ({ isDemo }) => (
+const CompanyInfo: React.FC<{ isDemo: boolean }> = ({ isDemo }) => {
+  const { currentCompany } = useCompany();
+  return (
     <div className="text-center text-xs text-gray-400 space-y-0.5 mt-6 pt-4 border-t border-dashed border-gray-600">
-        {isDemo ? (
-            <>
-                <p className="font-bold">{MOCK_COMPANY_INFO.name}</p>
-                <p>NIPC: {MOCK_COMPANY_INFO.nipc}</p>
-                <p>MORADA: {MOCK_COMPANY_INFO.address}</p>
-                <p>TEL: {MOCK_COMPANY_INFO.phone}</p>
-            </>
-        ) : (
-            <>
-                <p className="font-bold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
-                <p>NIPC: 517112604</p>
-                <p>MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
-                <p>TEL: +351 914 800 818</p>
-            </>
-        )}
+      {isDemo ? (
+        <>
+          <p className="font-bold">{currentCompany.name || MOCK_COMPANY_INFO.name}</p>
+          <p>NIPC: {currentCompany.nipc || MOCK_COMPANY_INFO.nipc}</p>
+          <p>MORADA: {currentCompany.address || MOCK_COMPANY_INFO.address}</p>
+          <p>TEL: {currentCompany.phone || MOCK_COMPANY_INFO.phone}</p>
+        </>
+      ) : (
+        <>
+          <p className="font-bold">{currentCompany.tradeName || currentCompany.name || "ASFALTO CATIVANTE - UNIPESSOAL LDA"}</p>
+          <p>NIPC: {currentCompany.nipc || "517112604"}</p>
+          <p>MORADA: {currentCompany.address || "PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ"}</p>
+          <p>TEL: {currentCompany.phone || "+351 914 800 818"}</p>
+        </>
+      )}
     </div>
-);
+  );
+};
 
 const RevisionNotesModal: React.FC<{
   isOpen: boolean;
@@ -283,6 +287,12 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                 <p className="font-bold pl-4 pr-4"> TOTAL DEDUÇÕES: {formatCurrency(totalDeducoes)}</p>
                 <p className="font-bold mb-2">└──────────────────────┘</p>
             </div>
+
+            {((calculation.adTechBonus || 0) > 0) && (
+                <div className="border-t border-dashed border-emerald-500/60 pt-2 mt-2 px-4 text-emerald-400">
+                    <CalculationLine label="(+) Bónus AdTech:" value={formatCurrency(calculation.adTechBonus || 0)} />
+                </div>
+            )}
 
             <div className="border-y-4 border-double border-gray-600 py-4 my-4 text-center">
                 <p className="text-lg font-bold">VALOR FINAL: {formatCurrency(valorFinal)}</p>
