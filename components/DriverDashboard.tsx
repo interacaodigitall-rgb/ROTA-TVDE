@@ -8,6 +8,7 @@ import Card from './ui/Card';
 import ReportsView from './ReportsView';
 import Button from './ui/Button';
 import DriverInfoView from './DriverInfoView';
+import { BRAND_LOGOS } from '../constants';
 
 type DriverView = 'info' | 'list' | 'details' | 'reports';
 
@@ -32,9 +33,20 @@ const DriverCalculationsList: React.FC<{
   return (
       <div className="w-full p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto">
-           <Button onClick={onBack} className="mb-6">
-                &larr; Voltar às Informações
-            </Button>
+           <div className="flex items-center justify-between mb-6">
+             <Button onClick={onBack}>
+               &larr; Voltar às Informações
+             </Button>
+             <div className="flex items-center gap-2">
+               <img 
+                 src={BRAND_LOGOS.MOBILE} 
+                 alt="ROTA TVDE" 
+                 referrerPolicy="no-referrer"
+                 className="w-8 h-8 rounded-lg object-cover border border-slate-700 shadow-sm"
+               />
+               <span className="text-xs font-bold text-slate-300 hidden sm:inline">ROTA TVDE 5.0</span>
+             </div>
+           </div>
             <Card>
               <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h3 className="text-xl font-semibold">Meus Resumos Semanais</h3>

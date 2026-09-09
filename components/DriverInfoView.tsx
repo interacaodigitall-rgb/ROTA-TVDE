@@ -9,6 +9,7 @@ import { useCalculations } from '../hooks/useCalculations';
 import { useReceipts } from '../hooks/useReceipts';
 import { useCompany } from '../hooks/useCompany';
 import { calculateSummary } from '../utils/calculationUtils';
+import { BRAND_LOGOS } from '../constants';
 
 // FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; borderColor: string; }> = ({ title, icon, children, borderColor }) => (
@@ -171,11 +172,17 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
       <header className="bg-gray-800 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-                <div>
-                    <h1 className="text-lg font-bold text-gray-100">Área do Motorista</h1>
-                    <p className="text-sm text-gray-400">ROTA TVDE 5.0</p>
-                </div>
+            <div className="flex items-center gap-3">
+              <img 
+                src={BRAND_LOGOS.MOBILE} 
+                alt="ROTA TVDE 5.0" 
+                referrerPolicy="no-referrer"
+                className="w-10 h-10 rounded-xl object-cover border border-slate-700 shadow-md"
+              />
+              <div>
+                <h1 className="text-lg font-black text-gray-100 tracking-tight">Área do Motorista</h1>
+                <p className="text-xs text-blue-400 font-semibold">ROTA TVDE 5.0 • Asfalto Cativante</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
                 <div className="hidden sm:flex items-center text-sm text-green-400">

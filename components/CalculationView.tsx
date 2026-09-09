@@ -8,6 +8,7 @@ import Card from './ui/Card';
 import { useUsers } from '../hooks/useUsers';
 import { useCompany } from '../hooks/useCompany';
 import { MOCK_COMPANY_INFO } from '../demoData';
+import { BRAND_LOGOS } from '../constants';
 
 // Add declarations for CDN libraries
 declare const html2canvas: any;
@@ -389,7 +390,13 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
   return (
     <>
       <div ref={printRef} className="bg-gray-800 border border-gray-700 shadow-2xl rounded-lg p-6 font-mono text-sm text-gray-200 max-w-md mx-auto">
-        <div className="text-center border-b-2 border-dashed border-gray-600 pb-4 mb-4">
+        <div className="text-center border-b-2 border-dashed border-gray-600 pb-4 mb-4 flex flex-col items-center">
+          <img 
+            src={BRAND_LOGOS.DESKTOP} 
+            alt="Asfalto Cativante - ROTA TVDE 5.0" 
+            referrerPolicy="no-referrer"
+            className="h-10 w-auto object-contain mx-auto mb-2"
+          />
           <h2 className="text-lg font-bold">ROTA TVDE 5.0</h2>
           <h3 className="text-md">RESUMO SEMANAL</h3>
         </div>

@@ -82,6 +82,7 @@ export interface Calculation {
   
   // SaaS Multi-tenancy
   companyId?: string;
+  matricula?: string;
 
   // Ganhos
   uberRides: number;

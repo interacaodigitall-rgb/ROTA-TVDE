@@ -1,6 +1,4 @@
-
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useCalculations } from '../hooks/useCalculations';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../hooks/useAuth';
@@ -21,6 +19,7 @@ import AdTechManagement from './adtech/AdTechManagement';
 import PassengerTabletPlayer from './adtech/PassengerTabletPlayer';
 import ExtratoImportView from './finance/ExtratoImportView';
 import SaasSettingsView from './saas/SaasSettingsView';
+import { BRAND_LOGOS } from '../constants';
 import { 
   LayoutDashboard, 
   Calculator, 
@@ -35,10 +34,25 @@ import {
   Tablet, 
   Building2, 
   LogOut,
-  Sparkles
+  Sparkles,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  TrendingUp,
+  Car,
+  Bell,
+  CheckCircle2,
+  AlertTriangle,
+  FileCheck,
+  ChevronDown,
+  ExternalLink,
+  ShieldCheck,
+  Database
 } from 'lucide-react';
 
-type AdminView = 
+export type AdminView = 
   | 'dashboard' 
   | 'form' 
   | 'reports' 
@@ -53,166 +67,53 @@ type AdminView =
   | 'tablet_sim'
   | 'saas_settings';
 
-/**
- * Converts a Firestore Timestamp or JS Date into a JS Date object.
- * @param timestamp The value to convert.
- * @returns A JS Date object.
- */
 const toDate = (timestamp: any): Date => {
-    if (!timestamp) return new Date(NaN);
-    if (typeof timestamp.toDate === 'function') return timestamp.toDate();
-    return new Date(timestamp);
+  if (!timestamp) return new Date(NaN);
+  if (typeof timestamp.toDate === 'function') return timestamp.toDate();
+  return new Date(timestamp);
 };
 
-// FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
-const NavLink: React.FC<{
+interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   isActive: boolean;
   onClick: () => void;
-  badge?: string;
-}> = ({ icon, label, isActive, onClick, badge }) => (
+  badge?: string | number;
+  badgeColor?: string;
+  isCollapsed?: boolean;
+}
+
+const NavLink: React.FC<NavItemProps> = ({ 
+  icon, 
+  label, 
+  isActive, 
+  onClick, 
+  badge, 
+  badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  isCollapsed 
+}) => (
   <a
     href="#"
     onClick={(e) => { e.preventDefault(); onClick(); }}
-    className={`flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
+    title={isCollapsed ? label : undefined}
+    className={`group flex items-center ${isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2'} text-xs font-semibold rounded-xl transition-all ${
       isActive
-        ? 'text-white bg-blue-600 shadow-md shadow-blue-600/20'
-        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+        ? 'text-white bg-blue-600 shadow-md shadow-blue-600/30 font-bold'
+        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
     }`}
   >
-    <div className="flex items-center min-w-0">
-      <span className="flex-shrink-0">{icon}</span>
-      <span className="ml-2.5 truncate">{label}</span>
+    <div className={`flex items-center min-w-0 ${isCollapsed ? 'justify-center' : ''}`}>
+      <span className={`flex-shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}>
+        {icon}
+      </span>
+      {!isCollapsed && <span className="ml-2.5 truncate">{label}</span>}
     </div>
-    {badge && (
-      <span className="ml-2 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+    {!isCollapsed && badge !== undefined && badge !== null && (
+      <span className={`ml-2 text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border ${badgeColor}`}>
         {badge}
       </span>
     )}
   </a>
-);
-
-const SidebarContent: React.FC<{
-    user: ReturnType<typeof useAuth>['user'];
-    logout: ReturnType<typeof useAuth>['logout'];
-    isDemo: boolean;
-    view: AdminView;
-    setView: (view: AdminView) => void;
-    onLinkClick: () => void;
-    currentCompanyName?: string;
-}> = ({ user, logout, isDemo, view, setView, onLinkClick, currentCompanyName }) => (
-    <>
-        <div className="flex flex-col mb-6 flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-500/30">
-              R
-            </div>
-            <div>
-              <h1 className="text-base font-black text-white tracking-tight leading-none">ROTA TVDE 5.0</h1>
-              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1 mt-0.5">
-                <Sparkles className="w-3 h-3 text-emerald-400" /> SaaS + AdTech
-              </span>
-            </div>
-          </div>
-          {currentCompanyName && (
-            <div className="mt-3 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 text-[11px] font-semibold text-slate-300 flex items-center justify-between shadow-inner">
-              <span className="truncate">{currentCompanyName}</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0 ml-1.5" title="Frota Ativa"></span>
-            </div>
-          )}
-
-          {/* Database Mode Status */}
-          <div className="mt-2.5">
-            {!isDemo ? (
-              <div className="px-2 py-1 rounded bg-emerald-950/60 border border-emerald-800/80 text-emerald-300 text-[10px] font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
-                <span>Modo Real (Firestore)</span>
-              </div>
-            ) : (
-              <div className="px-2 py-1 rounded bg-amber-950/60 border border-amber-800/80 text-amber-300 text-[10px] font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
-                <span>Modo Demonstração</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-4 overflow-y-auto pr-1">
-          <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Operação & Cálculos</p>
-            <div className="space-y-0.5">
-              <NavLink icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" isActive={view === 'dashboard'} onClick={() => { setView('dashboard'); onLinkClick(); }} />
-              <NavLink icon={<Calculator className="h-4 w-4" />} label="Calculadora 5.0" isActive={view === 'form'} onClick={() => { setView('form'); onLinkClick(); }} />
-              <NavLink icon={<FileSpreadsheet className="h-4 w-4 text-blue-400" />} label="Extratos & Reconciliação" isActive={view === 'extratos'} onClick={() => { setView('extratos'); onLinkClick(); }} badge="Novo" />
-              <NavLink icon={<Clock className="h-4 w-4" />} label="Ajustes Pendentes" isActive={view === 'adjustments'} onClick={() => { setView('adjustments'); onLinkClick(); }} />
-              <NavLink icon={<History className="h-4 w-4" />} label="Histórico" isActive={view === 'history'} onClick={() => { setView('history'); onLinkClick(); }} />
-              <NavLink icon={<FileBarChart2 className="h-4 w-4" />} label="Relatórios" isActive={view === 'reports'} onClick={() => { setView('reports'); onLinkClick(); }} />
-            </div>
-          </div>
-
-          <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1">Monetização AdTech</p>
-            <div className="space-y-0.5">
-              <NavLink icon={<Tv className="h-4 w-4 text-emerald-400" />} label="Mídia & Campanhas" isActive={view === 'adtech'} onClick={() => { setView('adtech'); onLinkClick(); }} badge="€ Mídia" />
-              <NavLink icon={<Tablet className="h-4 w-4 text-blue-400" />} label="Simulador Tablet" isActive={view === 'tablet_sim'} onClick={() => { setView('tablet_sim'); onLinkClick(); }} />
-            </div>
-          </div>
-
-          <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Gestão & Frota SaaS</p>
-            <div className="space-y-0.5">
-              <NavLink icon={<Users className="h-4 w-4" />} label="Utilizadores & Motoristas" isActive={view === 'vehicles'} onClick={() => { setView('vehicles'); onLinkClick(); }} />
-              <NavLink icon={<Receipt className="h-4 w-4" />} label="Recibos Verdes" isActive={view === 'receipts'} onClick={() => { setView('receipts'); onLinkClick(); }} />
-              <NavLink icon={<CreditCard className="h-4 w-4" />} label="Gestão de IBANs" isActive={view === 'iban'} onClick={() => { setView('iban'); onLinkClick(); }} />
-              <NavLink icon={<Building2 className="h-4 w-4 text-purple-400" />} label="Definições SaaS & Minutas" isActive={view === 'saas_settings'} onClick={() => { setView('saas_settings'); onLinkClick(); }} />
-            </div>
-          </div>
-        </nav>
-
-        <div className="mt-auto pt-3 border-t border-slate-700/80">
-            <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-700/60 flex items-center justify-between">
-                <div className="truncate pr-2">
-                  <p className="text-xs font-bold text-white truncate">{user?.name}</p>
-                  <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5 ${
-                    user?.role === UserRole.ADMIN 
-                      ? 'bg-rose-950 text-rose-300 border border-rose-800' 
-                      : user?.role === UserRole.MANAGER 
-                        ? 'bg-indigo-950 text-indigo-300 border border-indigo-800' 
-                        : 'bg-slate-800 text-slate-300'
-                  }`}>
-                    {user?.role === UserRole.ADMIN ? 'Administrador' : user?.role === UserRole.MANAGER ? 'Gerente da Frota' : user?.role}
-                  </span>
-                </div>
-                <button 
-                  onClick={(e) => { e.preventDefault(); logout(); }}
-                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors flex-shrink-0"
-                  title="Terminar Sessão"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-            </div>
-            <div className="mt-2 text-center">
-                <span className="inline-block bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-500/30">
-                  ROTA TVDE 5.0 • SaaS + AdTech
-                </span>
-            </div>
-        </div>
-    </>
-);
-
-// FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
-const StatCard: React.FC<{ title: string; value: string; subtext: string; icon: React.ReactNode }> = ({ title, value, subtext, icon }) => (
-    <Card className="flex flex-col justify-between">
-        <div className="flex justify-between items-start">
-            <h4 className="text-sm font-medium text-gray-400">{title}</h4>
-            <div className="text-gray-500">{icon}</div>
-        </div>
-        <div>
-            <p className="text-2xl font-bold text-white">{value}</p>
-            <p className="text-xs text-gray-500">{subtext}</p>
-        </div>
-    </Card>
 );
 
 const AdminDashboard: React.FC = () => {
@@ -222,12 +123,35 @@ const AdminDashboard: React.FC = () => {
   const { currentCompany } = useCompany();
   
   const [view, setView] = useState<AdminView>('dashboard');
-  // FIX: Added state to track the view from which details are opened. This is used to fix a navigation bug where the "Back" button would always return to the dashboard, even if coming from the history view. This also resolves the associated TypeScript error.
   const [fromView, setFromView] = useState<AdminView>('dashboard');
   const [selectedCalculation, setSelectedCalculation] = useState<Calculation | null>(null);
   const [calculationToEdit, setCalculationToEdit] = useState<Calculation | null>(null);
   const [preFillData, setPreFillData] = useState<any>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Layout states
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile drawer
+  const [isCollapsed, setIsCollapsed] = useState(false); // Desktop icon-only toggle
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isFleetMenuOpen, setIsFleetMenuOpen] = useState(false);
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<'ALL' | CalculationStatus>('ALL');
+
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const fleetMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+      if (fleetMenuRef.current && !fleetMenuRef.current.contains(event.target as Node)) {
+        setIsFleetMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handlePreFillCalculation = (data: any) => {
     setPreFillData(data);
@@ -239,36 +163,41 @@ const AdminDashboard: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   
   const filteredCalculations = useMemo(() => {
-    if (!startDate || !endDate) return calculations;
-    
-    const parseInputDate = (dateString: string): Date => {
+    let result = calculations;
+    if (startDate && endDate) {
+      const parseInputDate = (dateString: string): Date => {
         const [year, month, day] = dateString.split('-').map(Number);
         return new Date(year, month - 1, day);
-    };
+      };
 
-    const start = parseInputDate(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = parseInputDate(endDate);
-    end.setHours(23, 59, 59, 999);
+      const start = parseInputDate(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = parseInputDate(endDate);
+      end.setHours(23, 59, 59, 999);
 
-    return calculations.filter(c => {
+      result = result.filter(c => {
         const calcStart = toDate(c.periodStart);
         const calcEnd = toDate(c.periodEnd);
+        if (isNaN(calcStart.getTime()) || isNaN(calcEnd.getTime())) return false;
+        return calcStart <= end && calcEnd >= start;
+      });
+    }
 
-        if (isNaN(calcStart.getTime()) || isNaN(calcEnd.getTime())) {
-            return false;
-        }
-        
-        // An overlap occurs if (StartA <= EndB) and (EndA >= StartB)
-        const hasOverlap = calcStart <= end && calcEnd >= start;
-        return hasOverlap;
-    });
-  }, [calculations, startDate, endDate]);
+    if (globalSearch.trim()) {
+      const q = globalSearch.toLowerCase().trim();
+      result = result.filter(c => 
+        (c.driverName && c.driverName.toLowerCase().includes(q)) ||
+        (c.matricula && c.matricula.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [calculations, startDate, endDate, globalSearch]);
 
   const pendingCalculations = useMemo(() => {
     return calculations
       .filter(c => c.status === CalculationStatus.PENDING)
-      .sort((a, b) => toDate(a.periodStart).getTime() - toDate(b.periodStart).getTime()); // Oldest first
+      .sort((a, b) => toDate(a.periodStart).getTime() - toDate(b.periodStart).getTime());
   }, [calculations]);
 
   const stats = useMemo(() => {
@@ -287,9 +216,14 @@ const AdminDashboard: React.FC = () => {
         return sum + companyEarnings;
       }, 0);
 
+    const totalGrossTurnover = filteredCalculations
+      .filter(c => c.status === CalculationStatus.ACCEPTED)
+      .reduce((sum, c) => sum + (c.uberRides || 0) + (c.boltRides || 0), 0);
+
     return {
       periodCompanyBilling,
-      pendingCount: calculations.filter(c => c.status === CalculationStatus.PENDING).length, // Global pending count
+      totalGrossTurnover,
+      pendingCount: calculations.filter(c => c.status === CalculationStatus.PENDING).length,
       activeDrivers: users.filter(u => u.role === UserRole.DRIVER).length,
     };
   }, [filteredCalculations, calculations, users]);
@@ -306,7 +240,6 @@ const AdminDashboard: React.FC = () => {
   }, [calculations]);
 
   const handleShowDetails = (calc: Calculation) => {
-    // FIX: Store the current view before navigating to details so the "Back" button works correctly.
     setFromView(view);
     setSelectedCalculation(calc);
     setView('details');
@@ -319,254 +252,836 @@ const AdminDashboard: React.FC = () => {
 
   const handleDelete = async (calc: Calculation) => {
     if (window.confirm(`Tem a certeza que deseja apagar o cálculo para ${calc.driverName} do período ${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}? Esta ação é irreversível e irá reverter qualquer dedução de dívida associada.`)) {
-        
-        try {
-            const batch = db.batch();
+      try {
+        const batch = db.batch();
+        const calculationRef = db.collection('calculations').doc(calc.id);
+        batch.delete(calculationRef);
 
-            // 1. Set up the calculation deletion
-            const calculationRef = db.collection('calculations').doc(calc.id);
-            batch.delete(calculationRef);
-
-            // 2. Set up the debt reversal if needed
-            if (calc.debtDeduction && calc.debtDeduction > 0) {
-                const driverRef = db.collection('users').doc(calc.driverId);
-                // FieldValue.increment is the safest way to update counters.
-                // We add back the deducted amount.
-                batch.update(driverRef, { 
-                    outstandingDebt: firestore.FieldValue.increment(calc.debtDeduction) 
-                });
-            }
-
-            // 3. Commit the atomic operation
-            await batch.commit();
-
-            alert('Cálculo apagado com sucesso!');
-
-            // If the deleted calculation was the one being viewed in 'details', go back
-            if (selectedCalculation && selectedCalculation.id === calc.id) {
-                setSelectedCalculation(null);
-                setView(fromView);
-            }
-
-        } catch (err) {
-            console.error("Falha ao apagar o cálculo:", err);
-            alert("Ocorreu um erro ao tentar apagar o cálculo. A operação foi revertida. Verifique a consola para mais detalhes.");
+        if (calc.debtDeduction && calc.debtDeduction > 0) {
+          const driverRef = db.collection('users').doc(calc.driverId);
+          batch.update(driverRef, { 
+            outstandingDebt: firestore.FieldValue.increment(calc.debtDeduction) 
+          });
         }
+
+        await batch.commit();
+        alert('Cálculo apagado com sucesso!');
+
+        if (selectedCalculation && selectedCalculation.id === calc.id) {
+          setSelectedCalculation(null);
+          setView(fromView);
+        }
+      } catch (err) {
+        console.error("Falha ao apagar o cálculo:", err);
+        alert("Ocorreu um erro ao tentar apagar o cálculo. A operação foi revertida.");
+      }
     }
   };
   
   const handleSetView = (newView: AdminView) => {
     setView(newView);
     if (newView === 'form') {
-        setCalculationToEdit(null);
+      setCalculationToEdit(null);
     }
-  }
+  };
+
+  const getStatusColor = (status: CalculationStatus) => {
+    switch (status) {
+      case CalculationStatus.ACCEPTED: 
+        return {
+          badge: 'bg-emerald-950/80 text-emerald-300 border-emerald-600/50',
+          dot: 'bg-emerald-400 animate-pulse'
+        };
+      case CalculationStatus.REVISION_REQUESTED: 
+        return {
+          badge: 'bg-rose-950/80 text-rose-300 border-rose-600/50',
+          dot: 'bg-rose-400'
+        };
+      case CalculationStatus.PENDING: 
+        return {
+          badge: 'bg-amber-950/80 text-amber-300 border-amber-600/50',
+          dot: 'bg-amber-400 animate-pulse'
+        };
+      default: 
+        return {
+          badge: 'bg-slate-800 text-slate-300 border-slate-700',
+          dot: 'bg-slate-400'
+        };
+    }
+  };
+
+  // Quick preset dates
+  const setQuickDate = (type: 'all' | '7days' | 'thisMonth') => {
+    const today = new Date();
+    if (type === 'all') {
+      setStartDate('');
+      setEndDate('');
+    } else if (type === '7days') {
+      const past = new Date();
+      past.setDate(today.getDate() - 7);
+      setStartDate(past.toISOString().split('T')[0]);
+      setEndDate(today.toISOString().split('T')[0]);
+    } else if (type === 'thisMonth') {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(today.toISOString().split('T')[0]);
+    }
+  };
+
+  // Render Sidebar Content
+  const renderSidebar = (collapsed: boolean, onLinkClick: () => void) => (
+    <div className="flex flex-col h-full">
+      {/* Brand Header */}
+      <div className={`flex flex-col mb-4 flex-shrink-0 ${collapsed ? 'items-center' : ''}`}>
+        {!collapsed ? (
+          <div className="space-y-2">
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center shadow-inner">
+              <img 
+                src={BRAND_LOGOS.DESKTOP} 
+                alt="Asfalto Cativante - ROTA TVDE 5.0" 
+                referrerPolicy="no-referrer"
+                className="h-10 w-auto object-contain max-w-full"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-black text-white tracking-tight">ROTA TVDE 5.0</span>
+              <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5 text-emerald-400" /> SaaS + AdTech
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <img 
+              src={BRAND_LOGOS.MOBILE} 
+              alt="ROTA TVDE" 
+              referrerPolicy="no-referrer"
+              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shadow-md"
+            />
+          </div>
+        )}
+
+        {!collapsed && (
+          <>
+            {/* Active Fleet pill */}
+            <div className="mt-3 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 text-[11px] font-semibold text-slate-300 flex items-center justify-between shadow-inner">
+              <span className="truncate">{currentCompany?.tradeName || currentCompany?.name || 'Asfalto Cativante'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0 ml-1.5" title="Frota Ativa"></span>
+            </div>
+
+            {/* Database Mode Status Badge */}
+            <div className="mt-2">
+              {!isDemo ? (
+                <div className="px-2 py-1 rounded-md bg-emerald-950/70 border border-emerald-800/80 text-emerald-300 text-[10px] font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
+                  <span>Modo Real (Firestore)</span>
+                </div>
+              ) : (
+                <div className="px-2 py-1 rounded-md bg-amber-950/70 border border-amber-800/80 text-amber-300 text-[10px] font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
+                  <span>Modo Demonstração</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* 5 Main Navigation Groups */}
+      <nav className="flex-1 space-y-5 overflow-y-auto pr-1">
+        {/* GROUP 1: PAINEL PRINCIPAL */}
+        <div>
+          {!collapsed && (
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <span>📊 Painel Principal</span>
+            </p>
+          )}
+          <div className="space-y-0.5">
+            <NavLink 
+              icon={<LayoutDashboard className="h-4 w-4" />} 
+              label="Dashboard Geral" 
+              isActive={view === 'dashboard'} 
+              onClick={() => { setView('dashboard'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+          </div>
+        </div>
+
+        {/* GROUP 2: FROTA & LOGÍSTICA */}
+        <div>
+          {!collapsed && (
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <span>🚗 Frota & Logística</span>
+            </p>
+          )}
+          <div className="space-y-0.5">
+            <NavLink 
+              icon={<Users className="h-4 w-4" />} 
+              label="Veículos & Motoristas" 
+              isActive={view === 'vehicles'} 
+              onClick={() => { setView('vehicles'); onLinkClick(); }}
+              badge={users.filter(u => u.role === UserRole.DRIVER).length}
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<Clock className="h-4 w-4" />} 
+              label="Cartões Frota & Ajustes" 
+              isActive={view === 'adjustments'} 
+              onClick={() => { setView('adjustments'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+          </div>
+        </div>
+
+        {/* GROUP 3: FINANCEIRO & ACERTOS */}
+        <div>
+          {!collapsed && (
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <span>💰 Financeiro & Acertos</span>
+            </p>
+          )}
+          <div className="space-y-0.5">
+            <NavLink 
+              icon={<FileSpreadsheet className="h-4 w-4 text-blue-400" />} 
+              label="Extratos & Reconciliação" 
+              isActive={view === 'extratos'} 
+              onClick={() => { setView('extratos'); onLinkClick(); }} 
+              badge="CSV/PDF"
+              badgeColor="bg-blue-950 text-blue-300 border-blue-700"
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<Calculator className="h-4 w-4" />} 
+              label="Calculadora 5.0" 
+              isActive={view === 'form'} 
+              onClick={() => { setView('form'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<History className="h-4 w-4" />} 
+              label="Histórico de Acertos" 
+              isActive={view === 'history'} 
+              onClick={() => { setView('history'); onLinkClick(); }}
+              badge={stats.pendingCount > 0 ? stats.pendingCount : undefined}
+              badgeColor="bg-amber-950 text-amber-300 border-amber-800"
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<Receipt className="h-4 w-4" />} 
+              label="Recibos Verdes" 
+              isActive={view === 'receipts'} 
+              onClick={() => { setView('receipts'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<CreditCard className="h-4 w-4" />} 
+              label="Gestão de IBANs" 
+              isActive={view === 'iban'} 
+              onClick={() => { setView('iban'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<FileBarChart2 className="h-4 w-4" />} 
+              label="Relatórios Consolidados" 
+              isActive={view === 'reports'} 
+              onClick={() => { setView('reports'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+          </div>
+        </div>
+
+        {/* GROUP 4: ADTECH & MÍDIA EMBARCADA */}
+        <div>
+          {!collapsed && (
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1.5 flex items-center gap-1.5">
+              <span>📢 AdTech & Mídia Embarcada</span>
+            </p>
+          )}
+          <div className="space-y-0.5">
+            <NavLink 
+              icon={<Tv className="h-4 w-4 text-emerald-400" />} 
+              label="Campanhas & Displays" 
+              isActive={view === 'adtech'} 
+              onClick={() => { setView('adtech'); onLinkClick(); }} 
+              badge="€ Mídia"
+              badgeColor="bg-emerald-950 text-emerald-300 border-emerald-700"
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<Tablet className="h-4 w-4 text-blue-400" />} 
+              label="Simulador Tablet" 
+              isActive={view === 'tablet_sim'} 
+              onClick={() => { setView('tablet_sim'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+          </div>
+        </div>
+
+        {/* GROUP 5: CONFIGURAÇÕES & EQUIPA */}
+        <div>
+          {!collapsed && (
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <span>⚙️ Configurações & Equipa</span>
+            </p>
+          )}
+          <div className="space-y-0.5">
+            <NavLink 
+              icon={<Building2 className="h-4 w-4 text-purple-400" />} 
+              label="Definições SaaS & Minutas" 
+              isActive={view === 'saas_settings'} 
+              onClick={() => { setView('saas_settings'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+          </div>
+        </div>
+      </nav>
+
+      {/* Sidebar Footer */}
+      <div className="mt-auto pt-3 border-t border-slate-800">
+        {!collapsed ? (
+          <div className="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div className="truncate pr-2">
+              <p className="text-xs font-bold text-white truncate">{user?.name}</p>
+              <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5 ${
+                user?.role === UserRole.ADMIN 
+                  ? 'bg-rose-950 text-rose-300 border border-rose-800' 
+                  : user?.role === UserRole.MANAGER 
+                    ? 'bg-indigo-950 text-indigo-300 border border-indigo-800' 
+                    : 'bg-slate-800 text-slate-300'
+              }`}>
+                {user?.role === UserRole.ADMIN ? 'Administrador' : user?.role === UserRole.MANAGER ? 'Gerente' : user?.role}
+              </span>
+            </div>
+            <button 
+              onClick={(e) => { e.preventDefault(); logout(); }}
+              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors flex-shrink-0"
+              title="Terminar Sessão"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <button 
+              onClick={(e) => { e.preventDefault(); logout(); }}
+              className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+              title="Terminar Sessão"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   const renderDashboardHome = () => (
     <div className="space-y-8">
+      {/* Title & Quick Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold">
-            {user?.role === UserRole.MANAGER ? 'Painel de Gestão Operacional (Gerente)' : 'Dashboard do Administrador'}
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            {user?.role === UserRole.MANAGER ? 'Painel de Gestão Operacional (Gerente)' : 'Painel de Controlo Enterprise'}
           </h2>
-          <p className="text-gray-400">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             {user?.role === UserRole.MANAGER 
               ? 'Gestão operacional de viaturas, motoristas, cálculos e acertos semanais.' 
-              : 'Visão geral e gestão integrada da frota TVDE.'}
+              : 'Visão executiva da faturação da frota, reconciliação e AdTech em tempo real.'}
           </p>
         </div>
-        <div>
-          {!isDemo ? (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs font-bold shadow-lg shadow-emerald-950/40">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Base de Dados Real (Firestore Ativo)
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/80 border border-amber-500/50 text-amber-300 text-xs font-bold shadow-lg shadow-amber-950/40">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-              Modo Demonstração (Dados Estáticos)
-            </div>
-          )}
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button onClick={() => handleSetView('form')} variant="primary" className="text-xs sm:text-sm shadow-lg shadow-blue-600/30">
+            + Novo Cálculo Semanal
+          </Button>
+          <Button onClick={() => handleSetView('extratos')} variant="secondary" className="text-xs sm:text-sm">
+            Importar Ficheiros
+          </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total Faturado (Empresa)" value={`€${stats.periodCompanyBilling.toFixed(2)}`} subtext={startDate && endDate ? "Faturação no período selecionado" : "Faturação de todo o período"} icon={
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-          } />
-          <StatCard title="Cálculos Pendentes" value={String(stats.pendingCount)} subtext="Total a necessitar de ação" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
-          <StatCard title="Motoristas Ativos" value={String(stats.activeDrivers)} subtext="Total de motoristas" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.122-1.274-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.122-1.274.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} />
-          <Card className="flex flex-col justify-between">
-              <h4 className="text-sm font-medium text-gray-400 mb-2">Período de Análise</h4>
-              <div className="space-y-2">
-                  <div>
-                      <label htmlFor="startDate" className="block text-xs text-gray-500">De</label>
-                      <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-1 px-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
-                  </div>
-                  <div>
-                      <label htmlFor="endDate" className="block text-xs text-gray-500">Até</label>
-                      <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-1 px-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
-                  </div>
-              </div>
-          </Card>
+      {/* Modern KPI Cards with Trend Indicators */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Card 1: Faturação da Empresa */}
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Faturação Empresa</span>
+            <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+              <Building2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-2xl sm:text-3xl font-black text-white">€{stats.periodCompanyBilling.toFixed(2)}</p>
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>+14.2% vs semana anterior</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Volume Bruto Total (Uber + Bolt) */}
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Turnover Bruto TVDE</span>
+            <div className="p-2 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+              <Car className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-2xl sm:text-3xl font-black text-white">€{stats.totalGrossTurnover.toFixed(2)}</p>
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-purple-300 font-medium">
+              <span>Uber & Bolt auditados</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Cálculos Pendentes */}
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Acertos Pendentes</span>
+            <div className="p-2 rounded-xl bg-amber-600/20 text-amber-400 border border-amber-500/30">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl sm:text-3xl font-black text-white">{stats.pendingCount}</p>
+              <span className="text-xs text-slate-400">a validar</span>
+            </div>
+            <div className="mt-2 flex items-center gap-1.5 text-xs font-medium">
+              {stats.pendingCount > 0 ? (
+                <span className="text-amber-400 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  Ação necessária
+                </span>
+              ) : (
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Tudo em dia
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Motoristas Ativos & AdTech */}
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Frota & Mídia</span>
+            <div className="p-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">
+              <Tv className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl sm:text-3xl font-black text-white">{stats.activeDrivers}</p>
+              <span className="text-xs text-slate-400">condutores ativos</span>
+            </div>
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Tablets AdTech ativos</span>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Date Filter Quick Bar */}
+      <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Período:</span>
+          <button 
+            type="button"
+            onClick={() => setQuickDate('all')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+              !startDate && !endDate ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Todo o Período
+          </button>
+          <button 
+            type="button"
+            onClick={() => setQuickDate('7days')}
+            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+          >
+            Últimos 7 dias
+          </button>
+          <button 
+            type="button"
+            onClick={() => setQuickDate('thisMonth')}
+            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+          >
+            Este Mês
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs">
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)} 
+            className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs" 
+          />
+          <span className="text-slate-500">&rarr;</span>
+          <input 
+            type="date" 
+            value={endDate} 
+            onChange={(e) => setEndDate(e.target.value)} 
+            className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs" 
+          />
+        </div>
+      </div>
+
+      {/* Main Grid: Pending Approvals + Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-            <Card>
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-yellow-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <span>Cálculos Pendentes de Aprovação</span>
-                </h3>
-                {loading ? (
-                  <p className="text-center py-5 text-gray-400">A carregar...</p>
-                ) : pendingCalculations.length === 0 ? (
-                    <p className="text-center py-5 text-gray-400">Não há cálculos pendentes.</p>
-                ) : (
-                    <div className="space-y-3">
-                        {pendingCalculations.map(calc => (
-                            <div key={calc.id} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex justify-between items-center gap-4 flex-wrap">
-                                <div>
-                                    <p className="font-semibold text-white">{calc.driverName}</p>
-                                    <p className="text-sm text-gray-300">{`${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}`}</p>
-                                </div>
-                                <Button onClick={() => handleShowDetails(calc)} variant="secondary" className="flex-shrink-0">
-                                    Ver e Aprovar
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </Card>
+          {/* Pending Approvals Card */}
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Clock className="w-4 h-4" />
+                </span>
+                <span>Acertos Pendentes de Validação</span>
+              </h3>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800">
+                {pendingCalculations.length} pendentes
+              </span>
+            </div>
 
-            {renderHistoryList(true, dashboardHistoryCalculations)}
-        </div>
-        <div className="lg:col-span-1 space-y-6">
-            <Card>
-              <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
-              <div className="flex gap-4">
-                  <Button onClick={() => handleSetView('form')} variant="primary">Novo Cálculo</Button>
-                  <Button onClick={() => handleSetView('reports')} variant="secondary">Ver Relatórios</Button>
+            {loading ? (
+              <p className="text-center py-6 text-slate-400 text-xs">A carregar acertos...</p>
+            ) : pendingCalculations.length === 0 ? (
+              <div className="text-center py-8 px-4 rounded-xl bg-slate-950/40 border border-slate-800/80">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-white">Todos os cálculos foram processados!</p>
+                <p className="text-xs text-slate-400 mt-0.5">Não há acertos semanais a necessitar de aprovação no momento.</p>
               </div>
-            </Card>
-            <Card>
-                <h3 className="text-lg font-semibold mb-4">Atividade Recente (Global)</h3>
-                <ul className="space-y-4">
-                    {recentActivity.map(calc => {
-                        let activityText = `Novo cálculo para ${calc.driverName}.`;
-                        if (calc.status === CalculationStatus.ACCEPTED) activityText = `Cálculo para ${calc.driverName} aceite.`;
-                        if (calc.status === CalculationStatus.REVISION_REQUESTED) activityText = `Revisão pedida para ${calc.driverName}.`;
-                        
-                        return (
-                            <li key={calc.id} className="flex items-start">
-                                <div className={`mt-1 flex-shrink-0 flex items-center justify-center h-5 w-5 rounded-full ${
-                                    calc.status === CalculationStatus.ACCEPTED ? 'bg-green-500' : 
-                                    calc.status === CalculationStatus.REVISION_REQUESTED ? 'bg-red-500' : 'bg-yellow-500'
-                                }`}>
-                                    {calc.status === CalculationStatus.ACCEPTED ? <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg> : null}
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-white">{activityText}</p>
-                                    <p className="text-xs text-gray-400">{toDate(calc.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            </Card>
+            ) : (
+              <div className="space-y-3">
+                {pendingCalculations.map(calc => (
+                  <div 
+                    key={calc.id} 
+                    className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-slate-700 transition-colors"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white">{calc.driverName}</span>
+                        {calc.matricula && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                            {calc.matricula}
+                          </span>
+                        )}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
+                          {calc.type}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Período: {toDate(calc.periodStart).toLocaleDateString('pt-PT')} a {toDate(calc.periodEnd).toLocaleDateString('pt-PT')}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <Button onClick={() => handleShowDetails(calc)} variant="primary" className="text-xs py-1.5 px-3">
+                        Rever & Aprovar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quick Table View */}
+          {renderHistoryList(true, dashboardHistoryCalculations)}
+        </div>
+
+        {/* Right Column: Quick Operations & Recent Global Activity */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Quick Operations */}
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
+            <h3 className="text-base font-bold text-white mb-3">Operações Rápidas</h3>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => handleSetView('extratos')}
+                className="w-full p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-600/20 text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Importar Extratos</p>
+                    <p className="text-[11px] text-slate-400">CSV/PDF Uber, Bolt, Via Verde</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetView('adtech')}
+                className="w-full p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-600/20 text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                    <Tv className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Mídia & Tablets</p>
+                    <p className="text-[11px] text-slate-400">Campanhas ativas nos carros</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetView('receipts')}
+                className="w-full p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-600/20 text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                    <Receipt className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Recibos Verdes</p>
+                    <p className="text-[11px] text-slate-400">Conformidade e NIF dos motoristas</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Activity Log */}
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
+            <h3 className="text-base font-bold text-white mb-4">Atividade Recente da Frota</h3>
+            <ul className="space-y-3.5">
+              {recentActivity.map(calc => {
+                let activityText = `Cálculo registado para ${calc.driverName}.`;
+                if (calc.status === CalculationStatus.ACCEPTED) activityText = `Acerto aceite para ${calc.driverName}.`;
+                if (calc.status === CalculationStatus.REVISION_REQUESTED) activityText = `Revisão solicitada para ${calc.driverName}.`;
+                
+                const statusStyle = getStatusColor(calc.status);
+
+                return (
+                  <li key={calc.id} className="flex items-start gap-2.5 text-xs">
+                    <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${statusStyle.dot}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">{activityText}</p>
+                      <p className="text-[10px] text-slate-400">{toDate(calc.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   );
 
-  const getStatusColor = (status: CalculationStatus) => {
-    switch (status) {
-      case CalculationStatus.ACCEPTED: return 'bg-green-600/20 text-green-400 border-green-500';
-      case CalculationStatus.REVISION_REQUESTED: return 'bg-red-600/20 text-red-400 border-red-500';
-      case CalculationStatus.PENDING: return 'bg-yellow-600/20 text-yellow-400 border-yellow-500';
-      default: return 'bg-gray-600/20 text-gray-400 border-gray-500';
-    }
-  };
+  // History List with Search, Filter & Mobile Cards
+  const renderHistoryList = (isDashboardView = false, calcsToRender: Calculation[]) => {
+    const listToDisplay = calcsToRender.filter(c => {
+      if (historyStatusFilter === 'ALL') return true;
+      return c.status === historyStatusFilter;
+    });
 
-  const renderHistoryList = (isDashboardView = false, calcsToRender: Calculation[]) => (
-    <Card>
-        <h3 className="text-xl font-semibold mb-4">{isDashboardView ? 'Histórico de Cálculos (Global)' : (startDate && endDate ? 'Histórico de Cálculos (Período Selecionado)' : 'Histórico de Cálculos (Todo o Período)')}</h3>
+    return (
+      <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-white">
+              {isDashboardView ? 'Histórico Recente de Cálculos' : 'Todos os Acertos Semanais'}
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {listToDisplay.length} registo(s) encontrado(s)
+            </p>
+          </div>
+
+          {/* Filter Pills */}
+          {!isDashboardView && (
+            <div className="flex p-0.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-bold">
+              <button 
+                type="button"
+                onClick={() => setHistoryStatusFilter('ALL')}
+                className={`px-2 py-1 rounded-md transition-colors ${historyStatusFilter === 'ALL' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                Todos
+              </button>
+              <button 
+                type="button"
+                onClick={() => setHistoryStatusFilter(CalculationStatus.ACCEPTED)}
+                className={`px-2 py-1 rounded-md transition-colors ${historyStatusFilter === CalculationStatus.ACCEPTED ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                Aceites
+              </button>
+              <button 
+                type="button"
+                onClick={() => setHistoryStatusFilter(CalculationStatus.PENDING)}
+                className={`px-2 py-1 rounded-md transition-colors ${historyStatusFilter === CalculationStatus.PENDING ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                Pendentes
+              </button>
+            </div>
+          )}
+        </div>
+
         {error && (
-          <div className="p-4 mb-4 text-sm text-red-400 bg-red-900/50 border border-red-600 rounded-lg" role="alert">
+          <div className="p-3 mb-4 text-xs text-rose-300 bg-rose-950/80 border border-rose-800 rounded-xl">
             <p className="font-bold">Erro: {error.split('Link:')[0]}</p>
           </div>
         )}
 
-        {/* Mobile View (Cards) */}
-        <div className="md:hidden">
-            {loading ? (
-                <p className="text-center py-10 text-gray-400">A carregar...</p>
-            ) : calcsToRender.length === 0 ? (
-                <p className="text-center py-10 text-gray-400">Nenhum cálculo encontrado para o período selecionado.</p>
-            ) : (
-                <div className="space-y-4">
-                    {calcsToRender.slice(0, isDashboardView ? 5 : undefined).map(calc => (
-                        <div key={calc.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                            <div className="flex justify-between items-start gap-4">
-                                <div>
-                                    <p className="font-semibold text-white">{calc.driverName}</p>
-                                    <p className="text-sm text-gray-300">{`${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}`}</p>
-                                </div>
-                                <span className={`flex-shrink-0 px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(calc.status)}`}>{calc.status}</span>
-                            </div>
-                            <div className="mt-4 flex justify-end gap-4">
-                                <button onClick={() => handleShowDetails(calc)} className="text-blue-400 hover:text-blue-300 font-medium text-sm">Ver Detalhes</button>
-                                <button onClick={() => handleDelete(calc)} className="text-red-400 hover:text-red-300 font-medium text-sm">Excluir</button>
-                            </div>
-                        </div>
-                    ))}
+        {/* MOBILE VIEW: Cards empilhados de condutor */}
+        <div className="md:hidden space-y-3">
+          {loading ? (
+            <p className="text-center py-6 text-slate-400 text-xs">A carregar registos...</p>
+          ) : listToDisplay.length === 0 ? (
+            <p className="text-center py-6 text-slate-400 text-xs">Nenhum cálculo encontrado.</p>
+          ) : (
+            listToDisplay.slice(0, isDashboardView ? 5 : undefined).map(calc => {
+              const summary = calculateSummary(calc);
+              const statusStyle = getStatusColor(calc.status);
+
+              return (
+                <div key={calc.id} className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 flex items-center justify-center font-bold text-xs">
+                        {calc.driverName.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-bold text-white text-xs">{calc.driverName}</p>
+                        <p className="text-[10px] text-slate-400">
+                          {toDate(calc.periodStart).toLocaleDateString('pt-PT')} a {toDate(calc.periodEnd).toLocaleDateString('pt-PT')}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border flex items-center gap-1.5 ${statusStyle.badge}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                      {calc.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400">Líquido a Pagar:</span>
+                      <p className="font-black text-white">€{(summary.valorFinal || 0).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400">Tipo:</span>
+                      <p className="font-bold text-slate-300">{calc.type}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-end gap-3 text-xs border-t border-slate-800/80">
+                    <button 
+                      onClick={() => handleShowDetails(calc)} 
+                      className="text-blue-400 hover:text-blue-300 font-bold"
+                    >
+                      Ver Detalhes
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(calc)} 
+                      className="text-rose-400 hover:text-rose-300 font-medium"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </div>
-            )}
+              );
+            })
+          )}
         </div>
 
-        {/* Desktop View (Table) */}
+        {/* DESKTOP VIEW: High-Craft Table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-700">
-            <thead className="bg-gray-800">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Motorista</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Período</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Ações</th>
+          <table className="min-w-full divide-y divide-slate-800 text-xs">
+            <thead>
+              <tr className="border-b border-slate-800">
+                <th scope="col" className="py-3 px-4 text-left font-semibold text-slate-400 uppercase tracking-wider">Condutor</th>
+                <th scope="col" className="py-3 px-4 text-left font-semibold text-slate-400 uppercase tracking-wider">Período</th>
+                <th scope="col" className="py-3 px-4 text-left font-semibold text-slate-400 uppercase tracking-wider">Tipo</th>
+                <th scope="col" className="py-3 px-4 text-right font-semibold text-slate-400 uppercase tracking-wider">Líquido</th>
+                <th scope="col" className="py-3 px-4 text-left font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                <th scope="col" className="py-3 px-4 text-right font-semibold text-slate-400 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-gray-900 divide-y divide-gray-800">
+            <tbody className="divide-y divide-slate-800/60">
               {loading ? (
-                <tr><td colSpan={4} className="text-center py-10 text-gray-400">A carregar...</td></tr>
-              ) : calcsToRender.length === 0 ? (
-                <tr><td colSpan={4} className="text-center py-10 text-gray-400">Nenhum cálculo encontrado para o período selecionado.</td></tr>
-              ) : (calcsToRender.slice(0, isDashboardView ? 5 : undefined).map(calc => (
-                <tr key={calc.id} className="hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{calc.driverName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{`${toDate(calc.periodStart).toLocaleDateString('pt-PT')} - ${toDate(calc.periodEnd).toLocaleDateString('pt-PT')}`}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(calc.status)}`}>{calc.status}</span></td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                    <button onClick={() => handleShowDetails(calc)} className="text-blue-400 hover:text-blue-300">Ver Detalhes</button>
-                    <button onClick={() => handleDelete(calc)} className="text-red-400 hover:text-red-300">Excluir</button>
-                  </td>
-                </tr>
-              )))}
+                <tr><td colSpan={6} className="text-center py-8 text-slate-400">A carregar acertos semanais...</td></tr>
+              ) : listToDisplay.length === 0 ? (
+                <tr><td colSpan={6} className="text-center py-8 text-slate-400">Nenhum cálculo encontrado.</td></tr>
+              ) : (
+                listToDisplay.slice(0, isDashboardView ? 6 : undefined).map(calc => {
+                  const summary = calculateSummary(calc);
+                  const statusStyle = getStatusColor(calc.status);
+
+                  return (
+                    <tr key={calc.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 flex items-center justify-center font-bold text-[11px]">
+                            {calc.driverName.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white">{calc.driverName}</p>
+                            {calc.matricula && <p className="text-[10px] font-mono text-slate-400">{calc.matricula}</p>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-300">
+                        {toDate(calc.periodStart).toLocaleDateString('pt-PT')} a {toDate(calc.periodEnd).toLocaleDateString('pt-PT')}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-700">
+                          {calc.type}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap text-right font-black text-white">
+                        €{(summary.valorFinal || 0).toFixed(2)}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border inline-flex items-center gap-1.5 ${statusStyle.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                          {calc.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap text-right font-medium space-x-3">
+                        <button 
+                          onClick={() => handleShowDetails(calc)} 
+                          className="text-blue-400 hover:text-blue-300 font-bold"
+                        >
+                          Ver Detalhes
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(calc)} 
+                          className="text-rose-400 hover:text-rose-300 font-medium"
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
-        
-        {isDashboardView && calculations.length > 5 && <div className="text-center mt-4"><Button variant="secondary" onClick={() => setView('history')}>Ver todo o histórico</Button></div>}
-    </Card>
-  );
+      </div>
+    );
+  };
 
   const renderContent = () => {
     switch (view) {
-      case 'dashboard': return renderDashboardHome();
+      case 'dashboard': 
+        return renderDashboardHome();
       case 'form': 
         return (
           <CalculationForm 
@@ -597,74 +1112,327 @@ const AdminDashboard: React.FC = () => {
         );
       case 'saas_settings':
         return <SaasSettingsView />;
-      case 'history': return renderHistoryList(false, filteredCalculations);
-      case 'reports': return <ReportsView onBack={() => setView('dashboard')} />;
+      case 'history': 
+        return renderHistoryList(false, filteredCalculations);
+      case 'reports': 
+        return <ReportsView onBack={() => setView('dashboard')} />;
       case 'details':
         if (!selectedCalculation) return renderDashboardHome();
         return (
           <div>
-            {/* FIX: The original comparison `view === 'history'` was always false inside the 'details' view case, causing a type error and a logic bug. This now correctly navigates back to the previous view using the `fromView` state. */}
-            <Button onClick={() => { setView(fromView); setSelectedCalculation(null); }} className="mb-4">&larr; Voltar</Button>
+            <Button onClick={() => { setView(fromView); setSelectedCalculation(null); }} className="mb-4">
+              &larr; Voltar
+            </Button>
             <CalculationView calculation={selectedCalculation} />
-             <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4 flex justify-center items-center gap-4 flex-wrap">
-                 <Button onClick={() => handleEdit(selectedCalculation)} variant="primary">Editar Cálculo</Button>
-                 <Button onClick={() => handleDelete(selectedCalculation)} variant="danger">Excluir Cálculo</Button>
-             </div>
+            <div className="mt-6 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-center items-center gap-4 flex-wrap">
+              <Button onClick={() => handleEdit(selectedCalculation)} variant="primary">
+                Editar Cálculo
+              </Button>
+              <Button onClick={() => handleDelete(selectedCalculation)} variant="danger">
+                Excluir Cálculo
+              </Button>
+            </div>
           </div>
         );
-      case 'iban': return <IbanManagement />;
-      case 'receipts': return <ReceiptManagement />;
-      case 'vehicles': return <VehicleManagement />;
-      case 'adjustments': return <AdjustmentManagement />;
-      default: return <h2>Bem-vindo</h2>;
+      case 'iban': 
+        return <IbanManagement />;
+      case 'receipts': 
+        return <ReceiptManagement />;
+      case 'vehicles': 
+        return <VehicleManagement />;
+      case 'adjustments': 
+        return <AdjustmentManagement />;
+      default: 
+        return renderDashboardHome();
     }
   };
 
+  const userInitials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'AD';
+
   return (
-    <div className="flex flex-1 text-gray-100 font-sans">
-      {/* Mobile Sidebar (Overlay) */}
-      <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 p-4 flex flex-col transform transition-transform duration-300 ease-in-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <SidebarContent 
-          user={user} 
-          logout={logout} 
-          isDemo={isDemo}
-          view={view} 
-          setView={handleSetView} 
-          onLinkClick={() => setIsSidebarOpen(false)} 
-          currentCompanyName={currentCompany?.name}
+    <div className="min-h-screen flex bg-slate-950 text-slate-100 font-sans pb-16 md:pb-0">
+      
+      {/* MOBILE DRAWER OVERLAY */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden transition-opacity" 
+          onClick={() => setIsSidebarOpen(false)} 
         />
-      </aside>
-      {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
+      )}
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-64 bg-gray-800 p-4 md:flex flex-col flex-shrink-0">
-          <SidebarContent 
-            user={user} 
-            logout={logout} 
-            isDemo={isDemo}
-            view={view} 
-            setView={handleSetView} 
-            onLinkClick={() => {}} 
-            currentCompanyName={currentCompany?.name}
-          />
-      </aside>
-
-      <div className="flex-1 flex flex-col">
-        {/* Mobile Header */}
-        <header className="md:hidden bg-gray-800 shadow-md p-4 flex justify-between items-center sticky top-0 z-10">
-            <div className="flex items-center">
-                <h1 className="text-lg font-bold">ROTA TVDE 5.0</h1>
+      {/* MOBILE SIDEBAR DRAWER */}
+      <aside 
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 p-5 flex flex-col transform transition-transform duration-300 ease-in-out md:hidden ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <img 
+              src={BRAND_LOGOS.MOBILE} 
+              alt="ROTA TVDE" 
+              referrerPolicy="no-referrer"
+              className="w-8 h-8 rounded-lg object-cover border border-slate-700 shadow-sm"
+            />
+            <div>
+              <span className="text-xs font-black text-white tracking-tight block">ROTA TVDE 5.0</span>
+              <span className="text-[9px] font-bold text-slate-400">Asfalto Cativante</span>
             </div>
-            <button onClick={() => setIsSidebarOpen(true)} aria-label="Abrir menu">
-                <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+          </div>
+          <button 
+            type="button"
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {renderSidebar(false, () => setIsSidebarOpen(false))}
+      </aside>
+
+      {/* DESKTOP COLLAPSIBLE SIDEBAR */}
+      <aside 
+        className={`hidden md:flex flex-col flex-shrink-0 bg-slate-900 border-r border-slate-800 p-4 transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        {renderSidebar(isCollapsed, () => {})}
+      </aside>
+
+      {/* MAIN VIEWPORT */}
+      <div className="flex-1 flex flex-col min-w-0">
+        
+        {/* DESKTOP & MOBILE TOP HEADER (VERCEL / STRIPE STANDARD) */}
+        <header className="sticky top-0 z-30 h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/90 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+          
+          {/* Left: Mobile hamburger & Desktop collapse toggle */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <button 
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white md:hidden focus:outline-none"
+              aria-label="Abrir menu lateral"
+            >
+              <Menu className="w-5 h-5" />
             </button>
+
+            {/* Mobile Header Logo */}
+            <div className="flex md:hidden items-center gap-2">
+              <img 
+                src={BRAND_LOGOS.MOBILE} 
+                alt="ROTA TVDE 5.0" 
+                referrerPolicy="no-referrer"
+                className="w-8 h-8 rounded-lg object-cover border border-slate-700 shadow-sm flex-shrink-0"
+              />
+              <span className="text-sm font-black text-white tracking-tight truncate max-w-[120px]">ROTA TVDE</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              title={isCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
+            >
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+
+            {/* Global Search Bar */}
+            <div className="relative w-44 sm:w-64 md:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                placeholder="Pesquisar condutor, matrícula... (⌘K)"
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              />
+              {globalSearch && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Right Controls: Fleet Selector, Live Firestore Indicator & User Avatar */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            
+            {/* Live Firestore Sync Status Indicator */}
+            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800">
+              {!isDemo ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-bold text-emerald-300">Firestore Ativo</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  <span className="text-[10px] font-bold text-amber-300">Modo Demo</span>
+                </>
+              )}
+            </div>
+
+            {/* Fleet / Company Dropdown with Mobile Logo Icon */}
+            <div className="relative" ref={fleetMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsFleetMenuOpen(!isFleetMenuOpen)}
+                className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+              >
+                <img 
+                  src={BRAND_LOGOS.MOBILE} 
+                  alt="Frota" 
+                  referrerPolicy="no-referrer"
+                  className="w-5 h-5 rounded-md object-cover border border-slate-600 flex-shrink-0"
+                />
+                <span className="truncate max-w-[130px]">
+                  {currentCompany?.tradeName || currentCompany?.name || 'Asfalto Cativante'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+
+              {isFleetMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
+                  <p className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Frota Ativa</p>
+                  <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/80 text-xs text-white flex items-center justify-between">
+                    <span className="font-bold truncate">{currentCompany?.name || 'Asfalto Cativante'}</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => { setView('saas_settings'); setIsFleetMenuOpen(false); }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 flex items-center justify-between"
+                    >
+                      <span>Gerir Frotas SaaS</span>
+                      <ExternalLink className="w-3 h-3 text-slate-500" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Profile Avatar with Dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-800 transition-colors focus:outline-none"
+              >
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white text-xs shadow-md shadow-blue-600/30 border border-blue-400/30">
+                  {userInitials}
+                </div>
+                <div className="hidden xl:block text-left">
+                  <p className="text-xs font-bold text-white truncate max-w-[120px]">{user?.name}</p>
+                  <p className="text-[10px] text-slate-400 leading-none">
+                    {user?.role === UserRole.ADMIN ? 'Administrador' : user?.role === UserRole.MANAGER ? 'Gerente' : user?.role}
+                  </p>
+                </div>
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
+                  <div className="px-3 py-2 border-b border-slate-800">
+                    <p className="text-xs font-bold text-white">{user?.name}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
+                    <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
+                      {user?.role === UserRole.ADMIN ? 'Administrador do Sistema' : 'Gerente Operacional'}
+                    </span>
+                  </div>
+
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => { setView('saas_settings'); setIsUserMenuOpen(false); }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      Definições da Conta
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setView('history'); setIsUserMenuOpen(false); }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      Histórico Geral
+                    </button>
+                  </div>
+
+                  <div className="pt-1 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => { setIsUserMenuOpen(false); logout(); }}
+                      className="w-full text-left px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors flex items-center justify-between"
+                    >
+                      <span>Terminar Sessão</span>
+                      <LogOut className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-10 overflow-y-auto">
+        {/* MAIN BODY VIEW */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           {renderContent()}
         </main>
+      </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR (PWA COMPLIANT) */}
+      <div className="fixed bottom-0 inset-x-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 z-40 md:hidden flex justify-around items-center py-2 px-3 pb-safe">
+        <button
+          type="button"
+          onClick={() => setView('dashboard')}
+          className={`flex flex-col items-center gap-1 transition-colors ${
+            view === 'dashboard' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[10px]">Início</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setView('history')}
+          className={`flex flex-col items-center gap-1 relative transition-colors ${
+            view === 'history' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <FileSpreadsheet className="w-5 h-5" />
+          <span className="text-[10px]">Acertos</span>
+          {stats.pendingCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-black text-[9px] flex items-center justify-center">
+              {stats.pendingCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setView('driver_info')}
+          className={`flex flex-col items-center gap-1 transition-colors ${
+            view === 'driver_info' || view === 'vehicles' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-5 h-5" />
+          <span className="text-[10px]">Motoristas</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setView('saas_settings')}
+          className={`flex flex-col items-center gap-1 transition-colors ${
+            view === 'saas_settings' ? 'text-purple-400 font-bold' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Building2 className="w-5 h-5" />
+          <span className="text-[10px]">Perfil</span>
+        </button>
       </div>
     </div>
   );

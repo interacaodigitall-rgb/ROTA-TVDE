@@ -3,6 +3,7 @@ import { useAdTech } from '../../hooks/useAdTech';
 import { useAuth } from '../../hooks/useAuth';
 import { useUsers } from '../../hooks/useUsers';
 import { AdCampaign } from '../../types';
+import { BRAND_LOGOS } from '../../constants';
 import Button from '../ui/Button';
 import { 
   Tv, 
@@ -167,9 +168,15 @@ export const PassengerTabletPlayer: React.FC<PassengerTabletPlayerProps> = ({
         
         {/* Top Tablet Status Bar */}
         <div className="h-10 bg-gradient-to-b from-black/90 to-transparent px-6 flex items-center justify-between text-white text-xs z-20">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <img 
+              src={BRAND_LOGOS.MOBILE} 
+              alt="ROTA TVDE" 
+              referrerPolicy="no-referrer"
+              className="w-5 h-5 rounded-md object-cover border border-slate-700 shadow-sm"
+            />
             <span className="font-bold tracking-wider text-blue-400">ROTA TVDE 5.0 ADTECH</span>
-            <span className="flex items-center gap-1 text-slate-300">
+            <span className="flex items-center gap-1 text-slate-300 ml-2">
               <Sun className="w-3.5 h-3.5 text-amber-400" /> 23°C Lisboa
             </span>
           </div>

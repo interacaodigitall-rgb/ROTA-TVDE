@@ -1,135 +1,390 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import Button from './ui/Button';
-import Input from './ui/Input';
-import Card from './ui/Card';
+import { BRAND_LOGOS } from '../constants';
+import { 
+  ShieldCheck, 
+  Sparkles, 
+  Car, 
+  Tv, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  CheckCircle2, 
+  Building2, 
+  Database,
+  ArrowRight,
+  TrendingUp,
+  FileCheck2,
+  ChevronDown,
+  Zap
+} from 'lucide-react';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isQuickAccessOpen, setIsQuickAccessOpen] = useState(false);
+  const [selectedProfileLabel, setSelectedProfileLabel] = useState<string | null>(null);
+  
+  const quickAccessRef = useRef<HTMLDivElement>(null);
   const { login, error: authError } = useAuth();
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (quickAccessRef.current && !quickAccessRef.current.contains(e.target as Node)) {
+        setIsQuickAccessOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     await login(email, password);
-    // Error handling and navigation are now managed by the AuthContext and App component.
     setIsLoading(false);
   };
 
+  const setCredentials = (em: string, pass: string, label: string) => {
+    setEmail(em);
+    setPassword(pass);
+    setSelectedProfileLabel(label);
+    setIsQuickAccessOpen(false);
+  };
+
   return (
-    <div className="flex-1 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-4xl font-bold text-center text-white mb-8">
-          ROTA TVDE 5.0
-        </h1>
-        <Card>
-          <h2 className="text-2xl font-semibold text-center text-gray-200 mb-6">Login do Sistema TVDE</h2>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Input
-              id="email"
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-            
+    <div className="min-h-screen w-full flex flex-col lg:grid lg:grid-cols-2 bg-slate-950 text-slate-100 font-sans">
+      {/* LEFT PANE: Enterprise Hero & Branding (Logo Principal Desktop) */}
+      <div className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 border-r border-slate-800/80">
+        {/* Background glow meshes */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Top Branding with Official Desktop Logo */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="p-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-xl backdrop-blur-md">
+              <img 
+                src={BRAND_LOGOS.DESKTOP} 
+                alt="Asfalto Cativante - ROTA TVDE 5.0" 
+                referrerPolicy="no-referrer"
+                className="h-12 w-auto object-contain max-w-[200px]"
+                onError={(e) => {
+                  // Fallback to text badge if network error occurs
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="block w-full pr-10 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white"
-                />
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-black tracking-tight text-white">ROTA TVDE</span>
+                <span className="px-2 py-0.5 rounded-md bg-blue-500/20 border border-blue-400/40 text-blue-300 text-xs font-bold">5.0</span>
+              </div>
+              <p className="text-xs text-slate-400 font-medium tracking-wide">Plataforma Integrada Operacional & AdTech TVDE</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Center Highlights */}
+        <div className="relative z-10 my-auto py-10 space-y-8 max-w-lg">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-semibold mb-4 shadow-lg shadow-emerald-950/40">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Sincronização em Tempo Real Firestore
+            </div>
+            <h1 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight tracking-tight">
+              Gestão Financeira, Frota & Monetização Inteligente para TVDE
+            </h1>
+            <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+              Solução completa para operadores de frotas TVDE em Portugal. Automatize acertos semanais da Uber e Bolt, controle combustíveis e portagens e gere receita adicional com tablets de publicidade embarcada.
+            </p>
+          </div>
+
+          {/* Feature Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 text-blue-400 font-bold text-xs mb-1">
+                <Car className="w-4 h-4" />
+                <span>Cálculos Slot & %</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                Algoritmos validados com deduções de combustível, Via Verde e caução com IVA 6%.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-xs mb-1">
+                <Tv className="w-4 h-4" />
+                <span>AdTech Embarcada</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                Tablets nos veículos com distribuição de anúncios e bónus para motoristas e frota.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 text-purple-400 font-bold text-xs mb-1">
+                <FileCheck2 className="w-4 h-4" />
+                <span>Importação CSV/PDF</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                Reconciliação automática de extratos bancários, Prio, Galp e Via Verde.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 text-amber-400 font-bold text-xs mb-1">
+                <TrendingUp className="w-4 h-4" />
+                <span>Multi-Tenant SaaS</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                Gestão isolada de múltiplas empresas e frotas parceiras com minutas contratuais.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Trust Badges */}
+        <div className="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              SSL 256-bit Seguro
+            </span>
+            <span className="flex items-center gap-1.5 font-medium">
+              <Database className="w-4 h-4 text-blue-400" />
+              Firebase Cloud
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-[11px] text-slate-400">
+            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+            <span>Frota Padrão: <strong className="text-slate-200">Asfalto Cativante</strong></span>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT PANE: Modern Form & Fast Profile Selectors */}
+      <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 xl:p-16 bg-slate-950 relative">
+        <div className="w-full max-w-md space-y-6">
+          
+          {/* Mobile Header with Official Mobile Logo */}
+          <div className="lg:hidden text-center space-y-2 mb-6">
+            <div className="inline-block p-1 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl mx-auto">
+              <img 
+                src={BRAND_LOGOS.MOBILE} 
+                alt="ROTA TVDE 5.0" 
+                referrerPolicy="no-referrer"
+                className="w-16 h-16 rounded-xl object-cover shadow-md"
+              />
+            </div>
+            <h1 className="text-2xl font-extrabold text-white">ROTA TVDE 5.0</h1>
+            <p className="text-xs text-slate-400">Plataforma Enterprise de Gestão de Frotas TVDE & AdTech</p>
+          </div>
+
+          {/* Login Card */}
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800/90 rounded-2xl p-7 sm:p-8 shadow-2xl relative overflow-visible">
+            
+            {/* Header with Title & Discreet Dropdown for Quick Access */}
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-tight">Iniciar Sessão</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Introduza as credenciais para aceder ao sistema.</p>
+              </div>
+
+              {/* DISCREET QUICK ACCESS DROPDOWN MENU */}
+              <div className="relative" ref={quickAccessRef}>
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-200"
-                  aria-label={showPassword ? "Ocultar password" : "Mostrar password"}
+                  onClick={() => setIsQuickAccessOpen(!isQuickAccessOpen)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700/80 hover:border-blue-500/50 text-slate-300 hover:text-white text-xs font-semibold shadow-sm transition-all focus:outline-none"
                 >
-                  {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path fillRule="evenodd" d="M.458 10C1.73 5.943 5.522 3 10 3s8.27 2.943 9.542 7c-1.272 4.057-5.022 7-9.542 7S1.73 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M13.57 12.394A4.001 4.001 0 0110 14a4 4 0 01-3.57-1.606A10.054 10.054 0 01.458 10c1.272-4.057 5.022-7 9.542-7 1.655 0 3.21.387 4.595 1.088l-1.739 1.739A8.073 8.073 0 0110 5a8.07 8.07 0 01-1.696.185L6.5 6.983A4.002 4.002 0 0110 6a4 4 0 013.57 1.606l2.121-2.121A9.985 9.985 0 0010 3C5.522 3 1.73 5.943.458 10a10.048 10.048 0 003.249 3.454l-1.414 1.414a1 1 0 001.414 1.414l11.293-11.293a1 1 0 00-1.414-1.414L13.57 12.394z" />
-                    </svg>
-                  )}
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Acesso Rápido de Teste</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isQuickAccessOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isQuickAccessOpen && (
+                  <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-slate-900 border border-slate-700/90 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-2 py-1 mb-2 border-b border-slate-800">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Selecionar Perfil de Teste</p>
+                    </div>
+
+                    {/* Modo Real */}
+                    <div className="mb-3 space-y-1">
+                      <div className="px-2 py-0.5 text-[9px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Modo Real (Firestore)
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCredentials('adm@tvdecheck.pt', '0123456789', 'Administrador Real')}
+                        className="w-full px-2.5 py-1.5 rounded-xl hover:bg-slate-800/90 text-left transition-colors flex items-center justify-between group"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-emerald-300">Administrador Real</p>
+                          <p className="text-[10px] text-slate-400">adm@tvdecheck.pt</p>
+                        </div>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">Admin</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCredentials('gerente@tvdecheck.pt', '0123456789', 'Gerente Operacional')}
+                        className="w-full px-2.5 py-1.5 rounded-xl hover:bg-slate-800/90 text-left transition-colors flex items-center justify-between group"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-indigo-300">Gerente Operacional</p>
+                          <p className="text-[10px] text-slate-400">gerente@tvdecheck.pt</p>
+                        </div>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Frota</span>
+                      </button>
+                    </div>
+
+                    {/* Modo Demonstração */}
+                    <div className="pt-2 border-t border-slate-800 space-y-1">
+                      <div className="px-2 py-0.5 text-[9px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                        Modo Demonstração
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCredentials('demoad@rotatvde.pt', 'Minharotatvde', 'Demo Admin')}
+                        className="w-full px-2.5 py-1.5 rounded-xl hover:bg-slate-800/90 text-left transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white">Demo Admin Geral</p>
+                          <p className="text-[10px] text-slate-400">demoad@rotatvde.pt</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCredentials('demofr@rotatvde.pt', '0123456', 'Demo Frota %')}
+                        className="w-full px-2.5 py-1.5 rounded-xl hover:bg-slate-800/90 text-left transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white">Demo Frota (Percentagem)</p>
+                          <p className="text-[10px] text-slate-400">demofr@rotatvde.pt</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCredentials('demosl@rotatvde.pt', '0123456', 'Demo Slot')}
+                        className="w-full px-2.5 py-1.5 rounded-xl hover:bg-slate-800/90 text-left transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white">Demo Slot (Aluguer Fixo)</p>
+                          <p className="text-[10px] text-slate-400">demosl@rotatvde.pt</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Selected Profile Notification Badge */}
+            {selectedProfileLabel && (
+              <div className="mb-4 px-3 py-1.5 rounded-xl bg-blue-950/60 border border-blue-800/80 text-blue-300 text-xs flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Perfil preenchido: <strong>{selectedProfileLabel}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedProfileLabel(null)}
+                  className="text-slate-400 hover:text-white text-xs font-bold"
+                >
+                  &times;
                 </button>
               </div>
-            </div>
+            )}
 
-            {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
-            <div>
-              <Button type="submit" variant="primary" className="w-full" disabled={isLoading}>
-                {isLoading ? 'A entrar...' : 'Entrar'}
-              </Button>
-            </div>
-          </form>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Email de Acesso
+                </label>
+                <div className="relative">
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    placeholder="ex: utilizador@tvdecheck.pt"
+                    className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  />
+                </div>
+              </div>
 
-          {/* Real Mode Quick Access for Admin & Gerente */}
-          <div className="mt-6 pt-4 border-t border-gray-700/80">
-            <p className="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
-              <span>Acesso Rápido - Modo Real (Firestore):</span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">Oficial</span>
-            </p>
-            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label htmlFor="password" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    Palavra-passe
+                  </label>
+                </div>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••••••"
+                    className="w-full pl-3.5 pr-10 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 focus:outline-none cursor-pointer"
+                    aria-label={showPassword ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {authError && (
+                <div className="p-3 rounded-xl bg-rose-950/70 border border-rose-800 text-rose-300 text-xs font-medium">
+                  {authError}
+                </div>
+              )}
+
               <button
-                type="button"
-                onClick={() => { setEmail('adm@tvdecheck.pt'); setPassword('0123456789'); }}
-                className="text-left p-2 rounded-lg bg-gray-750 hover:bg-gray-700 border border-gray-600 transition-colors"
+                type="submit"
+                disabled={isLoading}
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <div className="text-xs font-bold text-white">Administrador Real</div>
-                <div className="text-[10px] text-gray-400 truncate">adm@tvdecheck.pt</div>
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    A autenticar...
+                  </span>
+                ) : (
+                  <>
+                    <span>Entrar na Plataforma</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
-              <button
-                type="button"
-                onClick={() => { setEmail('gerente@tvdecheck.pt'); setPassword('0123456789'); }}
-                className="text-left p-2 rounded-lg bg-gray-750 hover:bg-gray-700 border border-gray-600 transition-colors"
-              >
-                <div className="text-xs font-bold text-white">Gerente Real</div>
-                <div className="text-[10px] text-gray-400 truncate">gerente@tvdecheck.pt</div>
-              </button>
-            </div>
+            </form>
           </div>
 
-          {/* Demo Section */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-800 text-gray-400 text-xs">Ou aceder à versão DEMO (Dados de Teste)</span>
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <Button type="button" onClick={() => { setEmail('demoad@rotatvde.pt'); setPassword('Minharotatvde'); }} variant="secondary" className="w-full text-xs">
-                Demo Admin
-              </Button>
-              <Button type="button" onClick={() => { setEmail('demofr@rotatvde.pt'); setPassword('0123456'); }} variant="secondary" className="w-full text-xs">
-                Demo Frota
-              </Button>
-              <Button type="button" onClick={() => { setEmail('demosl@rotatvde.pt'); setPassword('0123456'); }} variant="secondary" className="w-full text-xs">
-                Demo Slot
-              </Button>
-            </div>
+          <div className="text-center text-[11px] text-slate-400 flex items-center justify-center gap-2">
+            <span>ROTA TVDE 5.0 Enterprise</span>
+            <span>•</span>
+            <span className="text-slate-400">Conforme Legislação TVDE & IVA 6%</span>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );
