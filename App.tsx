@@ -14,9 +14,18 @@ const App: React.FC = () => {
   const { user, loading } = useAuth();
   const { isUpdateAvailable, updateServiceWorker } = useServiceWorkerUpdater();
 
-  // Check if current path is tablet activation/player route
+  // Check if current path or query/hash indicates tablet mode
   const currentPath = window.location.pathname;
-  if (currentPath === '/tablet' || currentPath === '/display' || currentPath === '/kiosk') {
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTabletMode = 
+    currentPath === '/tablet' || 
+    currentPath === '/display' || 
+    currentPath === '/kiosk' ||
+    searchParams.get('tablet') === 'true' ||
+    searchParams.get('mode') === 'tablet' ||
+    window.location.hash.includes('tablet');
+
+  if (isTabletMode) {
     return <TabletDisplayRoute onClose={() => { window.location.href = '/'; }} />;
   }
 
