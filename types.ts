@@ -111,6 +111,13 @@ export interface Calculation {
 
   // AdTech bonus integration (optional extra earnings passed to driver)
   adTechBonus?: number;
+
+  // Gestão Fiscal & IVA (Portugal / Finanças)
+  ivaLiquidado?: number;
+  ivaDedutivel?: number;
+  saldoIvaSemana?: number;
+  anoFiscal?: number;
+  trimestre?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
 }
 
 export interface Iban {
@@ -230,3 +237,90 @@ export interface ContractTemplate {
   content: string;
   lastUpdated: string;
 }
+
+// --- MÓDULO DE GESTÃO DE IVA & REEMBOLSO ANUAL (FINANÇAS PT) ---
+
+export type FiscalQuarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
+
+export interface FiscalSettings {
+  taxaIvaPassageiros: number; // 0.06 (6%)
+  taxaNormalIva: number; // 0.23 (23%)
+  quotaDeducaoDiesel: number; // 0.50 (50% nos termos do CIVA art. 21)
+  quotaDeducaoEletrico: number; // 1.00 (100%)
+  quotaDeducaoPortagens: number; // 1.00 (100% do IVA 23%)
+  quotaDeducaoAluguer: number; // 1.00 (100% do IVA 23%)
+  quotaDeducaoManutencao: number; // 1.00 (100% do IVA 23%)
+}
+
+export interface WeeklyIvaRecord {
+  calculationId: string;
+  driverId: string;
+  driverName: string;
+  matricula?: string;
+  periodStart: any;
+  periodEnd: any;
+  anoFiscal: number;
+  trimestre: FiscalQuarter;
+  
+  // Ganhos e IVA Liquidado (Débito)
+  faturacaoBruta: number; // Uber + Bolt
+  taxaIvaLiquidado: number; // 6%
+  ivaLiquidado: number;
+  
+  // Despesas elegíveis e IVA Dedutível (Crédito)
+  combustivelTotal: number;
+  combustivelIvaDedutivel: number;
+  portagensTotal: number;
+  portagensIvaDedutivel: number;
+  aluguerTotal: number;
+  aluguerIvaDedutivel: number;
+  outrasDespesasTotal: number;
+  outrasDespesasIvaDedutivel: number;
+  totalIvaDedutivel: number;
+  
+  // Saldo da Semana: Liquidado - Dedutível
+  saldoIvaSemana: number; // Positivo: A pagar; Negativo: A recuperar
+  statusSemana: 'A_RECUPERAR' | 'A_PAGAR' | 'EQUILIBRADO';
+}
+
+export interface QuarterlyIvaSummary {
+  trimestre: FiscalQuarter;
+  anoFiscal: number;
+  label: string; // ex: "1º Trimestre (Jan - Mar)"
+  dataLimiteEntrega: string; // ex: "15 de Maio"
+  ivaLiquidado: number;
+  ivaDedutivel: number;
+  saldoIva: number; // Liquidado - Dedutivel
+  status: 'REEMBOLSO' | 'PAGAMENTO' | 'EQUILIBRADO';
+  totalFaturacao: number;
+  totalDespesas: number;
+  numCalculos: number;
+  semanas: WeeklyIvaRecord[];
+}
+
+export interface AnnualIvaSummary {
+  anoFiscal: number;
+  totalCalculos: number;
+  totalFaturacaoBruta: number;
+  totalDespesasOperacionais: number;
+  
+  // Totais IVA
+  ivaLiquidadoTotal: number;
+  ivaDedutivelTotal: number;
+  saldoIvaAnual: number; // Liquidado - Dedutivel
+  
+  // Classificação
+  isReembolso: boolean; // true se saldoIvaAnual < 0
+  reembolsoEstimado: number; // abs(saldo) se isReembolso
+  aPagarEstimado: number; // saldo se !isReembolso
+  
+  // Discriminação do IVA Dedutível
+  combustivelIvaTotal: number;
+  portagensIvaTotal: number;
+  aluguerIvaTotal: number;
+  outrasDespesasIvaTotal: number;
+  
+  // Trimestres
+  trimestres: Record<FiscalQuarter, QuarterlyIvaSummary>;
+}
+

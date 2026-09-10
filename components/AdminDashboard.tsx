@@ -19,6 +19,8 @@ import AdTechManagement from './adtech/AdTechManagement';
 import PassengerTabletPlayer from './adtech/PassengerTabletPlayer';
 import ExtratoImportView from './finance/ExtratoImportView';
 import SaasSettingsView from './saas/SaasSettingsView';
+import IvaManagementView from './iva/IvaManagementView';
+import { aggregateAnnualIva } from '../utils/ivaUtils';
 import { BRAND_LOGOS } from '../constants';
 import { 
   LayoutDashboard, 
@@ -65,7 +67,8 @@ export type AdminView =
   | 'extratos'
   | 'adtech'
   | 'tablet_sim'
-  | 'saas_settings';
+  | 'saas_settings'
+  | 'iva';
 
 const toDate = (timestamp: any): Date => {
   if (!timestamp) return new Date(NaN);
@@ -227,6 +230,10 @@ const AdminDashboard: React.FC = () => {
       activeDrivers: users.filter(u => u.role === UserRole.DRIVER).length,
     };
   }, [filteredCalculations, calculations, users]);
+
+  const annualIvaSummary = useMemo(() => {
+    return aggregateAnnualIva(calculations, new Date().getFullYear());
+  }, [calculations]);
 
   const recentActivity = useMemo(() => {
     return [...calculations]
@@ -484,6 +491,15 @@ const AdminDashboard: React.FC = () => {
               isCollapsed={collapsed}
             />
             <NavLink 
+              icon={<Receipt className="h-4 w-4 text-emerald-400" />} 
+              label="Gestão Fiscal & IVA" 
+              isActive={view === 'iva'} 
+              onClick={() => { setView('iva'); onLinkClick(); }}
+              badge="AT"
+              badgeColor="bg-emerald-950 text-emerald-300 border-emerald-700"
+              isCollapsed={collapsed}
+            />
+            <NavLink 
               icon={<FileBarChart2 className="h-4 w-4" />} 
               label="Relatórios Consolidados" 
               isActive={view === 'reports'} 
@@ -604,7 +620,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Modern KPI Cards with Trend Indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
         {/* Card 1: Faturação da Empresa */}
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
@@ -638,7 +654,38 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Cálculos Pendentes */}
+        {/* Card 3: Crédito de IVA Acumulado (Finanças) - CORE FISCAL KPI */}
+        <div 
+          onClick={() => handleSetView('iva')}
+          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/60 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between cursor-pointer group transition-all"
+        >
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Crédito de IVA Acumulado (Finanças)</span>
+            <div className={`p-2 rounded-xl border ${annualIvaSummary.isReembolso ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-600/20 text-amber-400 border-amber-500/30'}`}>
+              <Receipt className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-2xl sm:text-3xl font-black text-white">
+              €{Math.abs(annualIvaSummary.saldoIvaAnual).toFixed(2)}
+            </p>
+            <div className="mt-2">
+              {annualIvaSummary.isReembolso ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  A Recuperar pela Frota
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  A Pagar às Finanças
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Cálculos Pendentes */}
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Acertos Pendentes</span>
@@ -667,7 +714,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4: Motoristas Ativos & AdTech */}
+        {/* Card 5: Motoristas Ativos & AdTech */}
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Frota & Mídia</span>
@@ -833,6 +880,23 @@ const AdminDashboard: React.FC = () => {
                   <div>
                     <p className="text-xs font-bold text-white">Mídia & Tablets</p>
                     <p className="text-[11px] text-slate-400">Campanhas ativas nos carros</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetView('iva')}
+                className="w-full p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-600/20 text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                    <Receipt className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Gestão Fiscal & IVA</p>
+                    <p className="text-[11px] text-slate-400">Reembolso anual e declaração AT</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white" />
@@ -1142,6 +1206,8 @@ const AdminDashboard: React.FC = () => {
         return <VehicleManagement />;
       case 'adjustments': 
         return <AdjustmentManagement />;
+      case 'iva':
+        return <IvaManagementView />;
       default: 
         return renderDashboardHome();
     }
