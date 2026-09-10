@@ -154,6 +154,17 @@ export interface Adjustment {
 
 // --- SAAS & ADTECH NEW EXTENSIONS ---
 
+export interface CompanyIntegrations {
+  uberClientId?: string;
+  uberClientSecret?: string;
+  uberFleetPartnerId?: string;
+  boltApiKey?: string;
+  boltFleetCompanyId?: string;
+  uberConnected?: boolean;
+  boltConnected?: boolean;
+  lastTestedAt?: string;
+}
+
 export interface Company {
   id: string;
   name: string; // Default: "Asfalto Cativante"
@@ -170,6 +181,7 @@ export interface Company {
   adTechActive: boolean;
   adTechDriverSharePercentage: number; // e.g. 30% of vehicle ad revenue to driver
   masterTabletCode?: string; // e.g. "ASFALTO2026"
+  integrations?: CompanyIntegrations;
   createdAt?: any;
 }
 
