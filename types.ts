@@ -169,7 +169,43 @@ export interface Company {
   defaultIvaRate: number; // e.g. 6%
   adTechActive: boolean;
   adTechDriverSharePercentage: number; // e.g. 30% of vehicle ad revenue to driver
+  masterTabletCode?: string; // e.g. "ASFALTO2026"
   createdAt?: any;
+}
+
+export interface TabletDevice {
+  id: string; // e.g. "tablet_AA-00-AA"
+  companyId: string;
+  matricula: string;
+  viaturaId?: string;
+  motoristaAtualId?: string; // Sincronizado dinamicamente via Firestore
+  motoristaAtualNome?: string;
+  motoristaFoto?: string;
+  pinCode?: string;
+  status: 'online' | 'offline' | 'standby';
+  impressoesTotais: number;
+  scansQR: number;
+  lastPing: any;
+  tabletModel?: string;
+  batteryLevel?: number;
+  appVersion?: string;
+  remoteCommand?: 'RELOAD' | 'RESET' | null;
+  remoteCommandTimestamp?: any;
+  earnedBonus?: number;
+}
+
+export interface TabletPendingPairing {
+  pin: string; // 6 digits, e.g. "482-910"
+  status: 'WAITING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+  matricula?: string;
+  viaturaId?: string;
+  companyId?: string;
+  tabletId?: string;
+  driverId?: string;
+  driverName?: string;
+  createdAt: any;
+  expiresAt: any;
+  tabletModel?: string;
 }
 
 export interface AdCampaign {

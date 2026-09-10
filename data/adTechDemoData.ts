@@ -15,6 +15,7 @@ export const DEFAULT_COMPANY: Company = {
   defaultIvaRate: 6,
   adTechActive: true,
   adTechDriverSharePercentage: 30, // 30% of revenue distributed as driver bonus
+  masterTabletCode: 'ASFALTO2026',
   createdAt: new Date('2023-01-15')
 };
 
@@ -35,6 +36,7 @@ export const MOCK_COMPANIES: Company[] = [
     defaultIvaRate: 6,
     adTechActive: true,
     adTechDriverSharePercentage: 25,
+    masterTabletCode: 'LISBOA2026',
     createdAt: new Date('2024-03-10')
   },
   {
@@ -52,6 +54,7 @@ export const MOCK_COMPANIES: Company[] = [
     defaultIvaRate: 6,
     adTechActive: true,
     adTechDriverSharePercentage: 35,
+    masterTabletCode: 'PORTO2026',
     createdAt: new Date('2022-08-01')
   }
 ];
