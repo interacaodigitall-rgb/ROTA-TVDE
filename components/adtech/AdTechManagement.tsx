@@ -230,6 +230,38 @@ export const AdTechManagement: React.FC = () => {
         </Card>
       </div>
 
+      {/* Quick Tablet Link Bar */}
+      <div className="bg-slate-900 border border-blue-500/30 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30">
+            <QrCode className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-bold text-white text-sm">Link de Acesso Direto para os Tablets em Viagem</h4>
+            <p className="text-xs text-slate-400 font-mono mt-0.5">https://tvdeemrota.vercel.app/tablet (ou o link atual da app + /tablet)</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText('https://tvdeemrota.vercel.app/tablet');
+              alert('Link copiado para a área de transferência: https://tvdeemrota.vercel.app/tablet');
+            }}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5"
+          >
+            Copiar Link Vercel
+          </button>
+          <a
+            href="/tablet"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> Abrir Modo Tablet
+          </a>
+        </div>
+      </div>
+
       {/* Tabs Navigation */}
       <div className="flex border-b border-slate-800 space-x-4">
         <button
