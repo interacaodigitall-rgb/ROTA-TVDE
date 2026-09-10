@@ -343,14 +343,22 @@ const AdminDashboard: React.FC = () => {
       <div className={`flex flex-col mb-4 flex-shrink-0 ${collapsed ? 'items-center' : ''}`}>
         {!collapsed ? (
           <div className="space-y-2">
-            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center shadow-inner">
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center shadow-inner min-h-[40px]">
               <img 
                 src={BRAND_LOGOS.DESKTOP} 
                 alt="Asfalto Cativante - ROTA TVDE 5.0" 
                 referrerPolicy="no-referrer"
                 className="h-10 w-auto object-contain max-w-full"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector('.logo-fallback')) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'logo-fallback flex items-center gap-2 text-blue-400 font-black text-xs uppercase';
+                    fallback.innerHTML = '<span class="px-2 py-1 rounded bg-blue-500/20 text-blue-300">AC</span> Asfalto Cativante';
+                    parent.appendChild(fallback);
+                  }
                 }}
               />
             </div>

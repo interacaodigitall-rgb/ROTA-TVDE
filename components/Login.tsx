@@ -119,15 +119,22 @@ const Login: React.FC = () => {
         {/* Top Branding with Official Desktop Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-4">
-            <div className="p-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-xl backdrop-blur-md">
+            <div className="p-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-xl backdrop-blur-md min-h-[48px] flex items-center justify-center">
               <img 
                 src={BRAND_LOGOS.DESKTOP} 
                 alt="Asfalto Cativante - ROTA TVDE 5.0" 
                 referrerPolicy="no-referrer"
                 className="h-12 w-auto object-contain max-w-[200px]"
                 onError={(e) => {
-                  // Fallback to text badge if network error occurs
-                  e.currentTarget.style.display = 'none';
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector('.logo-fallback')) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'logo-fallback flex items-center gap-2 text-blue-400 font-black text-xs uppercase';
+                    fallback.innerHTML = '<span class="px-2 py-1 rounded bg-blue-500/20 text-blue-300">AC</span> Asfalto Cativante';
+                    parent.appendChild(fallback);
+                  }
                 }}
               />
             </div>
