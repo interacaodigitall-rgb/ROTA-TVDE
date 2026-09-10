@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { BRAND_LOGOS } from '../constants';
+import { useTabletPairing } from '../hooks/useTabletPairing';
+import TabletDisplayRoute from './adtech/TabletDisplayRoute';
 import { 
   ShieldCheck, 
   Sparkles, 
@@ -16,7 +18,11 @@ import {
   TrendingUp,
   FileCheck2,
   ChevronDown,
-  Zap
+  Zap,
+  KeyRound,
+  X,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 const Login: React.FC = () => {
@@ -26,6 +32,16 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isQuickAccessOpen, setIsQuickAccessOpen] = useState(false);
   const [selectedProfileLabel, setSelectedProfileLabel] = useState<string | null>(null);
+  
+  // Ads / Tablet Modal States
+  const [showAdsModal, setShowAdsModal] = useState(false);
+  const [adsMatricula, setAdsMatricula] = useState('45-TX-90');
+  const [adsValidationCode, setAdsValidationCode] = useState('ASFALTO2026');
+  const [adsError, setAdsError] = useState<string | null>(null);
+  const [adsLoading, setAdsLoading] = useState(false);
+  const [launchedTablet, setLaunchedTablet] = useState(false);
+
+  const { activateByMasterKey } = useTabletPairing();
   
   const quickAccessRef = useRef<HTMLDivElement>(null);
   const { login, error: authError } = useAuth();
@@ -54,6 +70,42 @@ const Login: React.FC = () => {
     setSelectedProfileLabel(label);
     setIsQuickAccessOpen(false);
   };
+
+  const handleAdsActivationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdsError(null);
+    if (!adsMatricula.trim()) {
+      setAdsError('Insira a matrícula da viatura.');
+      return;
+    }
+    if (!adsValidationCode.trim()) {
+      setAdsError('Insira o código de validação do motorista ou código mestre.');
+      return;
+    }
+
+    setAdsLoading(true);
+    const res = await activateByMasterKey({
+      masterKey: adsValidationCode.trim().toUpperCase(),
+      matricula: adsMatricula.trim().toUpperCase()
+    });
+    setAdsLoading(false);
+
+    if (res.success) {
+      setShowAdsModal(false);
+      setLaunchedTablet(true);
+    } else {
+      setAdsError(res.error || 'Falha ao validar a matrícula ou código de validação.');
+    }
+  };
+
+  if (launchedTablet) {
+    return (
+      <TabletDisplayRoute 
+        onClose={() => setLaunchedTablet(false)} 
+        isStandaloneKiosk={true}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:grid lg:grid-cols-2 bg-slate-950 text-slate-100 font-sans">
@@ -377,6 +429,26 @@ const Login: React.FC = () => {
                 )}
               </button>
             </form>
+
+            {/* SEPARATOR */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-slate-900 px-3 text-slate-400 font-semibold">Instalação na Viatura</span>
+              </div>
+            </div>
+
+            {/* ANÚNCIOS / TABLET BUTTON REQUESTED BY USER */}
+            <button
+              type="button"
+              onClick={() => setShowAdsModal(true)}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600/90 to-indigo-600/90 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2.5 transition-all border border-purple-400/30 cursor-pointer"
+            >
+              <Tv className="w-4 h-4 text-purple-200" />
+              <span>🎬 Anúncios (Modo Tablet / Encosto)</span>
+            </button>
           </div>
 
           <div className="text-center text-[11px] text-slate-400 flex items-center justify-center gap-2">
@@ -386,6 +458,110 @@ const Login: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE ATIVAÇÃO DE ANÚNCIOS NO TABLET (MATRÍCULA + CÓDIGO DE VALIDAÇÃO) */}
+      {showAdsModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-slate-100 relative animate-fadeIn space-y-6">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-500/20 text-purple-400 rounded-xl border border-purple-500/30">
+                  <Tv className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-white text-lg">Ativação de Anúncios no Tablet</h3>
+                  <p className="text-xs text-slate-400">Vincular ecrã de encosto à viatura e motorista</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setShowAdsModal(false); setAdsError(null); }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Error Banner */}
+            {adsError && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+                <span>{adsError}</span>
+              </div>
+            )}
+
+            {/* Modal Form */}
+            <form onSubmit={handleAdsActivationSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Car className="w-3.5 h-3.5 text-emerald-400" />
+                  Matrícula da Viatura (ex: 45-TX-90)
+                </label>
+                <input
+                  type="text"
+                  value={adsMatricula}
+                  onChange={(e) => setAdsMatricula(e.target.value.toUpperCase())}
+                  placeholder="00-AA-00"
+                  maxLength={8}
+                  className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-base font-bold tracking-wider focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 uppercase"
+                  required
+                  autoFocus
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  O sistema identificará automaticamente o motorista atualmente afeto a esta viatura.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-blue-400" />
+                  Código de Validação / PIN do Motorista
+                </label>
+                <input
+                  type="password"
+                  value={adsValidationCode}
+                  onChange={(e) => setAdsValidationCode(e.target.value)}
+                  placeholder="PIN pessoal ou Código Mestre (ex: ASFALTO2026)"
+                  className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-sm tracking-wider focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Insira o seu código pessoal de motorista ou o código mestre fornecido pela frota.
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAdsModal(false)}
+                  className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition border border-slate-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={adsLoading}
+                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition disabled:opacity-50"
+                >
+                  {adsLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>A validar...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span>Iniciar Anúncios</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
