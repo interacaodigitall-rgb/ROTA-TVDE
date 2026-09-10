@@ -2,7 +2,7 @@ import React from 'react';
 import { useTabletPairing } from '../../hooks/useTabletPairing';
 import { TabletActivation } from './TabletActivation';
 import { PassengerTabletPlayer } from './PassengerTabletPlayer';
-import { useCompany } from '../../contexts/CompanyContext';
+import { useCompany } from '../../hooks/useCompany';
 
 interface TabletDisplayRouteProps {
   onClose?: () => void;

@@ -8,10 +8,17 @@ import { UserRole } from './types';
 import OwnerDashboard from './components/OwnerDashboard';
 import { useServiceWorkerUpdater } from './hooks/useServiceWorkerUpdater';
 import UpdateNotification from './components/UpdateNotification';
+import TabletDisplayRoute from './components/adtech/TabletDisplayRoute';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
   const { isUpdateAvailable, updateServiceWorker } = useServiceWorkerUpdater();
+
+  // Check if current path is tablet activation/player route
+  const currentPath = window.location.pathname;
+  if (currentPath === '/tablet' || currentPath === '/display' || currentPath === '/kiosk') {
+    return <TabletDisplayRoute onClose={() => { window.location.href = '/'; }} />;
+  }
 
   const renderDashboard = () => {
     if (!user) {
