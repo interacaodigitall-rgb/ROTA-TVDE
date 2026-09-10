@@ -490,8 +490,8 @@ export const IvaManagementView: React.FC = () => {
           </div>
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
+        {/* Table Content - Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-800 text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 font-semibold">
@@ -574,6 +574,81 @@ export const IvaManagementView: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View - Card-Based Layout (md:hidden) */}
+        <div className="md:hidden space-y-3">
+          {loading ? (
+            <p className="text-center py-8 text-slate-400 text-xs">A carregar apuramentos fiscais...</p>
+          ) : filteredWeeks.length === 0 ? (
+            <p className="text-center py-8 text-slate-500 text-xs">
+              Nenhum cálculo semanal encontrado para o ano fiscal {selectedYear}.
+            </p>
+          ) : (
+            filteredWeeks.map((week) => {
+              const isWeekRefund = week.statusSemana === 'A_RECUPERAR';
+              const isWeekPay = week.statusSemana === 'A_PAGAR';
+              const saldoWeekAbs = Math.abs(week.saldoIvaSemana);
+
+              const pStart = week.periodStart?.toDate ? week.periodStart.toDate().toLocaleDateString('pt-PT') : new Date(week.periodStart).toLocaleDateString('pt-PT');
+              const pEnd = week.periodEnd?.toDate ? week.periodEnd.toDate().toLocaleDateString('pt-PT') : new Date(week.periodEnd).toLocaleDateString('pt-PT');
+
+              return (
+                <div key={week.calculationId} className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{week.driverName}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {week.matricula && (
+                          <span className="text-[10px] font-mono text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                            {week.matricula}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-slate-400">
+                          {pStart} - {pEnd}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-blue-300 border border-slate-700">
+                        {week.trimestre}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        isWeekRefund 
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800' 
+                          : isWeekPay 
+                            ? 'bg-amber-950 text-amber-300 border-amber-800' 
+                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}>
+                        {isWeekRefund ? 'A Recuperar' : isWeekPay ? 'A Pagar' : 'Nulo'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-850">
+                    <div className="bg-slate-900/80 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">Faturação TVDE</span>
+                      <span className="font-semibold text-slate-200">€{week.faturacaoBruta.toFixed(2)}</span>
+                    </div>
+                    <div className="bg-slate-900/80 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">IVA Liquidado (6%)</span>
+                      <span className="font-semibold text-blue-400">€{week.ivaLiquidado.toFixed(2)}</span>
+                    </div>
+                    <div className="bg-slate-900/80 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">IVA Dedutível Total</span>
+                      <span className="font-semibold text-emerald-400">€{week.totalIvaDedutivel.toFixed(2)}</span>
+                    </div>
+                    <div className="bg-slate-900/80 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">Saldo Semanal</span>
+                      <span className={`font-bold ${isWeekRefund ? 'text-emerald-400' : isWeekPay ? 'text-amber-400' : 'text-slate-300'}`}>
+                        {isWeekRefund ? '-' : ''}€{saldoWeekAbs.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

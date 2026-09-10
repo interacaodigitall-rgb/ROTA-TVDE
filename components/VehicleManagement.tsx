@@ -1,17 +1,18 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import { useUsers } from '../hooks/useUsers';
 import { User, UserRole, CalculationType, PercentageType } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { MoreVertical, Edit2, Trash2, RefreshCw, Car } from 'lucide-react';
 
 const VehicleInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
     <div>
-        <label htmlFor={id} className="block text-sm font-medium text-gray-300">{label}</label>
+        <label htmlFor={id} className="block text-xs font-medium text-slate-300 mb-1">{label}</label>
         <input
             id={id}
             {...props}
-            className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white disabled:opacity-50 disabled:bg-gray-600"
+            className="block w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2 px-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:bg-slate-800 transition-colors"
         />
     </div>
 );
@@ -49,6 +50,16 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
     const [showArchived, setShowArchived] = useState(false);
     const [selectedVacantVehicleId, setSelectedVacantVehicleId] = useState('');
     const [roleFilter, setRoleFilter] = useState<'ALL' | 'DRIVER' | 'MANAGEMENT' | 'OWNER'>('ALL');
+    const [activeDropdownUserId, setActiveDropdownUserId] = useState<string | null>(null);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = () => setActiveDropdownUserId(null);
+        if (activeDropdownUserId) {
+            window.addEventListener('click', handleClickOutside);
+            return () => window.removeEventListener('click', handleClickOutside);
+        }
+    }, [activeDropdownUserId]);
 
     const allUsers = useMemo(() => [...users].sort((a, b) => a.name.localeCompare(b.name)), [users]);
     
@@ -458,28 +469,28 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
                             <button
                                 type="button"
                                 onClick={() => setRoleFilter('ALL')}
-                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'ALL' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${roleFilter === 'ALL' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'}`}
                             >
                                 Todos ({allUsers.length})
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setRoleFilter('DRIVER')}
-                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'DRIVER' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${roleFilter === 'DRIVER' ? 'bg-cyan-600 text-white shadow-sm' : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'}`}
                             >
                                 Motoristas ({allUsers.filter(u => u.role === UserRole.DRIVER).length})
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setRoleFilter('MANAGEMENT')}
-                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'MANAGEMENT' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${roleFilter === 'MANAGEMENT' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'}`}
                             >
-                                Gerentes & Admins ({allUsers.filter(u => u.role === UserRole.ADMIN || u.role === UserRole.MANAGER).length})
+                                Gerentes ({allUsers.filter(u => u.role === UserRole.ADMIN || u.role === UserRole.MANAGER).length})
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setRoleFilter('OWNER')}
-                                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${roleFilter === 'OWNER' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${roleFilter === 'OWNER' ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'}`}
                             >
                                 Proprietários ({allUsers.filter(u => u.role === UserRole.OWNER).length})
                             </button>
@@ -509,34 +520,159 @@ const VehicleManagement: React.FC<{readOnly?: boolean; hideArchivedToggle?: bool
                                     };
                                     const badge = roleBadgeConfig();
 
-                                    return (
-                                        <div key={user.id} className={`p-4 rounded-lg border transition-all duration-200 ${isSelected ? 'bg-blue-900/30 border-blue-600' : isArchived ? 'bg-gray-800/50 border-gray-700 opacity-60' : 'bg-gray-900/50 border-gray-700'}`}>
-                                            <div className="flex justify-between items-start gap-4 flex-wrap">
-                                                <div className="flex-grow">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <p className={`font-bold text-white ${isArchived ? 'line-through' : ''}`}>{user.name}</p>
-                                                        <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full ${badge.cls}`}>
-                                                            {badge.label}
+                                     return (
+                                        <div 
+                                            key={user.id} 
+                                            className={`p-4 rounded-xl border transition-all relative ${
+                                                isSelected 
+                                                    ? 'bg-blue-950/40 border-blue-600 ring-1 ring-blue-500/40' 
+                                                    : isArchived 
+                                                        ? 'bg-slate-900/40 border-slate-800/60 opacity-60' 
+                                                        : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                                            }`}
+                                        >
+                                            {/* Linha 1: Nome do Motorista + Badges + Menu de Opções */}
+                                            <div className="flex items-start justify-between gap-2 min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                                                    <p className={`font-semibold text-white text-sm truncate ${isArchived ? 'line-through text-slate-400' : ''}`}>
+                                                        {user.name}
+                                                    </p>
+                                                    <span className={`text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-md ${badge.cls}`}>
+                                                        {badge.label}
+                                                    </span>
+                                                    {hasDebt && !isArchived && (
+                                                        <span className="text-[10px] font-bold text-rose-300 bg-rose-950/80 border border-rose-800/80 px-2 py-0.5 rounded-md">
+                                                            COM DÍVIDA
                                                         </span>
-                                                        {isDriver && <span className="text-xs text-gray-400">({user.matricula})</span>}
-                                                        {isArchived && <span className="text-xs font-bold text-gray-400 bg-gray-700 px-2 py-0.5 rounded-full">ARQUIVADO</span>}
-                                                        {hasDebt && !isArchived && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">COM DÍVIDA</span>}
-                                                    </div>
-                                                    <p className="mt-1 text-xs text-gray-400">{user.email}</p>
+                                                    )}
+                                                    {isArchived && (
+                                                        <span className="text-[10px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
+                                                            ARQUIVADO
+                                                        </span>
+                                                    )}
                                                 </div>
+
+                                                {/* Botão discreto de 3 pontos para ações secundárias */}
                                                 {!readOnly && (
-                                                    <div className="flex-shrink-0 flex gap-2 flex-wrap">
-                                                        {isDriver && !isArchived && <Button variant="warning" onClick={() => handleOperation('reassign', user)} className="text-xs px-2 py-1">Reatribuir Viatura</Button>}
-                                                        {isDriver && !isArchived && <Button variant="secondary" onClick={() => handleOperation('swap', user)} className="text-xs px-2 py-1">Trocar Motorista</Button>}
-                                                        <Button variant={operationMode === 'edit' && isSelected ? 'success' : 'secondary'} onClick={() => handleOperation('edit', user)} className="text-xs px-2 py-1">
-                                                            {operationMode === 'edit' && isSelected ? 'A Editar' : 'Editar'}
-                                                        </Button>
-                                                        {currentUser?.id !== user.id && currentUser?.role === UserRole.ADMIN && (
-                                                            <Button variant="danger" onClick={() => handleDeleteUser(user)} className="text-xs px-2 py-1">Apagar</Button>
+                                                    <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setActiveDropdownUserId(activeDropdownUserId === user.id ? null : user.id)}
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                                                            title="Mais opções"
+                                                            aria-label="Mais opções"
+                                                        >
+                                                            <MoreVertical className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Dropdown Action Menu */}
+                                                        {activeDropdownUserId === user.id && (
+                                                            <div className="absolute right-0 mt-1 w-44 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl p-1.5 z-30">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        handleOperation('edit', user);
+                                                                        setActiveDropdownUserId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 hover:bg-slate-800 flex items-center gap-2 transition-colors"
+                                                                >
+                                                                    <Edit2 className="w-3.5 h-3.5 text-blue-400" />
+                                                                    <span>Editar Registo</span>
+                                                                </button>
+
+                                                                {isDriver && !isArchived && (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                handleOperation('reassign', user);
+                                                                                setActiveDropdownUserId(null);
+                                                                            }}
+                                                                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-300 hover:bg-slate-800 flex items-center gap-2 transition-colors"
+                                                                        >
+                                                                            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                                                                            <span>Reatribuir Viatura</span>
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                handleOperation('swap', user);
+                                                                                setActiveDropdownUserId(null);
+                                                                            }}
+                                                                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 hover:bg-slate-800 flex items-center gap-2 transition-colors"
+                                                                        >
+                                                                            <Car className="w-3.5 h-3.5 text-slate-400" />
+                                                                            <span>Trocar Motorista</span>
+                                                                        </button>
+                                                                    </>
+                                                                )}
+
+                                                                {currentUser?.id !== user.id && currentUser?.role === UserRole.ADMIN && (
+                                                                    <div className="pt-1 mt-1 border-t border-slate-800">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                handleDeleteUser(user);
+                                                                                setActiveDropdownUserId(null);
+                                                                            }}
+                                                                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400 hover:bg-rose-950/40 flex items-center gap-2 transition-colors"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                            <span>Apagar Utilizador</span>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
                                                 )}
                                             </div>
+
+                                            {/* Linha 2: Matrícula e E-mail */}
+                                            <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400 min-w-0">
+                                                {isDriver && (
+                                                    <span className="font-mono text-[11px] font-semibold bg-slate-800/90 text-slate-300 px-2 py-0.5 rounded border border-slate-700/60 flex-shrink-0">
+                                                        {user.matricula || 'Sem Viatura'}
+                                                    </span>
+                                                )}
+                                                <span className="truncate">{user.email}</span>
+                                            </div>
+
+                                            {/* Linha 3 (Botões de Ação Principais): Grelha limpa de 2 colunas sem qualquer overflow */}
+                                            {!readOnly && (
+                                                <div className="mt-3 pt-3 border-t border-slate-800/80 w-full">
+                                                    {isDriver && !isArchived ? (
+                                                        <div className="grid grid-cols-2 gap-2 w-full">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOperation('reassign', user)}
+                                                                className="w-full py-2 px-2 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 active:scale-95 transition-all text-center truncate"
+                                                                title="Reatribuir Viatura"
+                                                            >
+                                                                Reatribuir Viatura
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOperation('swap', user)}
+                                                                className="w-full py-2 px-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-750 active:scale-95 transition-all text-center truncate"
+                                                                title="Trocar Motorista"
+                                                            >
+                                                                Trocar Motorista
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-end gap-2 w-full">
+                                                            <Button 
+                                                                variant={operationMode === 'edit' && isSelected ? 'success' : 'secondary'} 
+                                                                onClick={() => handleOperation('edit', user)} 
+                                                                className="text-xs px-3 py-1.5 w-full sm:w-auto"
+                                                            >
+                                                                {operationMode === 'edit' && isSelected ? 'A Editar' : 'Editar Dados'}
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

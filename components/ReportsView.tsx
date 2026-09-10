@@ -263,9 +263,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
   };
   
   const ReportDataRow: React.FC<{ label: string; value: string; className?: string }> = ({label, value, className = ''}) => (
-    <div className={`flex justify-between items-center py-2 ${className}`}>
-        <span className="text-sm text-gray-400">{label}</span>
-        <span className="font-semibold text-white">{value}</span>
+    <div className={`flex justify-between items-center py-1.5 ${className}`}>
+        <span className="text-xs text-slate-400">{label}</span>
+        <span className="font-semibold text-slate-200 text-xs">{value}</span>
     </div>
   );
 
@@ -273,113 +273,147 @@ const ReportsView: React.FC<ReportsViewProps> = ({ onBack, driverId }) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-3xl font-bold">{isDriverView ? 'Meu Relatório de Faturação' : 'Relatório de Faturação'}</h2>
-        <div className="flex gap-4 flex-wrap">
-          <Button onClick={handleDownloadReportPdf} variant="primary">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{isDriverView ? 'Meu Relatório de Faturação' : 'Relatório de Faturação'}</h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Resumo financeiro acumulado de cálculos aceites e recibos emitidos.
+          </p>
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <Button onClick={handleDownloadReportPdf} variant="primary" className="text-xs">
             Baixar PDF
           </Button>
-          <Button onClick={onBack} variant="secondary">
+          <Button onClick={onBack} variant="secondary" className="text-xs">
             &larr; Voltar
           </Button>
         </div>
       </div>
       <Card>
        <div ref={reportPrintRef} className="p-1 sm:p-4">
-            <div className="text-center mb-6 border-b border-gray-700 pb-4">
-                <h3 className="text-xl font-bold">ROTA TVDE 5.0</h3>
+            <div className="text-center mb-6 border-b border-slate-800 pb-4">
+                <h3 className="text-xl font-bold text-white tracking-tight">ROTA TVDE 5.0</h3>
                  {isDemo ? (
                     <>
-                        <p className="text-sm font-semibold">{MOCK_COMPANY_INFO.name}</p>
-                        <p className="text-xs text-gray-400">NIPC: {MOCK_COMPANY_INFO.nipc} | TEL: {MOCK_COMPANY_INFO.phone}</p>
-                        <p className="text-xs text-gray-400">MORADA: {MOCK_COMPANY_INFO.address}</p>
+                        <p className="text-sm font-semibold text-slate-300">{MOCK_COMPANY_INFO.name}</p>
+                        <p className="text-xs text-slate-400">NIPC: {MOCK_COMPANY_INFO.nipc} | TEL: {MOCK_COMPANY_INFO.phone}</p>
+                        <p className="text-xs text-slate-400">MORADA: {MOCK_COMPANY_INFO.address}</p>
                     </>
                 ) : (
                     <>
-                        <p className="text-sm font-semibold">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
-                        <p className="text-xs text-gray-400">NIPC: 517112604 | TEL: +351 914 800 818</p>
-                        <p className="text-xs text-gray-400">MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
+                        <p className="text-sm font-semibold text-slate-300">ASFALTO CATIVANTE - UNIPESSOAL LDA</p>
+                        <p className="text-xs text-slate-400">NIPC: 517112604 | TEL: +351 914 800 818</p>
+                        <p className="text-xs text-slate-400">MORADA: PRACETA ALEXANDRE HERCULANO, 5 3ºESQ - 2745-706 QUELUZ</p>
                     </>
                 )}
             </div>
             {!isDriverView ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-700 pb-4 mb-4">
-                    <p className="text-sm text-gray-400 md:col-span-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-800 pb-4 mb-4">
+                    <p className="text-xs text-slate-400 md:col-span-3">
                         Este relatório resume todos os cálculos 'Aceitos' e recibos registados no período selecionado. O 'Saldo a Faturar' é o valor que o motorista ainda deve emitir em recibo para a empresa.
                     </p>
                     <div>
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-300">Período de (Início)</label>
-                        <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                        <label htmlFor="startDate" className="block text-xs font-medium text-slate-300 mb-1">Período de (Início)</label>
+                        <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="block w-full rounded-xl border border-slate-700 bg-slate-950 py-2 px-3 text-xs text-white focus:border-blue-500 focus:outline-none" />
                     </div>
                     <div>
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-300">Período até (Fim)</label>
-                        <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-2 px-3 focus:border-blue-500 focus:ring-blue-500 sm:text-sm text-white" />
+                        <label htmlFor="endDate" className="block text-xs font-medium text-slate-300 mb-1">Período até (Fim)</label>
+                        <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="block w-full rounded-xl border border-slate-700 bg-slate-950 py-2 px-3 text-xs text-white focus:border-blue-500 focus:outline-none" />
                     </div>
                     <div>
-                        <label htmlFor="driverFilter" className="block text-sm font-medium text-gray-300">Filtrar Motorista</label>
-                        <select id="driverFilter" value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md text-white">
+                        <label htmlFor="driverFilter" className="block text-xs font-medium text-slate-300 mb-1">Filtrar Motorista</label>
+                        <select id="driverFilter" value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)} className="block w-full rounded-xl border border-slate-700 bg-slate-950 py-2 px-3 text-xs text-white focus:border-blue-500 focus:outline-none">
                             <option value="all">Todos os Motoristas</option>
-                            {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            {drivers.map(d => <option key={d.id} value={d.id} className="bg-slate-900">{d.name}</option>)}
                         </select>
                     </div>
                 </div>
             ) : (
-                 <div className="border-b border-gray-700 pb-4 mb-4">
-                     <p className="text-sm text-gray-400">
+                 <div className="border-b border-slate-800 pb-4 mb-4">
+                     <p className="text-xs text-slate-400">
                         Este é o seu resumo financeiro cumulativo. Representa todos os seus cálculos aceites e todos os recibos emitidos até à data.
                     </p>
                  </div>
             )}
           
-          {/* Mobile View - Cards */}
-          <div className="md:hidden space-y-4">
+          {/* Mobile View - Cards (Native Responsive) */}
+          <div className="md:hidden space-y-3">
             {reportData.length > 0 ? (
                 reportData.map((row) => (
-                    <div key={row.driverId} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                        {!isDriverView && <h4 className="font-bold text-lg text-white mb-2 pb-2 border-b border-gray-700">{row.driverName}</h4>}
-                        <div className="space-y-1">
-                            <ReportDataRow label="Semanas Aceites" value={String(row.calculationCount)} />
-                            <ReportDataRow label="Total Líquido (Motorista)" value={formatCurrency(row.totalValorFinal)} />
-                            <ReportDataRow label="Total Recibos Emitidos" value={formatCurrency(row.totalReceipts)} />
-                            <div className="saldo-faturar-mobile-row flex justify-between items-center py-2 font-bold border-t-2 border-dashed border-gray-600 mt-2 pt-2">
-                                <span className="text-sm text-gray-400">Saldo a Faturar</span>
-                                <span className={`font-semibold ${row.pendingBalance > 0 ? 'text-yellow-400' : row.pendingBalance < 0 ? 'text-red-400' : 'text-white'}`}>
-                                    {formatCurrency(row.pendingBalance)}
-                                </span>
+                    <div key={row.driverId} className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+                        {!isDriverView && (
+                          <div className="flex justify-between items-start pb-2 border-b border-slate-850">
+                            <div>
+                              <h4 className="font-bold text-sm text-white">{row.driverName}</h4>
+                              <span className="text-[10px] text-slate-400">
+                                {row.calculationCount} {row.calculationCount === 1 ? 'semana aceite' : 'semanas aceites'}
+                              </span>
                             </div>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              row.pendingBalance > 0 
+                                ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' 
+                                : row.pendingBalance < 0 
+                                  ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' 
+                                  : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                            }`}>
+                              {row.pendingBalance > 0 ? 'Recibo Pendente' : row.pendingBalance < 0 ? 'Crédito' : 'Liquidado'}
+                            </span>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="bg-slate-900/80 p-2 rounded-lg">
+                              <span className="text-[10px] text-slate-400 block">Total Líquido</span>
+                              <span className="font-semibold text-slate-200">{formatCurrency(row.totalValorFinal)}</span>
+                            </div>
+                            <div className="bg-slate-900/80 p-2 rounded-lg">
+                              <span className="text-[10px] text-slate-400 block">Recibos Emitidos</span>
+                              <span className="font-semibold text-slate-200">{formatCurrency(row.totalReceipts)}</span>
+                            </div>
+                        </div>
+                        <div className="saldo-faturar-mobile-row flex justify-between items-center pt-2 border-t border-slate-850">
+                            <span className="text-xs font-medium text-slate-400">Saldo a Faturar:</span>
+                            <span className={`text-sm font-bold ${
+                              row.pendingBalance > 0 ? 'text-amber-400' : row.pendingBalance < 0 ? 'text-rose-400' : 'text-slate-200'
+                            }`}>
+                                {formatCurrency(row.pendingBalance)}
+                            </span>
                         </div>
                     </div>
                 ))
             ) : (
-                <p className="text-center py-10 text-gray-400">Nenhum cálculo aceite para o período selecionado.</p>
+                <p className="text-center py-8 text-slate-400 text-xs">Nenhum cálculo aceite para o período selecionado.</p>
             )}
           </div>
 
           {/* Desktop View - Table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-700">
-              <thead className="bg-gray-800">
+            <table className="min-w-full divide-y divide-slate-800 text-xs">
+              <thead className="bg-slate-950/60">
                 <tr>
-                  {!isDriverView && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Motorista</th>}
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">Semanas Aceites</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Líquido (Motorista)</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Total Recibos Emitidos</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider font-bold">Saldo a Faturar</th>
+                  {!isDriverView && <th scope="col" className="px-4 py-3 text-left font-medium text-slate-400 uppercase tracking-wider">Motorista</th>}
+                  <th scope="col" className="px-4 py-3 text-center font-medium text-slate-400 uppercase tracking-wider">Semanas Aceites</th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium text-slate-400 uppercase tracking-wider">Total Líquido</th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium text-slate-400 uppercase tracking-wider">Total Recibos</th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium text-slate-400 uppercase tracking-wider">Saldo a Faturar</th>
                 </tr>
               </thead>
-              <tbody className="bg-gray-900 divide-y divide-gray-800">
+              <tbody className="divide-y divide-slate-800/60">
                 {reportData.length > 0 ? (
                   reportData.map((row) => (
-                    <tr key={row.driverId} className="hover:bg-gray-700/50">
-                      {!isDriverView && <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{row.driverName}</td>}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-300">{row.calculationCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-300">{formatCurrency(row.totalValorFinal)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-300">{formatCurrency(row.totalReceipts)}</td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-bold ${row.pendingBalance > 0 ? 'text-yellow-400' : row.pendingBalance < 0 ? 'text-red-400' : 'text-white'}`}>{formatCurrency(row.pendingBalance)}</td>
+                    <tr key={row.driverId} className="hover:bg-slate-800/40 transition-colors">
+                      {!isDriverView && <td className="px-4 py-3 whitespace-nowrap font-medium text-white">{row.driverName}</td>}
+                      <td className="px-4 py-3 whitespace-nowrap text-center text-slate-300">{row.calculationCount}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-slate-300 font-medium">{formatCurrency(row.totalValorFinal)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-slate-300 font-medium">{formatCurrency(row.totalReceipts)}</td>
+                      <td className={`px-4 py-3 whitespace-nowrap text-right font-bold ${
+                        row.pendingBalance > 0 ? 'text-amber-400' : row.pendingBalance < 0 ? 'text-rose-400' : 'text-slate-200'
+                      }`}>
+                        {formatCurrency(row.pendingBalance)}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={isDriverView ? 4 : 5} className="text-center py-10 text-gray-400">
+                    <td colSpan={isDriverView ? 4 : 5} className="text-center py-8 text-slate-400">
                       Nenhum cálculo aceite para o período selecionado.
                     </td>
                   </tr>

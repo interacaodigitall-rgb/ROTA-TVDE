@@ -134,6 +134,7 @@ const AdminDashboard: React.FC = () => {
   // Layout states
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile drawer
   const [isCollapsed, setIsCollapsed] = useState(false); // Desktop icon-only toggle
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false); // Expandable mobile search bar
   const [globalSearch, setGlobalSearch] = useState('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isFleetMenuOpen, setIsFleetMenuOpen] = useState(false);
@@ -620,18 +621,18 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Modern KPI Cards with Trend Indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1: Faturação da Empresa */}
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+        <div className="h-full p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-750 shadow-sm backdrop-blur-sm relative overflow-hidden flex flex-col justify-between transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Faturação Empresa</span>
-            <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Faturação Empresa</span>
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
               <Building2 className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-2xl sm:text-3xl font-black text-white">€{stats.periodCompanyBilling.toFixed(2)}</p>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+            <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">€{stats.periodCompanyBilling.toFixed(2)}</p>
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>+14.2% vs semana anterior</span>
             </div>
@@ -639,16 +640,16 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Card 2: Volume Bruto Total (Uber + Bolt) */}
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+        <div className="h-full p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-750 shadow-sm backdrop-blur-sm relative overflow-hidden flex flex-col justify-between transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Turnover Bruto TVDE</span>
-            <div className="p-2 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Turnover Bruto TVDE</span>
+            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
               <Car className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-2xl sm:text-3xl font-black text-white">€{stats.totalGrossTurnover.toFixed(2)}</p>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-purple-300 font-medium">
+            <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">€{stats.totalGrossTurnover.toFixed(2)}</p>
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 font-medium">
               <span>Uber & Bolt auditados</span>
             </div>
           </div>
@@ -657,26 +658,26 @@ const AdminDashboard: React.FC = () => {
         {/* Card 3: Crédito de IVA Acumulado (Finanças) - CORE FISCAL KPI */}
         <div 
           onClick={() => handleSetView('iva')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/60 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between cursor-pointer group transition-all"
+          className="h-full p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 shadow-sm backdrop-blur-sm relative overflow-hidden flex flex-col justify-between cursor-pointer group transition-colors"
         >
           <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Crédito de IVA Acumulado (Finanças)</span>
-            <div className={`p-2 rounded-xl border ${annualIvaSummary.isReembolso ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-600/20 text-amber-400 border-amber-500/30'}`}>
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Crédito de IVA (Finanças)</span>
+            <div className={`p-2 rounded-xl border ${annualIvaSummary.isReembolso ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
               <Receipt className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-2xl sm:text-3xl font-black text-white">
+            <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               €{Math.abs(annualIvaSummary.saldoIvaAnual).toFixed(2)}
             </p>
             <div className="mt-2">
               {annualIvaSummary.isReembolso ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   A Recuperar pela Frota
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                   A Pagar às Finanças
                 </span>
@@ -686,26 +687,26 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Card 4: Cálculos Pendentes */}
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+        <div className="h-full p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-750 shadow-sm backdrop-blur-sm relative overflow-hidden flex flex-col justify-between transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Acertos Pendentes</span>
-            <div className="p-2 rounded-xl bg-amber-600/20 text-amber-400 border border-amber-500/30">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Acertos Pendentes</span>
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl sm:text-3xl font-black text-white">{stats.pendingCount}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stats.pendingCount}</p>
               <span className="text-xs text-slate-400">a validar</span>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs font-medium">
               {stats.pendingCount > 0 ? (
-                <span className="text-amber-400 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-amber-400 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                   Ação necessária
                 </span>
               ) : (
-                <span className="text-emerald-400 flex items-center gap-1">
+                <span className="text-emerald-400 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Tudo em dia
                 </span>
@@ -715,19 +716,19 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Card 5: Motoristas Ativos & AdTech */}
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between">
+        <div className="h-full p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-750 shadow-sm backdrop-blur-sm relative overflow-hidden flex flex-col justify-between transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Frota & Mídia</span>
-            <div className="p-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Frota & Mídia</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <Tv className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl sm:text-3xl font-black text-white">{stats.activeDrivers}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stats.activeDrivers}</p>
               <span className="text-xs text-slate-400">condutores ativos</span>
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tablets AdTech ativos</span>
             </div>
@@ -1269,78 +1270,121 @@ const AdminDashboard: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* DESKTOP & MOBILE TOP HEADER (VERCEL / STRIPE STANDARD) */}
-        <header className="sticky top-0 z-30 h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/90 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-30 h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
           
-          {/* Left: Mobile hamburger & Desktop collapse toggle */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <button 
-              type="button"
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white md:hidden focus:outline-none"
-              aria-label="Abrir menu lateral"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            {/* Mobile Header Logo */}
-            <div className="flex md:hidden items-center gap-2">
-              <img 
-                src={BRAND_LOGOS.MOBILE} 
-                alt="ROTA TVDE 5.0" 
-                referrerPolicy="no-referrer"
-                className="w-8 h-8 rounded-lg object-cover border border-slate-700 shadow-sm flex-shrink-0"
-              />
-              <span className="text-sm font-black text-white tracking-tight truncate max-w-[120px]">ROTA TVDE</span>
+          {isMobileSearchOpen ? (
+            /* FULL-WIDTH MOBILE EXPANDABLE SEARCH BAR */
+            <div className="flex-1 flex items-center gap-2 sm:hidden py-1 w-full animate-fadeIn">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  placeholder="Pesquisar condutor, matrícula..."
+                  className="w-full pl-9 pr-8 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                />
+                {globalSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setGlobalSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold p-1"
+                  >
+                    &times;
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className="px-3 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 rounded-xl border border-slate-700 flex-shrink-0"
+              >
+                Fechar
+              </button>
             </div>
+          ) : (
+            <>
+              {/* Left: Mobile hamburger & Logo / Desktop collapse toggle */}
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <button 
+                  type="button"
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white md:hidden focus:outline-none flex-shrink-0"
+                  aria-label="Abrir menu lateral"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              title={isCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
-            >
-              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </button>
+                {/* Mobile Header Logo */}
+                <div className="flex md:hidden items-center gap-2 min-w-0">
+                  <img 
+                    src={BRAND_LOGOS.MOBILE} 
+                    alt="ROTA TVDE 5.0" 
+                    referrerPolicy="no-referrer"
+                    className="w-7 h-7 rounded-lg object-cover border border-slate-700 shadow-sm flex-shrink-0"
+                  />
+                  <span className="text-sm font-bold text-white tracking-tight truncate">ROTA TVDE</span>
+                </div>
 
-            {/* Global Search Bar */}
-            <div className="relative w-44 sm:w-64 md:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={globalSearch}
-                onChange={(e) => setGlobalSearch(e.target.value)}
-                placeholder="Pesquisar condutor, matrícula... (⌘K)"
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-              />
-              {globalSearch && (
                 <button
                   type="button"
-                  onClick={() => setGlobalSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors flex-shrink-0"
+                  title={isCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
                 >
-                  &times;
+                  {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                 </button>
-              )}
-            </div>
-          </div>
 
-          {/* Right Controls: Fleet Selector, Live Firestore Indicator & User Avatar */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            
-            {/* Live Firestore Sync Status Indicator */}
-            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800">
-              {!isDemo ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-bold text-emerald-300">Firestore Ativo</span>
-                </>
-              ) : (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-amber-400" />
-                  <span className="text-[10px] font-bold text-amber-300">Modo Demo</span>
-                </>
-              )}
-            </div>
+                {/* Desktop & Tablet Search Bar */}
+                <div className="hidden sm:block relative w-52 md:w-80">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={globalSearch}
+                    onChange={(e) => setGlobalSearch(e.target.value)}
+                    placeholder="Pesquisar condutor, matrícula... (⌘K)"
+                    className="w-full pl-9 pr-7 py-1.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  />
+                  {globalSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setGlobalSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Controls: Mobile Search Trigger, Fleet Selector, Firestore Indicator & User Avatar */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                {/* Mobile Search Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSearchOpen(true)}
+                  className="sm:hidden p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white focus:outline-none"
+                  aria-label="Pesquisar"
+                  title="Pesquisar"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+
+                {/* Live Firestore Sync Status Indicator */}
+                <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800">
+                  {!isDemo ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px] font-bold text-emerald-300">Firestore Ativo</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      <span className="text-[10px] font-bold text-amber-300">Modo Demo</span>
+                    </>
+                  )}
+                </div>
 
             {/* Fleet / Company Dropdown with Mobile Logo Icon */}
             <div className="relative" ref={fleetMenuRef}>
@@ -1441,6 +1485,8 @@ const AdminDashboard: React.FC = () => {
               )}
             </div>
           </div>
+            </>
+          )}
         </header>
 
         {/* MAIN BODY VIEW */}
@@ -1450,29 +1496,29 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION BAR (PWA COMPLIANT) */}
-      <div className="fixed bottom-0 inset-x-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 z-40 md:hidden flex justify-around items-center py-2 px-3 pb-safe">
+      <div className="fixed bottom-0 inset-x-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 z-40 md:hidden flex justify-around items-center px-2 py-1 pb-safe">
         <button
           type="button"
           onClick={() => setView('dashboard')}
-          className={`flex flex-col items-center gap-1 transition-colors ${
-            view === 'dashboard' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+          className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl flex-1 transition-all ${
+            view === 'dashboard' ? 'text-blue-400 font-semibold bg-blue-500/10' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <LayoutDashboard className="w-5 h-5" />
-          <span className="text-[10px]">Início</span>
+          <LayoutDashboard className="w-5 h-5 mb-0.5" />
+          <span className="text-[11px] font-medium leading-tight">Início</span>
         </button>
 
         <button
           type="button"
           onClick={() => setView('history')}
-          className={`flex flex-col items-center gap-1 relative transition-colors ${
-            view === 'history' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+          className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl flex-1 relative transition-all ${
+            view === 'history' ? 'text-blue-400 font-semibold bg-blue-500/10' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <FileSpreadsheet className="w-5 h-5" />
-          <span className="text-[10px]">Acertos</span>
+          <FileSpreadsheet className="w-5 h-5 mb-0.5" />
+          <span className="text-[11px] font-medium leading-tight">Acertos</span>
           {stats.pendingCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-black text-[9px] flex items-center justify-center">
+            <span className="absolute top-1 right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] flex items-center justify-center shadow-sm">
               {stats.pendingCount}
             </span>
           )}
@@ -1481,23 +1527,23 @@ const AdminDashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => setView('driver_info')}
-          className={`flex flex-col items-center gap-1 transition-colors ${
-            view === 'driver_info' || view === 'vehicles' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'
+          className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl flex-1 transition-all ${
+            view === 'driver_info' || view === 'vehicles' ? 'text-blue-400 font-semibold bg-blue-500/10' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Users className="w-5 h-5" />
-          <span className="text-[10px]">Motoristas</span>
+          <Users className="w-5 h-5 mb-0.5" />
+          <span className="text-[11px] font-medium leading-tight">Motoristas</span>
         </button>
 
         <button
           type="button"
           onClick={() => setView('saas_settings')}
-          className={`flex flex-col items-center gap-1 transition-colors ${
-            view === 'saas_settings' ? 'text-purple-400 font-bold' : 'text-slate-400 hover:text-white'
+          className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl flex-1 transition-all ${
+            view === 'saas_settings' ? 'text-blue-400 font-semibold bg-blue-500/10' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Building2 className="w-5 h-5" />
-          <span className="text-[10px]">Perfil</span>
+          <Building2 className="w-5 h-5 mb-0.5" />
+          <span className="text-[11px] font-medium leading-tight">Perfil</span>
         </button>
       </div>
     </div>
