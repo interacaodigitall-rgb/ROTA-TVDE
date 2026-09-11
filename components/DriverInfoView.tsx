@@ -168,118 +168,68 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
   return (
     <>
     <div className="w-full text-gray-100 font-sans">
-      {/* Header */}
-      <header className="bg-gray-800 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <img 
-                src={BRAND_LOGOS.MOBILE} 
-                alt="ROTA TVDE 5.0" 
-                referrerPolicy="no-referrer"
-                className="w-10 h-10 rounded-xl object-cover border border-slate-700 shadow-md"
-              />
-              <div>
-                <h1 className="text-lg font-black text-gray-100 tracking-tight">Área do Motorista</h1>
-                <p className="text-xs text-blue-400 font-semibold">ROTA TVDE 5.0 • Asfalto Cativante</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-                <div className="hidden sm:flex items-center text-sm text-green-400">
-                    <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
-                    Sistema operacional
-                </div>
-                <Button onClick={logout} variant="secondary">Sair</Button>
-            </div>
-          </div>
-        </div>
-      </header>
-      
       {/* Main Content */}
       <main className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-5xl mx-auto space-y-6">
           
-          {/* Welcome Card */}
-          <div className="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col items-start gap-6">
-             <div className="flex-grow w-full">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">Bem-vindo, {user?.name}!</h2>
-                        <p className="text-gray-400">Frota {user?.type} - Matrícula: {user?.matricula}</p>
-                    </div>
-                    <div className="w-full sm:w-auto flex-shrink-0">
-                        <Button onClick={onNavigateToCalculations} variant="primary" className="w-full">Aceder aos Meus Cálculos</Button>
-                    </div>
+          {/* Main Action Uber-Style Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Olá, {user?.name || 'Motorista'}!</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-mono font-bold border border-slate-700">
+                    {user?.matricula || '45-TX-90'}
+                  </span>
+                  <span className="text-xs text-emerald-400 font-bold">
+                    Frota {user?.type || 'TVDE 5.0'}
+                  </span>
                 </div>
+              </div>
 
-                {/* Pending Invoicing Warning (Yellow) */}
+              {/* Compact Badges for Status Warnings */}
+              <div className="flex flex-wrap gap-2">
                 {pendingBalance > 0.01 && (
-                    <div className="w-full mt-6 p-4 border-l-4 border-yellow-500 bg-yellow-900/50 text-yellow-200 rounded-r-lg">
-                        <div className="flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div>
-                                <p className="font-bold">Aviso de Faturação Pendente</p>
-                                <p className="text-sm">Tem um saldo de <strong>€{pendingBalance.toFixed(2)}</strong> a faturar em recibos verdes.</p>
-                            </div>
-                        </div>
-                    </div>
+                  <div className="px-3 py-1 rounded-full bg-amber-950/80 border border-amber-500/50 text-amber-300 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    Pendente: €{pendingBalance.toFixed(2)}
+                  </div>
                 )}
-                
-                {/* Outstanding Debt Warning (Red) */}
                 {user && user.outstandingDebt > 0 && (
-                    <div className="w-full mt-6 p-4 border-l-4 border-red-500 bg-red-900/50 text-red-200 rounded-r-lg">
-                        <div className="flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <div>
-                                <p className="font-bold">Aviso de Saldo Devedor</p>
-                                <p className="text-sm">Tem um saldo devedor de <strong>€{user.outstandingDebt.toFixed(2)}</strong>. Este valor será cobrado na próxima faturação.</p>
-                            </div>
-                        </div>
-                    </div>
+                  <div className="px-3 py-1 rounded-full bg-red-950/80 border border-red-500/50 text-red-300 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                    Dívida: €{user.outstandingDebt.toFixed(2)}
+                  </div>
                 )}
-                
-                {/* Negative Balance Warning (Red) */}
                 {pendingBalance < -0.01 && (
-                     <div className="w-full mt-6 p-4 border-l-4 border-red-500 bg-red-900/50 text-red-200 rounded-r-lg">
-                        <div className="flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <div>
-                                <p className="font-bold">Aviso de Saldo Negativo</p>
-                                <p className="text-sm">Verificamos um saldo negativo de <strong>€{pendingBalance.toFixed(2)}</strong>. Este valor representa uma dívida para com a empresa e será gerido como tal.</p>
-                            </div>
-                        </div>
-                    </div>
+                  <div className="px-3 py-1 rounded-full bg-red-950/80 border border-red-500/50 text-red-300 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                    Saldo Negativo: €{Math.abs(pendingBalance).toFixed(2)}
+                  </div>
                 )}
-             </div>
+              </div>
+            </div>
+
+            {/* Uber "Iniciar Viagem" style full-width primary action button */}
+            <button
+              onClick={onNavigateToCalculations}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold rounded-2xl transition shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base tracking-wide"
+            >
+              Aceder aos Meus Cálculos &rarr;
+            </button>
           </div>
 
-          <h2 className="text-xl font-semibold text-gray-200">Informações Importantes</h2>
+          <h2 className="text-lg font-black text-slate-200 uppercase tracking-wider">Informações & Equipamentos da Frota</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
              <InfoCard title="Requisitos e Equipamentos" borderColor="border-t-orange-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
-                <div className="space-y-4">
-                    <RequirementItem title="Extintor 2kg com certificado">
-                        Deve estar dentro do prazo e fixado na viatura.
-                    </RequirementItem>
-                    <RequirementItem title="Dístico TVDE">
-                        Colado no para-brisas, visível e válido.
-                    </RequirementItem>
-                    <RequirementItem title="Aviso 'Não Fumadores'">
-                        Afixado visivelmente no interior do veículo.
-                    </RequirementItem>
-                    <RequirementItem title="Documentos Pessoais e Contratos">
-                        <p>Carta de Condução, Cartão de Cidadão, Registo Criminal, Certificado de Motorista TVDE (sempre válidos).</p>
-                        <p className="mt-2 font-semibold">Sempre estar acompanhado pelo contrato de aluguer ou contrato de prestação de serviços para o "SLOT".</p>
-                    </RequirementItem>
-                    <RequirementItem title="Aplicações TVDE">
-                        Uber Driver e Bolt Driver instaladas e atualizadas no telemóvel.
-                    </RequirementItem>
+                {/* Compact badges checklist for space saving */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-medium">✓ Extintor 2kg Certificado</span>
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-medium">✓ Dístico TVDE Válido</span>
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-medium">✓ Aviso Não Fumadores</span>
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-medium">✓ CMTVDE & CC Válidos</span>
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-medium">✓ Apps Uber & Bolt TVDE</span>
                 </div>
              </InfoCard>
 

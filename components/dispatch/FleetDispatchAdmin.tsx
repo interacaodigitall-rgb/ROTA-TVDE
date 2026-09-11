@@ -193,36 +193,49 @@ export const FleetDispatchAdmin: React.FC = () => {
               </span>
             </div>
 
-            {/* Map Canvas Background */}
-            <div className="flex-1 bg-[#0a101d] rounded-2xl relative border border-slate-800 overflow-hidden min-h-[360px]">
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:20px_20px]" />
+            {/* Map Canvas Background (Strict #0B0F17 Uber-Admin Palette) */}
+            <div className="flex-1 bg-[#0B0F17] rounded-2xl relative border border-slate-800 overflow-hidden min-h-[380px]">
+              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px]" />
               
-              {/* Roads Vector */}
-              <svg className="absolute inset-0 w-full h-full stroke-slate-800 stroke-2">
-                <path d="M 0 100 Q 250 80, 500 250 T 900 300" className="stroke-blue-500/20 stroke-[3]" fill="none" />
-                <path d="M 150 0 Q 300 300, 600 500" className="stroke-emerald-500/20 stroke-[2]" fill="none" />
+              {/* Roads Vector (#1E293B styled with subtle neon glow) */}
+              <svg className="absolute inset-0 w-full h-full">
+                <path d="M 0 120 Q 240 90, 480 240 T 900 290" className="stroke-[#1E293B] stroke-[6]" fill="none" />
+                <path d="M 0 120 Q 240 90, 480 240 T 900 290" className="stroke-blue-500/30 stroke-[2]" fill="none" />
+                <path d="M 160 0 Q 320 280, 580 500" className="stroke-[#1E293B] stroke-[5]" fill="none" />
+                <path d="M 160 0 Q 320 280, 580 500" className="stroke-emerald-500/30 stroke-[2]" fill="none" />
+                <path d="M 50 400 Q 350 350, 750 150" className="stroke-[#1E293B] stroke-[4]" fill="none" />
               </svg>
 
-              {/* Cars Markers */}
-              {drivers.map((d) => (
-                <div 
-                  key={d.driverId}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-1000"
-                  style={{ 
-                    top: `${((d.lat - 38.68) / 0.14) * 100}%`, 
-                    left: `${((d.lng + 9.45) / 0.40) * 100}%` 
-                  }}
-                >
-                  <div className="relative">
-                    <div className="w-9 h-9 rounded-full bg-slate-900 border-2 border-emerald-400 shadow-xl flex items-center justify-center text-emerald-400 group-hover:scale-125 transition">
-                      <Car className="w-4 h-4" />
-                    </div>
-                    <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-md bg-slate-950 border border-slate-700 text-[10px] font-black text-white shadow-xl">
-                      {d.matricula}
+              {/* Cars Markers with Collision/Offset Clustering Logic */}
+              {drivers.map((d, index) => {
+                // Apply a deterministic micro-offset to prevent overlapping markers in close coordinates
+                const baseTop = ((d.lat - 38.68) / 0.14) * 100;
+                const baseLeft = ((d.lng + 9.45) / 0.40) * 100;
+                const offsetAngle = (index * 60) * (Math.PI / 180);
+                const offsetDistance = index > 0 ? (index % 2 === 0 ? 1.5 : 2.2) : 0;
+                const topPct = Math.min(90, Math.max(10, baseTop + Math.sin(offsetAngle) * offsetDistance));
+                const leftPct = Math.min(90, Math.max(10, baseLeft + Math.cos(offsetAngle) * offsetDistance));
+
+                return (
+                  <div 
+                    key={d.driverId}
+                    className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-1000 z-20 hover:z-30"
+                    style={{ 
+                      top: `${topPct}%`, 
+                      left: `${leftPct}%` 
+                    }}
+                  >
+                    <div className="relative">
+                      <div className="w-9 h-9 rounded-full bg-slate-950 border-2 border-emerald-400 shadow-xl flex items-center justify-center text-emerald-400 group-hover:scale-125 transition">
+                        <Car className="w-4 h-4" />
+                      </div>
+                      <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-md bg-slate-950/95 border border-slate-700 text-[10px] font-black text-white shadow-xl opacity-90 group-hover:opacity-100 transition">
+                        {d.matricula}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

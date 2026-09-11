@@ -265,31 +265,32 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
-      {/* Top Floating App Bar */}
+      {/* Top Floating App Bar (Uber Style) */}
       <header className="absolute top-0 left-0 right-0 z-30 p-4 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-3 bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto">
+        <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md px-4 py-2.5 rounded-full border border-slate-700/60 shadow-2xl pointer-events-auto">
           <img 
-            src={BRAND_LOGOS.DESKTOP} 
+            src={BRAND_LOGOS.MOBILE} 
             alt="Asfalto Cativante" 
             referrerPolicy="no-referrer"
-            className="h-8 w-auto object-contain"
+            className="h-7 w-7 rounded-full object-cover border border-slate-600"
           />
-          <div className="border-l border-slate-700 pl-2.5">
-            <span className="text-xs font-black text-white block leading-tight">ASFALTO TRANSFERS</span>
-            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+          <div className="border-l border-slate-700/80 pl-2.5 pr-1">
+            <span className="text-xs font-black text-white tracking-wider block leading-tight uppercase">Asfalto Cativante</span>
+            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               {liveDrivers.filter(d => d.isOnline).length} Viaturas Ativas
             </span>
           </div>
         </div>
 
+        {/* Clean minimal floating actions */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          {onBackToMain && (
+          {step !== 'SELECT_DESTINATION' && step !== 'ACTIVE_RIDE' && (
             <button
-              onClick={onBackToMain}
-              className="px-3.5 py-2 bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white rounded-xl border border-slate-800 text-xs font-bold transition backdrop-blur-md shadow-lg"
+              onClick={() => setStep('SELECT_DESTINATION')}
+              className="px-3.5 py-2 bg-slate-900/80 backdrop-blur-md hover:bg-slate-800 text-slate-200 hover:text-white rounded-full border border-slate-700/60 text-xs font-bold transition shadow-lg flex items-center gap-1"
             >
-              Voltar ao SaaS
+              &larr; Voltar
             </button>
           )}
         </div>
@@ -350,19 +351,22 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
         )}
       </div>
 
-      {/* Main Bottom Sheet & Floating Interaction Panel */}
-      <div className="relative z-10 mt-auto w-full max-w-lg mx-auto p-4">
+      {/* Main Bottom Sheet & Floating Interaction Panel (Uber Pixel-Perfect) */}
+      <div className="relative z-10 mt-auto w-full max-w-lg mx-auto p-3 sm:p-4">
         {step === 'SELECT_DESTINATION' && (
-          <div className="bg-slate-900/95 backdrop-blur-xl rounded-3xl border border-slate-800 shadow-2xl p-5 space-y-4 animate-fadeIn">
+          <div className="bg-slate-900/95 backdrop-blur-2xl rounded-t-[28px] rounded-b-3xl sm:rounded-3xl border border-slate-700/60 shadow-2xl p-5 space-y-4 animate-fadeIn">
+            {/* Uber-Style Subtle Top Drag Handle */}
+            <div className="w-12 h-1.5 bg-slate-600 rounded-full mx-auto mb-1" />
+
             <div>
               <span className="text-[10px] font-extrabold uppercase text-emerald-400 tracking-wider">Transfers & Despacho Privado</span>
               <h1 className="text-2xl font-black text-white tracking-tight">Para onde vamos hoje?</h1>
             </div>
 
             {/* Inputs Box */}
-            <div className="space-y-2.5 bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+            <div className="space-y-2.5 bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-200" />
+                <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-200 flex-shrink-0" />
                 <input 
                   type="text"
                   value={originAddress}
@@ -373,7 +377,7 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
               </div>
               <div className="border-t border-slate-800/80 my-1 ml-6" />
               <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-emerald-200" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-emerald-200 flex-shrink-0" />
                 <input 
                   type="text"
                   value={destinationAddress}
@@ -390,18 +394,18 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
               </div>
             </div>
 
-            {/* Quick Popular Destinations */}
+            {/* Quick Popular Destinations in compact circular icon format */}
             <div>
-              <span className="text-xs font-bold text-slate-400 block mb-2">Destinos Frequentes & Transfers</span>
+              <span className="text-xs font-bold text-slate-400 block mb-2">Destinos Frequentes</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                 {POPULAR_DESTINATIONS.map((dest, i) => (
                   <button
                     key={i}
                     onClick={() => handleSelectPreset(dest)}
-                    className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-blue-500/50 text-left transition flex items-start gap-2.5 group"
+                    className="p-2.5 rounded-2xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 hover:border-emerald-500/50 text-left transition flex items-center gap-3 group"
                   >
-                    <div className="p-2 rounded-lg bg-slate-900 text-blue-400 group-hover:text-emerald-400 transition">
-                      <MapPin className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 group-hover:bg-slate-700 transition">
+                      <MapPin className="w-4 h-4 text-slate-300 group-hover:text-emerald-400" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-bold text-white truncate">{dest.name}</div>
@@ -415,7 +419,7 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
             {destinationAddress && (
               <button
                 onClick={() => setStep('SELECT_CATEGORY')}
-                className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-sm"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 text-sm"
               >
                 Ver Categorias & Tarifas <ArrowRight className="w-4 h-4" />
               </button>
