@@ -34,6 +34,15 @@ export interface InteractiveMapProps {
   showTraffic?: boolean;
 }
 
+// Check for user-provided API key from environment ONLY
+export const getEffectiveMapsKey = (): string => {
+  const envKey = ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+  if (envKey && !envKey.startsWith('YOUR_') && !envKey.startsWith('AIzaSyAL9ZcT5uhBTp0ydTiXA1kvM6EzMsIM33A') && envKey.length > 20) {
+    return envKey;
+  }
+  return '';
+};
+
 // Premium Dark Theme Palette (Uber Obsidian & Neon Green/Cyan)
 export const UBER_DARK_MAP_STYLES = [
   { elementType: "geometry", stylers: [{ color: "#0B0F17" }] },
@@ -144,9 +153,8 @@ export const loadGoogleMaps = (apiKey: string = ''): Promise<any> => {
     return Promise.resolve(win.google);
   }
 
-  const trimmedKey = (apiKey || '').trim();
-  // If key is empty or clearly a placeholder, do not make an invalid request to Google
-  if (!trimmedKey || trimmedKey.startsWith('YOUR_') || trimmedKey.length < 15) {
+  const keyToUse = (apiKey || getEffectiveMapsKey()).trim();
+  if (!keyToUse || keyToUse.length < 20) {
     return Promise.reject(new Error('No valid Google Maps API Key configured'));
   }
 
@@ -168,7 +176,7 @@ export const loadGoogleMaps = (apiKey: string = ''): Promise<any> => {
 
     const script = document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(trimmedKey)}&libraries=places,geometry&loading=async&callback=__initGoogleMapCallback`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(keyToUse)}&libraries=places,geometry&loading=async&callback=__initGoogleMapCallback`;
     script.async = true;
     script.defer = true;
 
@@ -206,7 +214,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const markersRef = useRef<Map<string, any>>(new Map());
   const polylineRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [loadError, setLoadError] = useState<boolean>(() => googleMapsAuthFailed);
+  const [loadError, setLoadError] = useState<boolean>(true); // Default to vector canvas mode for zero errors
 
   // Animated interpolated driver positions for smooth 60fps translation
   const [animatedDrivers, setAnimatedDrivers] = useState<DriverLiveLocation[]>(drivers);
@@ -287,9 +295,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     return () => cancelAnimationFrame(animFrame);
   }, [drivers]);
 
-  // Load Google Maps Script safely with Auth Failure Fallback
+  // Load Google Maps Script ONLY if user provided a valid custom key in .env
   useEffect(() => {
-    if (googleMapsAuthFailed) {
+    const validKey = getEffectiveMapsKey();
+    if (!validKey) {
       setLoadError(true);
       setIsLoaded(false);
       return;
@@ -305,18 +314,11 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     window.addEventListener('gmaps_auth_failed', handleAuthFail);
 
-    const apiKey = ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '').trim();
-    if (!apiKey || apiKey.startsWith('YOUR_') || apiKey.length < 15) {
-      setLoadError(true);
-      return () => {
-        window.removeEventListener('gmaps_auth_failed', handleAuthFail);
-      };
-    }
-
-    loadGoogleMaps(apiKey)
+    loadGoogleMaps(validKey)
       .then(() => {
         if (!googleMapsAuthFailed) {
           setIsLoaded(true);
+          setLoadError(false);
         } else {
           setLoadError(true);
         }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { loadGoogleMaps } from './InteractiveMap';
+import { loadGoogleMaps, getEffectiveMapsKey } from './InteractiveMap';
 import { MapPin } from 'lucide-react';
 
 interface PlaceAutocompleteProps {
@@ -35,8 +35,8 @@ export const PlaceAutocompleteInput: React.FC<PlaceAutocompleteProps> = ({
   const autocompleteServiceRef = useRef<any>(null);
 
   useEffect(() => {
-    const apiKey = ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '').trim();
-    if (!apiKey || apiKey.startsWith('YOUR_') || apiKey.length < 15) return;
+    const apiKey = getEffectiveMapsKey();
+    if (!apiKey) return;
 
     loadGoogleMaps(apiKey).then((googleObj) => {
       if (!inputRef.current || !googleObj?.maps?.places) return;
