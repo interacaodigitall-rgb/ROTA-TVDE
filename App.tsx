@@ -9,6 +9,7 @@ import OwnerDashboard from './components/OwnerDashboard';
 import { useServiceWorkerUpdater } from './hooks/useServiceWorkerUpdater';
 import UpdateNotification from './components/UpdateNotification';
 import TabletDisplayRoute from './components/adtech/TabletDisplayRoute';
+import RiderApp from './components/rider/RiderApp';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
@@ -17,6 +18,7 @@ const App: React.FC = () => {
   // Check if current path or query/hash indicates tablet mode
   const currentPath = window.location.pathname;
   const searchParams = new URLSearchParams(window.location.search);
+  
   const isTabletMode = 
     currentPath === '/tablet' || 
     currentPath === '/display' || 
@@ -25,8 +27,24 @@ const App: React.FC = () => {
     searchParams.get('mode') === 'tablet' ||
     window.location.hash.includes('tablet');
 
+  const isRiderMode = 
+    currentPath === '/rider' || 
+    currentPath === '/chamar' || 
+    currentPath === '/pedir' ||
+    searchParams.get('rider') === 'true' ||
+    searchParams.get('mode') === 'rider' ||
+    window.location.hash.includes('rider');
+
   if (isTabletMode) {
     return <TabletDisplayRoute onClose={() => { window.location.href = '/'; }} />;
+  }
+
+  if (isRiderMode) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+        <RiderApp onBackToMain={() => { window.location.href = '/'; }} />
+      </div>
+    );
   }
 
   const renderDashboard = () => {

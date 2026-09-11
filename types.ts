@@ -372,3 +372,104 @@ export interface AnnualIvaSummary {
   trimestres: Record<FiscalQuarter, QuarterlyIvaSummary>;
 }
 
+// ==========================================
+// --- DISPATCH PRIVADO & UBER STYLE TRANSFERS ---
+// ==========================================
+
+export type VehicleCategory = 'STANDARD' | 'BLACK_TESLA' | 'XL_VAN';
+
+export type PaymentMethod = 'MBWAY' | 'CARD' | 'CASH' | 'TPA';
+
+export type RideStatus = 
+  | 'pendente' 
+  | 'aceito' 
+  | 'a_caminho' 
+  | 'no_local' 
+  | 'em_viagem' 
+  | 'concluido' 
+  | 'cancelado';
+
+export interface ChatMessage {
+  id: string;
+  sender: 'client' | 'driver' | 'system';
+  text: string;
+  time: string;
+}
+
+export interface PrivateRide {
+  id: string;
+  clienteNome: string;
+  clienteTelefone: string;
+  clienteEmail?: string;
+  origem: {
+    lat: number;
+    lng: number;
+    endereco: string;
+  };
+  destino: {
+    lat: number;
+    lng: number;
+    endereco: string;
+  };
+  distanciaKm: number;
+  duracaoMin: number;
+  categoria: VehicleCategory;
+  valorTotal: number;
+  valorLiquidoMotorista: number;
+  comissaoFrota: number;
+  tipoViagem: 'imediato' | 'reserva';
+  dataHoraAgendamento?: any;
+  motoristaId?: string;
+  motoristaNome?: string;
+  motoristaFoto?: string;
+  motoristaTelefone?: string;
+  motoristaRating?: number;
+  viaturaId?: string;
+  viaturaMatricula?: string;
+  viaturaModelo?: string;
+  status: RideStatus;
+  metodoPagamento: PaymentMethod;
+  statusPagamento: 'pendente' | 'pago';
+  etaMinutos?: number;
+  driverLocation?: {
+    lat: number;
+    lng: number;
+  };
+  chatMensagens?: ChatMessage[];
+  createdAt: any;
+  acceptedAt?: any;
+  completedAt?: any;
+  companyId?: string;
+  ratingDadoPeloCliente?: number;
+  avaliacaoNotas?: string;
+}
+
+export interface FleetFareRules {
+  baseStandard: number; // ex: 2.50
+  kmStandard: number; // ex: 0.95
+  minStandard: number; // ex: 0.20
+  minimoStandard: number; // ex: 5.00
+  multBlackTesla: number; // ex: 1.50
+  multXL: number; // ex: 1.85
+  taxaAeroporto: number; // ex: 3.50
+  taxaNoturnaPercent: number; // ex: 20
+  comissaoFrotaPercent: number; // ex: 15
+}
+
+export interface DriverLiveLocation {
+  driverId: string;
+  driverName: string;
+  matricula: string;
+  vehicleModel: string;
+  categoria: VehicleCategory;
+  lat: number;
+  lng: number;
+  heading?: number;
+  isOnline: boolean;
+  status: 'LIVRE' | 'EM_VIAGEM' | 'EM_SERVICO_TVDE' | 'OFFLINE';
+  currentRideId?: string;
+  lastUpdate: any;
+  batteryLevel?: number;
+  phone?: string;
+  rating?: number;
+}

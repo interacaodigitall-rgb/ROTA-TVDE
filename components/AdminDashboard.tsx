@@ -20,6 +20,8 @@ import PassengerTabletPlayer from './adtech/PassengerTabletPlayer';
 import ExtratoImportView from './finance/ExtratoImportView';
 import SaasSettingsView from './saas/SaasSettingsView';
 import IvaManagementView from './iva/IvaManagementView';
+import FleetDispatchAdmin from './dispatch/FleetDispatchAdmin';
+import RiderApp from './rider/RiderApp';
 import { aggregateAnnualIva } from '../utils/ivaUtils';
 import { BRAND_LOGOS } from '../constants';
 import { 
@@ -51,7 +53,9 @@ import {
   ChevronDown,
   ExternalLink,
   ShieldCheck,
-  Database
+  Database,
+  Navigation,
+  Smartphone
 } from 'lucide-react';
 
 export type AdminView = 
@@ -62,6 +66,8 @@ export type AdminView =
   | 'history' 
   | 'iban' 
   | 'vehicles' 
+  | 'dispatch'
+  | 'rider_sim'
   | 'receipts' 
   | 'adjustments'
   | 'extratos'
@@ -434,6 +440,22 @@ const AdminDashboard: React.FC = () => {
             </p>
           )}
           <div className="space-y-0.5">
+            <NavLink 
+              icon={<Navigation className="h-4 w-4 text-emerald-400" />} 
+              label="Central Dispatch & GPS" 
+              isActive={view === 'dispatch'} 
+              onClick={() => { setView('dispatch'); onLinkClick(); }}
+              badge="Live"
+              badgeColor="bg-emerald-950 text-emerald-300 border-emerald-700"
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<Smartphone className="h-4 w-4 text-blue-400" />} 
+              label="App Passageiro (Rider)" 
+              isActive={view === 'rider_sim'} 
+              onClick={() => { setView('rider_sim'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
             <NavLink 
               icon={<Users className="h-4 w-4" />} 
               label="Veículos & Motoristas" 
@@ -1207,6 +1229,10 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         );
+      case 'dispatch':
+        return <FleetDispatchAdmin />;
+      case 'rider_sim':
+        return <RiderApp onBackToMain={() => setView('dispatch')} />;
       case 'iban': 
         return <IbanManagement />;
       case 'receipts': 
