@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import Button from './ui/Button';
 import { useIbans } from '../hooks/useIbans';
-import { CalculationStatus, CalculationType } from '../types';
+import { CalculationStatus, CalculationType, DriverLiveLocation } from '../types';
 import Card from './ui/Card';
 import { MOCK_COMPANY_INFO } from '../demoData';
 import { useCalculations } from '../hooks/useCalculations';
@@ -10,8 +10,9 @@ import { useReceipts } from '../hooks/useReceipts';
 import { useCompany } from '../hooks/useCompany';
 import { calculateSummary } from '../utils/calculationUtils';
 import { BRAND_LOGOS } from '../constants';
+import InteractiveMap from './map/InteractiveMap';
+import { dispatchService } from '../services/dispatchService';
 
-// FIX: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; borderColor: string; }> = ({ title, icon, children, borderColor }) => (
   <div className={`border border-gray-700 rounded-lg p-6 bg-gray-800 border-t-4 ${borderColor}`}>
     <div className="flex items-center mb-4">
@@ -24,16 +25,6 @@ const InfoCard: React.FC<{ title: string; icon: React.ReactNode; children: React
   </div>
 );
 
-const RequirementItem: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => (
-    <div>
-        <p className="font-bold text-gray-200">&#8226; {title}</p>
-        <div className="ml-5 text-sm text-gray-400 border-l border-gray-600 pl-3 mt-1">
-            {children}
-        </div>
-    </div>
-);
-
-
 const SosModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
@@ -43,51 +34,43 @@ const SosModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen,
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-semibold text-red-400 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
-                        SOS / Contactos de Assistência
+                        SOS & Assistência em Viagem
                     </h3>
-                     <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
                 </div>
-                <div className="space-y-4 text-lg">
-                    <div className="p-4 bg-gray-900 rounded-lg">
-                        <p className="text-sm text-gray-400">Em Portugal (chamada para a rede fixa nacional)</p>
-                        <a href="tel:214405008" className="font-bold text-2xl text-white hover:text-blue-400">214 405 008</a>
+                <div className="space-y-3 text-sm text-gray-200">
+                    <p>Contacte a linha de apoio 24/7 da frota ou a assistência em viagem do seguro:</p>
+                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                        <p className="font-bold text-white">Central Operacional Asfalto Cativante:</p>
+                        <p className="text-emerald-400 font-mono font-bold">+351 912 345 678</p>
                     </div>
-                    <div className="p-4 bg-gray-900 rounded-lg">
-                        <p className="text-sm text-gray-400">No Estrangeiro</p>
-                        <a href="tel:+351214417373" className="font-bold text-2xl text-white hover:text-blue-400">+351 21 441 73 73</a>
+                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                        <p className="font-bold text-white">Seguradora Fidelidade (Assistência):</p>
+                        <p className="text-blue-400 font-mono font-bold">808 29 39 49</p>
                     </div>
                 </div>
-                 <div className="mt-6 text-center">
-                     <Button variant="secondary" onClick={onClose}>Fechar</Button>
-                 </div>
+                <div className="mt-5 text-right">
+                    <Button variant="primary" onClick={onClose}>Fechar</Button>
+                </div>
             </Card>
         </div>
     );
 };
 
-const ReminderModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  amount: number;
-}> = ({ isOpen, onClose, amount }) => {
+const ReminderModal: React.FC<{ isOpen: boolean; onClose: () => void; amount: number; }> = ({ isOpen, onClose, amount }) => {
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <Card className="w-full max-w-lg border-t-4 border-t-yellow-500" onClick={(e) => e.stopPropagation()}>
+            <Card className="w-full max-w-lg border-t-4 border-t-amber-500" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold text-yellow-400 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        Lembrete de Faturação
-                    </h3>
-                     <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
+                    <h3 className="text-xl font-semibold text-amber-400">Regularização de Recibos</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
                 </div>
-                <div className="space-y-4 text-gray-200">
-                    <p>Lembrete: Verificámos que tem um saldo pendente de meses anteriores. O seu saldo de faturação total é de:</p>
+                <div className="space-y-3 text-sm text-gray-300">
+                    <p>Lembrete: Verificámos que tem um saldo pendente de meses anteriores:</p>
                     <p className="text-3xl font-bold text-center text-white py-4 bg-gray-900 rounded-lg">€{amount.toFixed(2)}</p>
                     <p>Por favor, emita os recibos verdes correspondentes para regularizar a sua situação.</p>
                 </div>
@@ -107,11 +90,16 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
   const { receipts } = useReceipts();
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [liveDrivers, setLiveDrivers] = useState<DriverLiveLocation[]>([]);
 
   const myIban = user ? ibans.find(iban => iban.driverId === user.id) : null;
   const hasVehicleInfo = user && (user.vehicleModel || user.insuranceCompany || user.insurancePolicy || user.fleetCardCompany || user.fleetCardNumber);
   
   const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+
+  useEffect(() => {
+    setLiveDrivers(dispatchService.getLiveDrivers());
+  }, []);
 
   const { pendingBalance, previousMonthsPendingBalance } = useMemo(() => {
     if (!user) return { pendingBalance: 0, previousMonthsPendingBalance: 0 };
@@ -129,7 +117,6 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
 
     const totalReceipts = userReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
 
-    // --- Previous months balance calculation ---
     const now = new Date();
     const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -155,7 +142,6 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
   }, [calculations, receipts, user]);
 
   useEffect(() => {
-    // Show reminder modal if there's a positive pending balance from previous months.
     if (previousMonthsPendingBalance > 0) {
         setIsReminderModalOpen(true);
     }
@@ -163,6 +149,11 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
 
   const handleCloseReminder = () => {
     setIsReminderModalOpen(false);
+  };
+
+  const myDriverLocation = liveDrivers.find(d => d.driverId === user?.id) || {
+    lat: 38.7369,
+    lng: -9.1426
   };
 
   return (
@@ -219,11 +210,31 @@ const DriverInfoView: React.FC<{ onNavigateToCalculations: () => void }> = ({ on
             </button>
           </div>
 
+          {/* Interactive Live GPS Map for Driver (Centered on vehicle) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase text-slate-300 tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Sua Viatura no Mapa em Tempo Real
+              </span>
+              <span className="text-[10px] text-emerald-400 font-bold bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                GPS Ativo ({user?.matricula || '45-TX-90'})
+              </span>
+            </div>
+            <div className="h-56 rounded-2xl overflow-hidden border border-slate-800/80">
+              <InteractiveMap 
+                center={{ lat: myDriverLocation.lat, lng: myDriverLocation.lng }}
+                zoom={14}
+                drivers={liveDrivers.filter(d => d.driverId === user?.id || d.isOnline)}
+                className="w-full h-full min-h-[220px]"
+              />
+            </div>
+          </div>
+
           <h2 className="text-lg font-black text-slate-200 uppercase tracking-wider">Informações & Equipamentos da Frota</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
              <InfoCard title="Requisitos e Equipamentos" borderColor="border-t-orange-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
-                {/* Compact badges checklist for space saving */}
                 <div className="flex flex-wrap gap-2">
                   <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-medium">✓ Extintor 2kg Certificado</span>
                   <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-medium">✓ Dístico TVDE Válido</span>

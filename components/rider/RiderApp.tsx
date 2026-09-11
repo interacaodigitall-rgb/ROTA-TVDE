@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Navigation, 
@@ -36,6 +36,8 @@ import {
   INITIAL_DEMO_DRIVERS, 
   playDispatchAlertSound 
 } from '../../services/dispatchService';
+import InteractiveMap, { LatLngLiteral } from '../map/InteractiveMap';
+import PlaceAutocompleteInput from '../map/PlaceAutocompleteInput';
 
 interface PresetDestination {
   name: string;
@@ -102,8 +104,10 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
   // Step in booking flow
   const [step, setStep] = useState<'SELECT_DESTINATION' | 'SELECT_CATEGORY' | 'CONFIRM_PAYMENT' | 'ACTIVE_RIDE'>('SELECT_DESTINATION');
   
-  // Locations
+  // Locations & GPS Coordinates
+  const [userLocation, setUserLocation] = useState<LatLngLiteral>({ lat: 38.736946, lng: -9.142685 });
   const [originAddress, setOriginAddress] = useState<string>('Minha Localização (Lisboa Centro)');
+  const [destinationCoords, setDestinationCoords] = useState<LatLngLiteral | null>(null);
   const [destinationAddress, setDestinationAddress] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<PresetDestination | null>(null);
   const [customDistanceKm, setCustomDistanceKm] = useState<number>(8.5);
@@ -133,6 +137,22 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
   const [ratingSubmitted, setRatingSubmitted] = useState<boolean>(false);
   const [stars, setStars] = useState<number>(5);
 
+  // Request browser geolocation on mount (focando a câmara no raio do cliente)
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(userPos);
+        },
+        (err) => {
+          console.warn('Geolocation denied or unavailable, using central Lisbon position:', err);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, []);
+
   // Recalculate estimates when distance/destination changes
   useEffect(() => {
     const isAirport = destinationAddress.toLowerCase().includes('aeroporto') || originAddress.toLowerCase().includes('aeroporto');
@@ -140,17 +160,16 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
     setEstimates(calc);
   }, [customDistanceKm, customDurationMin, destinationAddress, originAddress]);
 
-  // Subscribe to live drivers
+  // Subscribe to live drivers & smooth movements
   useEffect(() => {
     setLiveDrivers(dispatchService.getLiveDrivers());
     const interval = setInterval(() => {
-      // Small simulated GPS jitter for realism
       setLiveDrivers(prev => prev.map(d => ({
         ...d,
-        lat: d.lat + (Math.random() - 0.5) * 0.0008,
-        lng: d.lng + (Math.random() - 0.5) * 0.0008
+        lat: d.lat + (Math.random() - 0.5) * 0.0006,
+        lng: d.lng + (Math.random() - 0.5) * 0.0006
       })));
-    }, 4000);
+    }, 3500);
     return () => clearInterval(interval);
   }, []);
 
@@ -175,9 +194,25 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
   const handleSelectPreset = (dest: PresetDestination) => {
     setSelectedPreset(dest);
     setDestinationAddress(dest.name);
+    setDestinationCoords({ lat: dest.lat, lng: dest.lng });
     setCustomDistanceKm(dest.distanceKm);
     setCustomDurationMin(dest.durationMin);
     setStep('SELECT_CATEGORY');
+  };
+
+  const handlePlaceSelect = (place: { address: string; lat: number; lng: number; name?: string }) => {
+    setDestinationAddress(place.address || place.name || '');
+    setDestinationCoords({ lat: place.lat, lng: place.lng });
+    
+    // Estimate distance from user location
+    const dLat = (place.lat - userLocation.lat) * 111;
+    const dLng = (place.lng - userLocation.lng) * 85;
+    const directKm = Math.sqrt(dLat * dLat + dLng * dLng) * 1.35; // Route factor
+    const calculatedKm = Math.max(2.5, Math.round(directKm * 10) / 10);
+    const calculatedMin = Math.max(5, Math.round(calculatedKm * 1.6));
+
+    setCustomDistanceKm(calculatedKm);
+    setCustomDurationMin(calculatedMin);
   };
 
   const handleCreateRide = async () => {
@@ -188,13 +223,13 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
       clienteNome: clientName,
       clienteTelefone: clientPhone,
       origem: {
-        lat: 38.736946,
-        lng: -9.142685,
+        lat: userLocation.lat,
+        lng: userLocation.lng,
         endereco: originAddress
       },
       destino: {
-        lat: selectedPreset?.lat || 38.7756,
-        lng: selectedPreset?.lng || -9.1354,
+        lat: destinationCoords?.lat || selectedPreset?.lat || 38.7756,
+        lng: destinationCoords?.lng || selectedPreset?.lng || -9.1354,
         endereco: destinationAddress || 'Aeroporto de Lisboa Humberto Delgado'
       },
       distanciaKm: customDistanceKm,
@@ -212,7 +247,7 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
     setActiveRide(newRide);
     setStep('ACTIVE_RIDE');
 
-    // Simulate auto-dispatch acceptance if no driver acts within 4s (for seamless demo experience)
+    // Auto-dispatch acceptance simulation for smooth preview
     setTimeout(() => {
       if (dispatchService.getAllRides().find(r => r.id === newRide.id)?.status === 'pendente') {
         const bestDriver = INITIAL_DEMO_DRIVERS.find(d => d.categoria === selectedCategory) || INITIAL_DEMO_DRIVERS[0];
@@ -296,59 +331,17 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
         </div>
       </header>
 
-      {/* Simulated Vector Fullscreen Map Layer */}
-      <div className="absolute inset-0 z-0 bg-[#0c1322] overflow-hidden">
-        {/* Subtle Map Grid lines */}
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px]" />
-        
-        {/* Animated Road Lines */}
-        <svg className="absolute inset-0 w-full h-full stroke-slate-800/80 stroke-2" style={{ fill: 'none' }}>
-          <path d="M -50 150 Q 300 120, 600 350 T 1200 400" className="stroke-blue-500/30 stroke-[3]" />
-          <path d="M 200 -50 Q 350 400, 800 700" className="stroke-emerald-500/25 stroke-[2] stroke-dasharray-[6,6]" />
-          <path d="M 100 800 Q 500 500, 900 200" className="stroke-slate-700/50 stroke-[4]" />
-        </svg>
-
-        {/* Live Cars moving on Map */}
-        {liveDrivers.map((driver) => (
-          <div 
-            key={driver.driverId}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ease-out cursor-pointer group"
-            style={{ 
-              top: `${((driver.lat - 38.68) / 0.14) * 100}%`, 
-              left: `${((driver.lng + 9.45) / 0.40) * 100}%` 
-            }}
-          >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-900/90 border-2 border-emerald-500 shadow-xl flex items-center justify-center text-emerald-400 group-hover:scale-110 transition">
-                <Car className="w-5 h-5" />
-              </div>
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-md bg-slate-950/90 border border-slate-800 text-[10px] font-bold text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-lg">
-                {driver.driverName} • {driver.vehicleModel}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Client Origin Marker */}
-        <div className="absolute top-[52%] left-[48%] transform -translate-x-1/2 -translate-y-1/2">
-          <div className="relative flex items-center justify-center">
-            <span className="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-blue-400 opacity-40" />
-            <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white shadow-lg flex items-center justify-center text-[10px] font-black">
-              P
-            </div>
-          </div>
-        </div>
-
-        {/* Destination Marker if selected */}
-        {selectedPreset && (
-          <div className="absolute top-[35%] left-[65%] transform -translate-x-1/2 -translate-y-1/2">
-            <div className="relative flex items-center justify-center">
-              <div className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-black shadow-xl flex items-center gap-1 border border-emerald-400/50 animate-bounce">
-                <MapPin className="w-3.5 h-3.5" /> {selectedPreset.name}
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Interactive Realtime Vector Map Layer (Full Screen) */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <InteractiveMap 
+          center={userLocation}
+          zoom={14}
+          drivers={liveDrivers}
+          routeOrigin={destinationCoords ? userLocation : undefined}
+          routeDestination={destinationCoords || undefined}
+          routeColor="#10B981"
+          className="w-full h-full"
+        />
       </div>
 
       {/* Main Bottom Sheet & Floating Interaction Panel (Uber Pixel-Perfect) */}
@@ -363,7 +356,7 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
               <h1 className="text-2xl font-black text-white tracking-tight">Para onde vamos hoje?</h1>
             </div>
 
-            {/* Inputs Box */}
+            {/* Inputs Box with Places Autocomplete */}
             <div className="space-y-2.5 bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-200 flex-shrink-0" />
@@ -378,18 +371,18 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
               <div className="border-t border-slate-800/80 my-1 ml-6" />
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-emerald-200 flex-shrink-0" />
-                <input 
-                  type="text"
+                <PlaceAutocompleteInput
                   value={destinationAddress}
-                  onChange={(e) => {
-                    setDestinationAddress(e.target.value);
-                    if (e.target.value) {
+                  onChange={(val) => {
+                    setDestinationAddress(val);
+                    if (val) {
                       setCustomDistanceKm(12);
                       setCustomDurationMin(18);
                     }
                   }}
+                  onPlaceSelect={handlePlaceSelect}
                   placeholder="Introduza o destino ou selecione abaixo..."
-                  className="w-full bg-transparent text-sm text-white font-bold focus:outline-none placeholder-slate-400"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -657,7 +650,7 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
                 <div className="flex items-center gap-3">
                   <img 
                     src={activeRide.motoristaFoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                    alt={activeRide.motoristaNome}
+                    alt={activeRide.motoristaNome} 
                     className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500 shadow-md"
                   />
                   <div>
