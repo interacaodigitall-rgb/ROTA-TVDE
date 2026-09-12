@@ -448,14 +448,25 @@ const Login: React.FC = () => {
             </div>
 
             {/* ANÚNCIOS / TABLET BUTTON REQUESTED BY USER */}
-            <button
-              type="button"
-              onClick={() => setShowAdsModal(true)}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600/90 to-indigo-600/90 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2.5 transition-all border border-purple-400/30 cursor-pointer"
-            >
-              <Tv className="w-4 h-4 text-purple-200" />
-              <span>🎬 Anúncios (Modo Tablet / Encosto)</span>
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => { window.location.href = '/chamar'; }}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2.5 transition-all border border-emerald-400/30 cursor-pointer"
+              >
+                <Car className="w-4 h-4 text-emerald-200" />
+                <span>🚘 Chamar Carro (App Passageiro TVDE)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAdsModal(true)}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-xs border border-slate-700/80 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Tv className="w-3.5 h-3.5 text-purple-400" />
+                <span>🎬 Anúncios (Modo Tablet / Encosto)</span>
+              </button>
+            </div>
           </div>
 
           <div className="text-center text-[11px] text-slate-400 flex items-center justify-center gap-2">

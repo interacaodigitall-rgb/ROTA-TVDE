@@ -194,8 +194,10 @@ class DispatchService {
 
     return {
       STANDARD: baseFare(1.0),
+      ELECTRIC: baseFare(1.18),
       BLACK_TESLA: baseFare(rules.multBlackTesla),
-      XL_VAN: baseFare(rules.multXL)
+      XL_VAN: baseFare(rules.multXL),
+      PRIORIDADE: baseFare(rules.multBlackTesla * 1.06)
     };
   }
 

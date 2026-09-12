@@ -32,6 +32,7 @@ export interface InteractiveMapProps {
   onMapClick?: (coords: LatLngLiteral) => void;
   onMarkerClick?: (markerId: string) => void;
   showTraffic?: boolean;
+  pickupEtaBadge?: string;
 }
 
 // Check for user-provided API key from environment ONLY
@@ -207,7 +208,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   className = 'w-full h-full min-h-[300px]',
   interactive = true,
   onMapClick,
-  onMarkerClick
+  onMarkerClick,
+  pickupEtaBadge
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -565,14 +567,18 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             return (
               <div
                 key={m.id}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center"
                 style={{ top: `${top}%`, left: `${left}%` }}
               >
-                <div className="flex items-center justify-center">
-                  <span className="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-blue-400 opacity-50" />
-                  <div className="w-6 h-6 rounded-full bg-blue-600 border-2 border-white shadow-xl flex items-center justify-center text-[10px] font-black text-white">
-                    A
-                  </div>
+                {/* Pickup Time Badge: e.g. 4 MIN in Uber-style black pill with white text */}
+                <div className="mb-1.5 px-2.5 py-0.5 rounded-full bg-black/95 text-white font-black text-[11px] tracking-wider border border-zinc-700 shadow-2xl flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{pickupEtaBadge || '4 MIN'}</span>
+                </div>
+
+                <div className="flex items-center justify-center relative">
+                  <span className="animate-ping absolute inline-flex h-7 w-7 rounded-full bg-emerald-400 opacity-40" />
+                  <div className="w-4 h-4 rounded-full bg-black border-2 border-white shadow-xl flex items-center justify-center" />
                 </div>
               </div>
             );

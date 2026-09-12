@@ -376,7 +376,7 @@ export interface AnnualIvaSummary {
 // --- DISPATCH PRIVADO & UBER STYLE TRANSFERS ---
 // ==========================================
 
-export type VehicleCategory = 'STANDARD' | 'BLACK_TESLA' | 'XL_VAN';
+export type VehicleCategory = 'STANDARD' | 'ELECTRIC' | 'BLACK_TESLA' | 'XL_VAN' | 'PRIORIDADE';
 
 export type PaymentMethod = 'MBWAY' | 'CARD' | 'CASH' | 'TPA';
 

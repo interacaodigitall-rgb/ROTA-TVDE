@@ -32,8 +32,10 @@ const App: React.FC = () => {
     currentPath === '/chamar' || 
     currentPath === '/pedir' ||
     searchParams.get('rider') === 'true' ||
+    searchParams.get('chamar') === 'true' ||
     searchParams.get('mode') === 'rider' ||
-    window.location.hash.includes('rider');
+    window.location.hash.includes('rider') ||
+    window.location.hash.includes('chamar');
 
   if (isTabletMode) {
     return <TabletDisplayRoute onClose={() => { window.location.href = '/'; }} />;
