@@ -74,6 +74,7 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
     XL_VAN: { valorTotal: 17.50, valorLiquido: 14.88, comissao: 2.62 },
     PRIORIDADE: { valorTotal: 14.50, valorLiquido: 12.33, comissao: 2.17 }
   });
+  const [estimatesMeta, setEstimatesMeta] = useState<{ isFixedAirportRate?: boolean; airportZoneLabel?: string; isNightRate?: boolean }>({});
 
   // 5. Payment Configuration
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('MBWAY');
@@ -107,11 +108,15 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
     handleRecenterGps();
   }, []);
 
-  // Recalculate estimates when distance/destination changes
+  // Recalculate estimates when distance/destination changes (with Airport Geofencing)
   useEffect(() => {
-    const isAirport = destinationAddress.toLowerCase().includes('aeroporto') || originAddress.toLowerCase().includes('aeroporto');
-    const calc = dispatchService.calculateEstimates(customDistanceKm, customDurationMin, isAirport);
+    const calc = dispatchService.calculateEstimates(customDistanceKm, customDurationMin, originAddress, destinationAddress);
     setEstimates(calc);
+    setEstimatesMeta({
+      isFixedAirportRate: calc.isFixedAirportRate,
+      airportZoneLabel: calc.airportZoneLabel,
+      isNightRate: calc.isNightRate
+    });
   }, [customDistanceKm, customDurationMin, destinationAddress, originAddress]);
 
   // Subscribe to live drivers and smooth vehicle motion
@@ -324,6 +329,9 @@ export const RiderApp: React.FC<{ onBackToMain?: () => void }> = ({ onBackToMain
             onBackToRouteEdit={() => setStep('SELECT_DESTINATION')}
             onConfirmRide={handleConfirmRide}
             estimates={estimates}
+            isAirportFixedRate={estimatesMeta.isFixedAirportRate}
+            airportZoneLabel={estimatesMeta.airportZoneLabel}
+            isNightRate={estimatesMeta.isNightRate}
           />
         )}
 

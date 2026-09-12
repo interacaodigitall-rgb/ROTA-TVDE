@@ -112,6 +112,9 @@ export interface Calculation {
   // AdTech bonus integration (optional extra earnings passed to driver)
   adTechBonus?: number;
 
+  // Dispatch & Private Rides integration (extra earnings from private rides passed to driver)
+  privateRidesNet?: number;
+
   // Gestão Fiscal & IVA (Portugal / Finanças)
   ivaLiquidado?: number;
   ivaDedutivel?: number;

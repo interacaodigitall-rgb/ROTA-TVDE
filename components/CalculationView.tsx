@@ -295,6 +295,12 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                 </div>
             )}
 
+            {((calculation.privateRidesNet || 0) > 0) && (
+                <div className="border-t border-dashed border-blue-500/60 pt-2 mt-2 px-4 text-blue-400">
+                    <CalculationLine label="(+) Corridas Privadas (Dispatch):" value={formatCurrency(calculation.privateRidesNet || 0)} />
+                </div>
+            )}
+
             <div className="border-y-4 border-double border-gray-600 py-4 my-4 text-center">
                 <p className="text-lg font-bold">VALOR FINAL: {formatCurrency(valorFinal)}</p>
             </div>
@@ -378,6 +384,18 @@ const CalculationView: React.FC<CalculationViewProps> = ({ calculation, onAccept
                         <p className="font-bold mb-2">└───────────────────────────┘</p>
                     </div>
                 </>
+            )}
+
+            {((calculation.adTechBonus || 0) > 0) && (
+                <div className="border-t border-dashed border-emerald-500/60 pt-2 mt-2 px-4 text-emerald-400">
+                    <CalculationLine label="(+) Bónus AdTech:" value={formatCurrency(calculation.adTechBonus || 0)} />
+                </div>
+            )}
+
+            {((calculation.privateRidesNet || 0) > 0) && (
+                <div className="border-t border-dashed border-blue-500/60 pt-2 mt-2 px-4 text-blue-400">
+                    <CalculationLine label="(+) Corridas Privadas (Dispatch):" value={formatCurrency(calculation.privateRidesNet || 0)} />
+                </div>
             )}
 
             <div className="border-y-4 border-double border-gray-600 py-4 my-4 text-center">

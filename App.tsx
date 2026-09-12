@@ -24,8 +24,11 @@ const App: React.FC = () => {
     currentPath === '/display' || 
     currentPath === '/kiosk' ||
     searchParams.get('tablet') === 'true' ||
+    searchParams.get('display') === 'true' ||
     searchParams.get('mode') === 'tablet' ||
-    window.location.hash.includes('tablet');
+    searchParams.get('mode') === 'display' ||
+    window.location.hash.includes('tablet') ||
+    window.location.hash.includes('display');
 
   const isRiderMode = 
     currentPath === '/rider' || 
@@ -37,6 +40,15 @@ const App: React.FC = () => {
     window.location.hash.includes('rider') ||
     window.location.hash.includes('chamar');
 
+  const isDriverMode = 
+    currentPath === '/driver' || 
+    currentPath === '/motorista' || 
+    searchParams.get('driver') === 'true' ||
+    searchParams.get('motorista') === 'true' ||
+    searchParams.get('mode') === 'driver' ||
+    window.location.hash.includes('driver') ||
+    window.location.hash.includes('motorista');
+
   if (isTabletMode) {
     return <TabletDisplayRoute onClose={() => { window.location.href = '/'; }} />;
   }
@@ -45,6 +57,22 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col">
         <RiderApp onBackToMain={() => { window.location.href = '/'; }} />
+      </div>
+    );
+  }
+
+  if (isDriverMode || (user && user.role === UserRole.DRIVER)) {
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+          <Login />
+        </div>
+      );
+    }
+    return (
+      <div className="h-[100dvh] w-full overflow-hidden bg-slate-950 text-slate-100 flex flex-col">
+        {isUpdateAvailable && <UpdateNotification onUpdate={updateServiceWorker} />}
+        <DriverDashboard />
       </div>
     );
   }

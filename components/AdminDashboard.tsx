@@ -17,6 +17,7 @@ import ReceiptManagement from './ReceiptManagement';
 import AdjustmentManagement from './AdjustmentManagement';
 import AdTechManagement from './adtech/AdTechManagement';
 import PassengerTabletPlayer from './adtech/PassengerTabletPlayer';
+import TabletDisplayRoute from './adtech/TabletDisplayRoute';
 import ExtratoImportView from './finance/ExtratoImportView';
 import SaasSettingsView from './saas/SaasSettingsView';
 import IvaManagementView from './iva/IvaManagementView';
@@ -1200,9 +1201,19 @@ const AdminDashboard: React.FC = () => {
               <Button onClick={() => setView('adtech')} variant="secondary" className="text-xs">
                 &larr; Voltar ao Painel AdTech
               </Button>
-              <span className="text-xs text-slate-400">Simulação Interativa do Ecrã do Passageiro</span>
+              <div className="flex items-center gap-2">
+                <a 
+                  href="/display" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/40 text-xs font-semibold flex items-center gap-1.5 hover:bg-blue-600/30 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Abrir /display no Tablet
+                </a>
+                <span className="text-xs text-slate-400 hidden sm:inline">Simulador Kiosk & Ativação de Encosto</span>
+              </div>
             </div>
-            <PassengerTabletPlayer />
+            <TabletDisplayRoute isStandaloneKiosk={false} onClose={() => setView('adtech')} />
           </div>
         );
       case 'saas_settings':

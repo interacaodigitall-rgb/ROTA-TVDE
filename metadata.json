@@ -1,7 +1,9 @@
 {
   "name": "ROTA TVDE 5.0 Calculator",
-  "description": "Plataforma de gestão de frotas TVDE (Uber/Bolt) com cálculos semanais (Slot & Percentagem), importação de extratos, monetização AdTech em tablets e multi-tenancy SaaS.",
-  "requestFramePermissions": [],
+  "description": "Plataforma de gestão de frotas TVDE (Uber/Bolt) com cálculos semanais (Slot & Percentagem), importação de extratos, monetização AdTech em tablets, despacho de transfers privados e multi-tenancy SaaS.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

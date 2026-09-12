@@ -20,6 +20,125 @@ export const DEFAULT_FARE_RULES: FleetFareRules = {
   comissaoFrotaPercent: 15
 };
 
+export interface AirportFixedFareMatch {
+  isAirportFixedFare: boolean;
+  zoneKey?: 'LISBOA_CENTRO' | 'OEIRAS_CAPARICA' | 'CASCAIS_SINTRA' | 'MONTIJO_VFXIRA';
+  zoneLabel?: string;
+  isNight: boolean;
+  fixedFares?: Record<VehicleCategory, { valorTotal: number; valorLiquido: number; comissao: number }>;
+}
+
+/**
+ * Regra de Exceção Aeroporto (LIS):
+ * Tabela de Preço Fixo quando a viagem tem origem no Aeroporto Humberto Delgado (LIS)
+ */
+export function detectAirportFixedFare(
+  originText: string,
+  destinationText: string,
+  forceNight?: boolean
+): AirportFixedFareMatch {
+  const normOrigin = (originText || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const normDest = (destinationText || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const isAirportOrigin = normOrigin.includes('aeroporto') || 
+                          normOrigin.includes('humberto delgado') || 
+                          normOrigin.includes('lisbon airport') || 
+                          normOrigin.includes('terminal 1') || 
+                          normOrigin.includes('terminal 2') ||
+                          normOrigin.includes('portela');
+
+  if (!isAirportOrigin) {
+    return { isAirportFixedFare: false, isNight: false };
+  }
+
+  const currentHour = new Date().getHours();
+  const isNight = forceNight !== undefined ? forceNight : (currentHour >= 21 || currentHour < 6);
+
+  // 1. Aeroporto ➔ Lisboa Centro: €16-€19 (Diurno) | €20-€23 (Noturno)
+  const isLisboaCentro = normDest.includes('lisboa') || normDest.includes('centro') || 
+                        normDest.includes('baixa') || normDest.includes('chiado') || 
+                        normDest.includes('marques') || normDest.includes('saldanha') || 
+                        normDest.includes('alfama') || normDest.includes('rossio') || 
+                        normDest.includes('oriente') || normDest.includes('nacoes') || 
+                        normDest.includes('alvalade') || normDest.includes('campo') ||
+                        normDest.includes('benfica') || normDest.includes('estrela');
+
+  // 2. Aeroporto ➔ Oeiras / Caparica: €32,00 (Standard) / €42,00 (XL)
+  const isOeirasCaparica = normDest.includes('oeiras') || normDest.includes('caparica') || 
+                           normDest.includes('almada') || normDest.includes('carcavelos') || 
+                           normDest.includes('paco de arcos') || normDest.includes('cacilhas') ||
+                           normDest.includes('pragal') || normDest.includes('charneca');
+
+  // 3. Aeroporto ➔ Cascais / Sintra: €48,00 (Standard) / €60,00 (XL)
+  const isCascaisSintra = normDest.includes('cascais') || normDest.includes('sintra') || 
+                          normDest.includes('estoril') || normDest.includes('queluz') || 
+                          normDest.includes('cacem') || normDest.includes('guincho') ||
+                          normDest.includes('rio de mouro') || normDest.includes('beloura');
+
+  // 4. Aeroporto ➔ Montijo / VFXira: €44,00 (Standard) / €55,00 (XL)
+  const isMontijoVfxira = normDest.includes('montijo') || normDest.includes('vila franca') || 
+                          normDest.includes('vfxira') || normDest.includes('alverca') || 
+                          normDest.includes('barreiro') || normDest.includes('moita') || 
+                          normDest.includes('alcochete') || normDest.includes('santa iria');
+
+  let zoneKey: 'LISBOA_CENTRO' | 'OEIRAS_CAPARICA' | 'CASCAIS_SINTRA' | 'MONTIJO_VFXIRA' = 'LISBOA_CENTRO';
+  let zoneLabel = 'Lisboa Centro';
+
+  if (isCascaisSintra) {
+    zoneKey = 'CASCAIS_SINTRA';
+    zoneLabel = 'Cascais / Sintra';
+  } else if (isOeirasCaparica) {
+    zoneKey = 'OEIRAS_CAPARICA';
+    zoneLabel = 'Oeiras / Caparica';
+  } else if (isMontijoVfxira) {
+    zoneKey = 'MONTIJO_VFXIRA';
+    zoneLabel = 'Montijo / VFXira';
+  } else {
+    zoneKey = 'LISBOA_CENTRO';
+    zoneLabel = 'Lisboa Centro';
+  }
+
+  // Exact Official Tariff Table
+  let stdPrice = 18.00;
+  let xlPrice = 28.00;
+
+  if (zoneKey === 'LISBOA_CENTRO') {
+    stdPrice = isNight ? 22.00 : 18.00; // €16,00 - €19,00 (Diurno) | €20,00 - €23,00 (Noturno 21h-06h)
+    xlPrice = isNight ? 32.00 : 26.00;
+  } else if (zoneKey === 'OEIRAS_CAPARICA') {
+    stdPrice = 32.00;
+    xlPrice = 42.00;
+  } else if (zoneKey === 'CASCAIS_SINTRA') {
+    stdPrice = 48.00;
+    xlPrice = 60.00;
+  } else if (zoneKey === 'MONTIJO_VFXIRA') {
+    stdPrice = 44.00;
+    xlPrice = 55.00;
+  }
+
+  const buildCategory = (valorTotal: number) => {
+    const comissao = Math.round((valorTotal * 0.15) * 100) / 100;
+    const valorLiquido = Math.round((valorTotal - comissao) * 100) / 100;
+    return { valorTotal, valorLiquido, comissao };
+  };
+
+  const fixedFares: Record<VehicleCategory, { valorTotal: number; valorLiquido: number; comissao: number }> = {
+    STANDARD: buildCategory(stdPrice),
+    ELECTRIC: buildCategory(Math.round((stdPrice * 1.15) * 100) / 100),
+    BLACK_TESLA: buildCategory(Math.round((stdPrice * 1.35) * 100) / 100),
+    XL_VAN: buildCategory(xlPrice),
+    PRIORIDADE: buildCategory(Math.round((stdPrice * 1.40) * 100) / 100)
+  };
+
+  return {
+    isAirportFixedFare: true,
+    zoneKey,
+    zoneLabel,
+    isNight,
+    fixedFares
+  };
+}
+
 // Initial simulated fleet locations around Lisbon/Porto for rich interactive experience
 export const INITIAL_DEMO_DRIVERS: DriverLiveLocation[] = [
   {
@@ -165,15 +284,45 @@ class DispatchService {
   }
 
   /**
-   * Calculate estimate for all categories based on Distance (km) and Duration (minutes)
+   * Calculate estimate for all categories based on Distance (km), Duration (minutes)
+   * or Fixed Airport Rules (Geofencing Humberto Delgado LIS).
    */
   public calculateEstimates(
     distanciaKm: number, 
     duracaoMin: number, 
-    isAirport: boolean = false, 
-    isNight: boolean = false
-  ): Record<VehicleCategory, { valorTotal: number; valorLiquido: number; comissao: number }> {
+    isAirportOrOrigin: boolean | string = false, 
+    isNightOrDestination: boolean | string = false
+  ): Record<VehicleCategory, { valorTotal: number; valorLiquido: number; comissao: number }> & {
+    isFixedAirportRate?: boolean;
+    airportZoneLabel?: string;
+    isNightRate?: boolean;
+  } {
+    // Check if called with origin and destination strings
+    const originStr = typeof isAirportOrOrigin === 'string' ? isAirportOrOrigin : '';
+    const destStr = typeof isNightOrDestination === 'string' ? isNightOrDestination : '';
+
+    const isExplicitAirport = typeof isAirportOrOrigin === 'boolean' && isAirportOrOrigin;
+    const isExplicitNight = typeof isNightOrDestination === 'boolean' && isNightOrDestination;
+
+    // Check Airport Geofence Fixed Rate
+    const airportCheck = detectAirportFixedFare(
+      originStr || (isExplicitAirport ? 'Aeroporto Humberto Delgado LIS' : ''),
+      destStr || 'Lisboa Centro',
+      typeof isNightOrDestination === 'boolean' ? isNightOrDestination : undefined
+    );
+
+    if (airportCheck.isAirportFixedFare && airportCheck.fixedFares) {
+      return {
+        ...airportCheck.fixedFares,
+        isFixedAirportRate: true,
+        airportZoneLabel: airportCheck.zoneLabel,
+        isNightRate: airportCheck.isNight
+      };
+    }
+
     const rules = this.fareRules;
+    const isAirport = isExplicitAirport || originStr.toLowerCase().includes('aeroporto') || destStr.toLowerCase().includes('aeroporto');
+    const isNight = isExplicitNight || (new Date().getHours() >= 21 || new Date().getHours() < 6);
 
     const baseFare = (multiplier: number) => {
       let valor = (rules.baseStandard + (distanciaKm * rules.kmStandard) + (duracaoMin * rules.minStandard)) * multiplier;
@@ -197,7 +346,9 @@ class DispatchService {
       ELECTRIC: baseFare(1.18),
       BLACK_TESLA: baseFare(rules.multBlackTesla),
       XL_VAN: baseFare(rules.multXL),
-      PRIORIDADE: baseFare(rules.multBlackTesla * 1.06)
+      PRIORIDADE: baseFare(rules.multBlackTesla * 1.06),
+      isFixedAirportRate: false,
+      isNightRate: isNight
     };
   }
 
@@ -384,6 +535,29 @@ class DispatchService {
 
   public getAllRides(): PrivateRide[] {
     return this.localRides;
+  }
+
+  /**
+   * Get all completed private rides for a specific driver within an optional date range
+   */
+  public getDriverCompletedRides(driverId: string, startDate?: Date, endDate?: Date): PrivateRide[] {
+    return this.localRides.filter(r => {
+      if (r.motoristaId !== driverId || r.status !== 'concluido') return false;
+      if (!startDate && !endDate) return true;
+      const rideDate = new Date(r.createdAt);
+      if (startDate && rideDate < startDate) return false;
+      if (endDate && rideDate > endDate) return false;
+      return true;
+    });
+  }
+
+  /**
+   * Get net total earnings of completed private rides for a driver
+   */
+  public getDriverCompletedRidesNetTotal(driverId: string, startDate?: Date, endDate?: Date): number {
+    const rides = this.getDriverCompletedRides(driverId, startDate, endDate);
+    const total = rides.reduce((sum, r) => sum + (r.valorLiquidoMotorista || 0), 0);
+    return Math.round(total * 100) / 100;
   }
 
   private updateRideStatusInLocalAndDb(rideId: string, updates: Partial<PrivateRide>) {

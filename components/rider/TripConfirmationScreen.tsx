@@ -53,6 +53,9 @@ interface TripConfirmationScreenProps {
   onBackToRouteEdit: () => void;
   onConfirmRide: () => void;
   estimates: Record<VehicleCategory, { valorTotal: number; valorLiquido: number; comissao: number }>;
+  isAirportFixedRate?: boolean;
+  airportZoneLabel?: string;
+  isNightRate?: boolean;
 }
 
 export const TripConfirmationScreen: React.FC<TripConfirmationScreenProps> = ({
@@ -71,7 +74,10 @@ export const TripConfirmationScreen: React.FC<TripConfirmationScreenProps> = ({
   onOpenScheduleModal,
   onBackToRouteEdit,
   onConfirmRide,
-  estimates
+  estimates,
+  isAirportFixedRate,
+  airportZoneLabel,
+  isNightRate
 }) => {
   const [isPaymentSelectorOpen, setIsPaymentSelectorOpen] = useState(false);
   const [showMbwayInput, setShowMbwayInput] = useState(paymentMethod === 'MBWAY');
@@ -203,6 +209,23 @@ export const TripConfirmationScreen: React.FC<TripConfirmationScreenProps> = ({
           <span className="truncate text-white text-[11px] font-bold">{destinationAddress}</span>
         </div>
       </div>
+
+      {/* Airport Fixed Fare Notice Badge */}
+      {isAirportFixedRate && (
+        <div className="flex items-center justify-between px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl animate-fadeIn">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
+              Preço Fixo Aeroporto
+            </span>
+            <span className="text-xs font-bold text-emerald-300 truncate">
+              {airportZoneLabel || 'Tarifa Fixa Georreferenciada'}
+            </span>
+          </div>
+          <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap pl-2">
+            {isNightRate ? '🌙 Noturno' : '☀️ Diurno'}
+          </span>
+        </div>
+      )}
 
       {/* 3. Gaveta Inferior de Categorias (Bottom Sheet Vehicle Options) */}
       <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">

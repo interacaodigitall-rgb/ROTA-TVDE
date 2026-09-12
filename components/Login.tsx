@@ -22,7 +22,8 @@ import {
   KeyRound,
   X,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Navigation
 } from 'lucide-react';
 
 const Login: React.FC = () => {
@@ -456,6 +457,19 @@ const Login: React.FC = () => {
               >
                 <Car className="w-4 h-4 text-emerald-200" />
                 <span>🚘 Chamar Carro (App Passageiro TVDE)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsLoading(true);
+                  await login('demofr@rotatvde.pt', '0123456');
+                  setIsLoading(false);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-white font-semibold text-xs border border-slate-700/80 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Navigation className="w-3.5 h-3.5 text-[#10B981]" />
+                <span>📱 Portal do Motorista (/driver)</span>
               </button>
 
               <button

@@ -280,7 +280,7 @@ export const DriverLiveMapScreen: React.FC<DriverLiveMapScreenProps> = ({
   const formattedMinutes = todayOnlineMinutes % 60;
 
   return (
-    <div className="relative w-full h-[calc(100vh-65px)] min-h-[580px] bg-[#0B0F17] overflow-hidden select-none font-sans text-slate-100">
+    <div className="relative w-full h-full bg-[#0B0F17] overflow-hidden select-none font-sans text-slate-100">
       {/* 1. Full Screen Base Map */}
       <div className="absolute inset-0 z-0">
         <InteractiveMap
@@ -420,7 +420,7 @@ export const DriverLiveMapScreen: React.FC<DriverLiveMapScreenProps> = ({
 
       {/* 4. Retractable Bottom Drawer (Painel Inferior Uber Driver) */}
       <div 
-        className={`absolute bottom-0 left-0 right-0 z-30 transition-all duration-300 ease-in-out ${
+        className={`absolute bottom-16 left-0 right-0 z-30 transition-all duration-300 ease-in-out ${
           drawerState === 'collapsed' 
             ? 'translate-y-[calc(100%-80px)]' 
             : drawerState === 'half' 

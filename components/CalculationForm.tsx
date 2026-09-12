@@ -8,6 +8,7 @@ import { useUsers } from '../hooks/useUsers';
 import { db } from '../firebase';
 import { useAdjustments } from '../hooks/useAdjustments';
 import { calculateSummary } from '../utils/calculationUtils';
+import { dispatchService } from '../services/dispatchService';
 
 export interface CalculationFormProps {
   onClose: () => void;
@@ -25,6 +26,7 @@ export interface CalculationFormProps {
     periodStart?: string;
     periodEnd?: string;
     adTechBonus?: number;
+    privateRidesNet?: number;
   } | null;
 }
 
@@ -59,6 +61,7 @@ const initialFormData = {
   isSlotExempt: false,
   fuelType: '',
   adTechBonus: '0',
+  privateRidesNet: '0',
 };
 
 const toDate = (timestamp: any) => timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -104,6 +107,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         fleetCard: initialValues.fleetCard !== undefined ? String(initialValues.fleetCard) : prev.fleetCard,
         rentalTolls: initialValues.rentalTolls !== undefined ? String(initialValues.rentalTolls) : prev.rentalTolls,
         adTechBonus: initialValues.adTechBonus !== undefined ? String(initialValues.adTechBonus) : prev.adTechBonus,
+        privateRidesNet: initialValues.privateRidesNet !== undefined ? String(initialValues.privateRidesNet) : prev.privateRidesNet,
       }));
     }
   }, [initialValues, isEditMode, users]);
@@ -136,6 +140,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         isSlotExempt: !!calculationToEdit.isSlotExempt,
         fuelType: calculationToEdit.fuelType || '',
         adTechBonus: String(calculationToEdit.adTechBonus || '0'),
+        privateRidesNet: String(calculationToEdit.privateRidesNet || '0'),
       });
     } else if (!initialValues) {
       setDriverId('');
@@ -206,6 +211,13 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
               const currentNotes = newDefaults.otherExpensesNotes || '';
               newDefaults.otherExpensesNotes = currentNotes ? `${currentNotes}\n${debtNote}` : debtNote;
           }
+      }
+
+      // Auto-import completed private rides from dispatchService
+      const completedDispatchRides = dispatchService.getDriverCompletedRides(selectedDriver.id);
+      if (completedDispatchRides.length > 0) {
+        const dispatchTotal = dispatchService.getDriverCompletedRidesNetTotal(selectedDriver.id);
+        newDefaults.privateRidesNet = String(dispatchTotal);
       }
 
       // Use a functional update to avoid stale state issues, merging with existing form data
@@ -332,6 +344,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
         vehicleRental: parseFloat(formData.vehicleRental) || 0,
         debtDeduction: debtDeductionAmount,
         adTechBonus: parseFloat(formData.adTechBonus) || 0,
+        privateRidesNet: parseFloat(formData.privateRidesNet) || 0,
     };
 
     const calculationData: any = {
@@ -347,6 +360,7 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
       isIvaExempt: formData.isIvaExempt,
       isSlotExempt: formData.isSlotExempt,
       adTechBonus: numericFormData.adTechBonus,
+      privateRidesNet: numericFormData.privateRidesNet,
     };
 
     if (selectedDriver?.type === CalculationType.PERCENTAGE) {
@@ -546,6 +560,17 @@ const CalculationForm: React.FC<CalculationFormProps> = ({ onClose, calculationT
                 </div>
                 <div className="w-full sm:w-44">
                     <NumberInput label="Crédito AdTech" id="adTechBonus" name="adTechBonus" value={formData.adTechBonus} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
+                </div>
+            </div>
+
+            {/* Corridas Privadas & Dispatch ROTA TVDE */}
+            <div className="mt-4 p-3 bg-slate-800/80 border border-slate-700 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                    <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Corridas Privadas (Dispatch ROTA TVDE)</span>
+                    <p className="text-xs text-gray-400">Ganhos líquidos de transfers e viagens privadas atribuídas pela central.</p>
+                </div>
+                <div className="w-full sm:w-44">
+                    <NumberInput label="Total Líquido Dispatch" id="privateRidesNet" name="privateRidesNet" value={formData.privateRidesNet} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} />
                 </div>
             </div>
         </div>
