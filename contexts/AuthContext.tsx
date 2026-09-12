@@ -3,6 +3,7 @@ import React, { createContext, useState, ReactNode, useCallback, useEffect } fro
 import { User, UserRole, CalculationType } from '../types';
 import { auth, db } from '../firebase';
 import { MOCK_ADMIN_USER, MOCK_FROTA_DRIVER_1, MOCK_SLOT_DRIVER_USER } from '../demoData';
+import { establishmentService } from '../services/establishmentService';
 
 interface AuthContextType {
   user: User | null;
@@ -59,6 +60,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
             demoUser = MOCK_SLOT_DRIVER_USER;
         }
+    } else if (role === UserRole.B2B_CONCIERGE) {
+        const est = establishmentService.getById('est_tivoli_avenida') || establishmentService.getAll()[0];
+        demoUser = {
+          id: 'usr_concierge_tivoli',
+          name: 'Concierge Desk - Hotel Tivoli Avenida Liberdade',
+          email: 'concierge@tivoli.pt',
+          matricula: 'B2B-CONCIERGE',
+          type: CalculationType.SLOT,
+          role: UserRole.B2B_CONCIERGE,
+          establishmentId: est.id,
+          establishment: est,
+          companyId: 'asfalto-cativante'
+        };
     }
     
     if (demoUser) {
@@ -130,13 +144,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               userData.role = UserRole.MANAGER;
           } else if (roleSource === 'PROPRIETÁRIO' || roleSource === 'PROPRIETARIO' || roleSource === 'OWNER') {
               userData.role = UserRole.OWNER;
+          } else if (roleSource === 'B2B_CONCIERGE' || roleSource === 'CONCIERGE' || roleSource === 'HOTEL' || roleSource === 'RESTAURANTE') {
+              userData.role = UserRole.B2B_CONCIERGE;
+              if (userData.establishmentId) {
+                userData.establishment = establishmentService.getById(userData.establishmentId);
+              }
           } else {
-              // Smart check for admin/gerente email patterns
+              // Smart check for admin/gerente/concierge email patterns
               const checkEmail = (userData.email || firebaseUser.email || '').toLowerCase();
               if (checkEmail.includes('admin') || checkEmail.includes('adm@') || checkEmail === 'eunawebse@gmail.com') {
                 userData.role = UserRole.ADMIN;
               } else if (checkEmail.includes('gerente') || checkEmail.includes('gestor') || checkEmail.includes('manager')) {
                 userData.role = UserRole.MANAGER;
+              } else if (checkEmail.includes('concierge') || checkEmail.includes('hotel') || checkEmail.includes('restaurant')) {
+                userData.role = UserRole.B2B_CONCIERGE;
+                if (!userData.establishment) {
+                  userData.establishment = establishmentService.getById(userData.establishmentId || 'est_tivoli_avenida') || establishmentService.getAll()[0];
+                  userData.establishmentId = userData.establishment?.id;
+                }
               } else {
                 userData.role = UserRole.DRIVER;
               }
@@ -176,17 +201,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const lowerCaseEmail = email.toLowerCase().trim();
 
     // 1. Check if user is requesting STATIC DEMO MODE
-    const STATIC_DEMO_ACCOUNTS: Record<string, { role: UserRole; type?: CalculationType; pass: string }> = {
+    const STATIC_DEMO_ACCOUNTS: Record<string, { role: UserRole; type?: CalculationType; pass: string; establishmentId?: string; name?: string }> = {
       'demoad@rotatvde.pt': { role: UserRole.ADMIN, type: undefined, pass: 'Minharotatvde' },
       'demofr@rotatvde.pt': { role: UserRole.DRIVER, type: CalculationType.FROTA, pass: '0123456' },
       'demosl@rotatvde.pt': { role: UserRole.DRIVER, type: CalculationType.SLOT, pass: '0123456' },
+      'concierge@tivoli.pt': { role: UserRole.B2B_CONCIERGE, pass: '0123456', establishmentId: 'est_tivoli_avenida', name: 'Concierge Desk - Hotel Tivoli Avenida' },
+      'concierge@jncquoi.pt': { role: UserRole.B2B_CONCIERGE, pass: '0123456', establishmentId: 'est_jncquoi_avenida', name: 'Maitre / Concierge - JNcQUOI Avenida' },
+      'hotel@rotatvde.pt': { role: UserRole.B2B_CONCIERGE, pass: '0123456', establishmentId: 'est_tivoli_avenida', name: 'Parceiro Concierge B2B' },
     };
 
     if (STATIC_DEMO_ACCOUNTS[lowerCaseEmail]) {
       const demoAccount = STATIC_DEMO_ACCOUNTS[lowerCaseEmail];
       if (password === demoAccount.pass) {
-        loginAsDemo(demoAccount.role, demoAccount.type);
-        return true;
+        if (demoAccount.role === UserRole.B2B_CONCIERGE) {
+          const est = establishmentService.getById(demoAccount.establishmentId || 'est_tivoli_avenida') || establishmentService.getAll()[0];
+          setUser({
+            id: `usr_${demoAccount.establishmentId || 'concierge'}`,
+            name: demoAccount.name || `Concierge - ${est.name}`,
+            email: lowerCaseEmail,
+            matricula: 'B2B-CONCIERGE',
+            type: CalculationType.SLOT,
+            role: UserRole.B2B_CONCIERGE,
+            establishmentId: est.id,
+            establishment: est,
+            companyId: 'asfalto-cativante'
+          });
+          setIsDemo(true);
+          return true;
+        } else {
+          loginAsDemo(demoAccount.role, demoAccount.type);
+          return true;
+        }
       } else {
         setError('Password inválida para a conta de demonstração.');
         return false;

@@ -10,6 +10,8 @@ import { useServiceWorkerUpdater } from './hooks/useServiceWorkerUpdater';
 import UpdateNotification from './components/UpdateNotification';
 import TabletDisplayRoute from './components/adtech/TabletDisplayRoute';
 import RiderApp from './components/rider/RiderApp';
+import { ConciergeDashboard } from './components/concierge/ConciergeDashboard';
+import { PublicRideTracking } from './components/concierge/PublicRideTracking';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
@@ -49,6 +51,33 @@ const App: React.FC = () => {
     window.location.hash.includes('driver') ||
     window.location.hash.includes('motorista');
 
+  // B2B Concierge & Public Tracking Routes
+  const isTrackMode = 
+    currentPath.startsWith('/track') || 
+    currentPath.startsWith('/rastreio') ||
+    searchParams.get('track') === 'true' ||
+    Boolean(searchParams.get('rideId')) ||
+    window.location.hash.includes('track');
+
+  const isConciergeMode = 
+    currentPath === '/concierge' || 
+    currentPath.startsWith('/concierge') || 
+    currentPath === '/hotel' ||
+    currentPath === '/b2b' ||
+    searchParams.get('concierge') === 'true' || 
+    searchParams.get('mode') === 'concierge' ||
+    window.location.hash.includes('concierge');
+
+  if (isTrackMode) {
+    const rawId = currentPath.split('/track/')[1] || currentPath.split('/rastreio/')[1] || searchParams.get('rideId') || searchParams.get('token') || '';
+    const cleanId = rawId.split('?')[0].split('#')[0];
+    return <PublicRideTracking rideId={cleanId} onBack={() => { window.location.href = '/concierge'; }} />;
+  }
+
+  if (isConciergeMode || (user && user.role === UserRole.B2B_CONCIERGE)) {
+    return <ConciergeDashboard />;
+  }
+
   if (isTabletMode) {
     return <TabletDisplayRoute onClose={() => { window.location.href = '/'; }} />;
   }
@@ -83,6 +112,9 @@ const App: React.FC = () => {
     }
     
     // Each dashboard component is now responsible for its own full-page layout
+    if (user.role === UserRole.B2B_CONCIERGE) {
+      return <ConciergeDashboard />;
+    }
     if (user.role === UserRole.ADMIN || user.role === UserRole.MANAGER) {
       return <AdminDashboard />;
     }

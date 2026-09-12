@@ -3,6 +3,31 @@ export enum UserRole {
   MANAGER = 'MANAGER', // Gerente
   DRIVER = 'DRIVER',
   OWNER = 'OWNER',
+  B2B_CONCIERGE = 'b2b_concierge',
+}
+
+export type EstablishmentCategory = 'HOTEL' | 'RESTAURANT' | 'VIP_LOUNGE' | 'CORPORATE';
+
+export interface Establishment {
+  id: string;
+  name: string;
+  tradeName?: string;
+  category: EstablishmentCategory;
+  logoUrl: string;
+  fixedPickupAddress: string;
+  fixedPickupCoords: {
+    lat: number;
+    lng: number;
+  };
+  contactPhone: string;
+  contactEmail: string;
+  accountManager?: string;
+  commissionRatePercent: number; // ex: 10%
+  billingNif?: string;
+  billingAddress?: string;
+  status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
+  notes?: string;
+  createdAt?: any;
 }
 
 export enum CalculationType {
@@ -67,6 +92,10 @@ export interface User {
   adTechEnabled?: boolean;
   adTechAccumulatedBonus?: number;
   assignedTabletId?: string;
+
+  // B2B Concierge
+  establishmentId?: string;
+  establishment?: Establishment;
 }
 
 export interface Calculation {
@@ -381,7 +410,7 @@ export interface AnnualIvaSummary {
 
 export type VehicleCategory = 'STANDARD' | 'ELECTRIC' | 'BLACK_TESLA' | 'XL_VAN' | 'PRIORIDADE';
 
-export type PaymentMethod = 'MBWAY' | 'CARD' | 'CASH' | 'TPA';
+export type PaymentMethod = 'MBWAY' | 'CARD' | 'CASH' | 'TPA' | 'STRIPE' | 'FATURACAO_MENSAL';
 
 export type RideStatus = 
   | 'pendente' 
@@ -445,6 +474,18 @@ export interface PrivateRide {
   companyId?: string;
   ratingDadoPeloCliente?: number;
   avaliacaoNotas?: string;
+
+  // B2B Concierge & Corporate Extension
+  isB2B?: boolean;
+  establishmentId?: string;
+  establishmentName?: string;
+  establishmentLogo?: string;
+  guestRoomNumber?: string;
+  conciergeNotes?: string;
+  b2bCommissionRate?: number; // e.g. 10 (%)
+  b2bCommissionValue?: number; // e.g. €2.50
+  trackingToken?: string; // Token for public tracking URL /track/:id
+  source?: 'rider_app' | 'b2b_concierge' | 'admin_manual';
 }
 
 export interface FleetFareRules {

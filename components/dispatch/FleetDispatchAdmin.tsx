@@ -18,7 +18,8 @@ import {
   Users, 
   ExternalLink,
   Calendar,
-  Sparkles
+  Sparkles,
+  Building2
 } from 'lucide-react';
 import { 
   PrivateRide, 
@@ -124,6 +125,7 @@ export const FleetDispatchAdmin: React.FC = () => {
 
   const filteredRides = rides.filter(r => {
     if (statusFilter === 'ALL') return true;
+    if (statusFilter === 'B2B') return r.isB2B === true;
     return r.status === statusFilter;
   });
 
@@ -175,6 +177,15 @@ export const FleetDispatchAdmin: React.FC = () => {
           >
             <Sliders className="w-3.5 h-3.5" /> Tarifas & Regras
           </button>
+          <a
+            href="/concierge"
+            target="_blank"
+            rel="noreferrer"
+            className="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-purple-950/70 hover:bg-purple-900 text-purple-300 border border-purple-700/60"
+            title="Abrir Portal B2B Concierge para Hotéis"
+          >
+            <Building2 className="w-3.5 h-3.5" /> Portal Concierge
+          </a>
         </div>
       </div>
 
@@ -249,8 +260,8 @@ export const FleetDispatchAdmin: React.FC = () => {
         <div className="bg-slate-900 rounded-3xl border border-slate-800 p-5 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 className="text-base font-black text-white">Histórico e Fila de Corridas Privadas</h2>
-            <div className="flex items-center gap-2">
-              {['ALL', 'pendente', 'aceito', 'a_caminho', 'em_viagem', 'concluido'].map((st) => (
+            <div className="flex items-center gap-2 flex-wrap">
+              {['ALL', 'B2B', 'pendente', 'aceito', 'a_caminho', 'em_viagem', 'concluido'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
@@ -258,7 +269,7 @@ export const FleetDispatchAdmin: React.FC = () => {
                     statusFilter === st ? 'bg-emerald-600 text-white' : 'bg-slate-950 text-slate-400 border border-slate-800'
                   }`}
                 >
-                  {st}
+                  {st === 'B2B' ? '🏢 B2B Concierge' : st}
                 </button>
               ))}
             </div>
@@ -273,12 +284,30 @@ export const FleetDispatchAdmin: React.FC = () => {
               filteredRides.map((ride) => (
                 <div key={ride.id} className="p-4 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-mono text-slate-500">#{ride.id.slice(-6)}</span>
                       <span className="text-xs font-black text-white">{ride.clienteNome}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
                         {ride.status.toUpperCase()}
                       </span>
+                      {ride.isB2B && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-extrabold flex items-center gap-1">
+                          <Building2 className="w-3 h-3" />
+                          B2B: {ride.establishmentName || 'Hotel Parceiro'}
+                          {ride.guestRoomNumber && ` (${ride.guestRoomNumber})`}
+                        </span>
+                      )}
+                      {ride.trackingToken && (
+                        <a
+                          href={`/track/${ride.trackingToken}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-purple-400 hover:text-purple-300 flex items-center gap-1 font-bold underline"
+                          title="Abrir rastreio público do passageiro"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Rastreio
+                        </a>
+                      )}
                     </div>
                     <div className="text-xs text-slate-300 flex items-center gap-2">
                       <span className="text-blue-400">Origem:</span> {ride.origem.endereco} &rarr; <span className="text-emerald-400">Destino:</span> {ride.destino.endereco}
@@ -288,7 +317,14 @@ export const FleetDispatchAdmin: React.FC = () => {
                   <div className="flex items-center gap-4 text-right">
                     <div>
                       <div className="text-sm font-black text-emerald-400">€{ride.valorTotal.toFixed(2)}</div>
-                      <div className="text-[10px] text-slate-400">Motorista: €{ride.valorLiquidoMotorista.toFixed(2)} | Frota: €{ride.comissaoFrota.toFixed(2)}</div>
+                      <div className="text-[10px] text-slate-400">
+                        Motorista: €{ride.valorLiquidoMotorista.toFixed(2)} | Frota: €{ride.comissaoFrota.toFixed(2)}
+                        {ride.b2bCommissionValue && (
+                          <span className="text-purple-400 block font-bold">
+                            Comissão Hotel: €{ride.b2bCommissionValue.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

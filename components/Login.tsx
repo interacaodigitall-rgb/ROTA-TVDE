@@ -342,6 +342,34 @@ const Login: React.FC = () => {
                           <p className="text-[10px] text-slate-400">demosl@rotatvde.pt</p>
                         </div>
                       </button>
+
+                      <div className="pt-2 border-t border-slate-800 my-1">
+                        <p className="text-[9px] font-bold text-purple-400 uppercase tracking-wider px-2 mb-1">
+                          🏢 Parceiros B2B / Concierge
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCredentials('concierge.tivoli@rotatvde.pt', 'Minharotatvde', 'Concierge Hotel Tivoli')}
+                        className="w-full px-2.5 py-1.5 rounded-xl hover:bg-purple-950/40 text-left transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white">Hotel Tivoli Liberdade</p>
+                          <p className="text-[10px] text-purple-300">concierge.tivoli@rotatvde.pt</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCredentials('concierge.jncquoi@rotatvde.pt', 'Minharotatvde', 'Concierge JNcQUOI')}
+                        className="w-full px-2.5 py-1.5 rounded-xl hover:bg-purple-950/40 text-left transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white">Restaurante JNcQUOI</p>
+                          <p className="text-[10px] text-purple-300">concierge.jncquoi@rotatvde.pt</p>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -470,6 +498,15 @@ const Login: React.FC = () => {
               >
                 <Navigation className="w-3.5 h-3.5 text-[#10B981]" />
                 <span>📱 Portal do Motorista (/driver)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { window.location.href = '/concierge'; }}
+                className="w-full py-2.5 px-4 rounded-xl bg-purple-950/80 hover:bg-purple-900/90 text-purple-200 hover:text-white font-semibold text-xs border border-purple-700/60 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+              >
+                <Building2 className="w-3.5 h-3.5 text-purple-400" />
+                <span>🛎️ Portal B2B Concierge (Hotéis & Restaurantes)</span>
               </button>
 
               <button

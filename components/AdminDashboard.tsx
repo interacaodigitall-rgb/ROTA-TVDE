@@ -23,6 +23,7 @@ import SaasSettingsView from './saas/SaasSettingsView';
 import IvaManagementView from './iva/IvaManagementView';
 import FleetDispatchAdmin from './dispatch/FleetDispatchAdmin';
 import RiderApp from './rider/RiderApp';
+import { B2BAdminView } from './admin/B2BAdminView';
 import { aggregateAnnualIva } from '../utils/ivaUtils';
 import { BRAND_LOGOS } from '../constants';
 import { 
@@ -69,6 +70,7 @@ export type AdminView =
   | 'vehicles' 
   | 'dispatch'
   | 'rider_sim'
+  | 'concierge_b2b'
   | 'receipts' 
   | 'adjustments'
   | 'extratos'
@@ -455,6 +457,15 @@ const AdminDashboard: React.FC = () => {
               label="App Passageiro (Rider)" 
               isActive={view === 'rider_sim'} 
               onClick={() => { setView('rider_sim'); onLinkClick(); }}
+              isCollapsed={collapsed}
+            />
+            <NavLink 
+              icon={<Building2 className="h-4 w-4 text-purple-400" />} 
+              label="B2B Concierge & Hotéis" 
+              isActive={view === 'concierge_b2b'} 
+              onClick={() => { setView('concierge_b2b'); onLinkClick(); }}
+              badge="B2B"
+              badgeColor="bg-purple-950 text-purple-300 border-purple-700"
               isCollapsed={collapsed}
             />
             <NavLink 
@@ -1244,6 +1255,8 @@ const AdminDashboard: React.FC = () => {
         return <FleetDispatchAdmin />;
       case 'rider_sim':
         return <RiderApp onBackToMain={() => setView('dispatch')} />;
+      case 'concierge_b2b':
+        return <B2BAdminView />;
       case 'iban': 
         return <IbanManagement />;
       case 'receipts': 

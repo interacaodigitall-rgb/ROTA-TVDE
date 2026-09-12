@@ -243,6 +243,174 @@ export const playDispatchAlertSound = () => {
   }
 };
 
+export const INITIAL_DEMO_RIDES: PrivateRide[] = [
+  {
+    id: 'ride_b2b_tivoli_001',
+    isB2B: true,
+    establishmentId: 'est_tivoli_avenida',
+    establishmentName: 'Hotel Tivoli Avenida Liberdade',
+    establishmentLogo: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&auto=format&fit=crop&q=80',
+    guestRoomNumber: 'Suite 408',
+    clienteNome: 'Mr. Julian Vance',
+    clienteTelefone: '+44 7911 123456',
+    origem: {
+      lat: 38.7212,
+      lng: -9.1465,
+      endereco: 'Hotel Tivoli - Av. da Liberdade, 185, Lisboa'
+    },
+    destino: {
+      lat: 38.7756,
+      lng: -9.1354,
+      endereco: 'Aeroporto Humberto Delgado (LIS) - Terminal 1'
+    },
+    distanciaKm: 8.4,
+    duracaoMin: 18,
+    categoria: 'BLACK_TESLA',
+    valorTotal: 22.00,
+    valorLiquidoMotorista: 18.70,
+    comissaoFrota: 3.30,
+    b2bCommissionRate: 10,
+    b2bCommissionValue: 2.20,
+    tipoViagem: 'imediato',
+    status: 'a_caminho',
+    motoristaId: 'drv_001',
+    motoristaNome: 'Carlos Silva',
+    viaturaMatricula: '45-TX-90',
+    viaturaModelo: 'Tesla Model 3 Highland Black',
+    motoristaTelefone: '+351 912 345 678',
+    motoristaRating: 4.98,
+    motoristaFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    etaMinutos: 3,
+    driverLocation: { lat: 38.7240, lng: -9.1480 },
+    metodoPagamento: 'MBWAY',
+    statusPagamento: 'pago',
+    trackingToken: 'tvl849x2',
+    source: 'b2b_concierge',
+    createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString()
+  },
+  {
+    id: 'ride_b2b_jncquoi_002',
+    isB2B: true,
+    establishmentId: 'est_jncquoi_avenida',
+    establishmentName: 'Restaurante JNcQUOI Avenida',
+    establishmentLogo: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&auto=format&fit=crop&q=80',
+    guestRoomNumber: 'Mesa VIP Sala do Meio',
+    clienteNome: 'Dra. Beatriz e Convidados (6 pax)',
+    clienteTelefone: '+351 918 765 432',
+    origem: {
+      lat: 38.7208,
+      lng: -9.1461,
+      endereco: 'Restaurante JNcQUOI - Av. da Liberdade 182, Lisboa'
+    },
+    destino: {
+      lat: 38.6946,
+      lng: -9.4222,
+      endereco: 'Marina de Cascais, Cascais'
+    },
+    distanciaKm: 28.5,
+    duracaoMin: 32,
+    categoria: 'XL_VAN',
+    valorTotal: 60.00,
+    valorLiquidoMotorista: 51.00,
+    comissaoFrota: 9.00,
+    b2bCommissionRate: 10,
+    b2bCommissionValue: 6.00,
+    tipoViagem: 'imediato',
+    status: 'em_viagem',
+    motoristaId: 'drv_003',
+    motoristaNome: 'Rui Costa',
+    viaturaMatricula: '89-VT-34',
+    viaturaModelo: 'Mercedes-Benz Vito Tourer Extra-Long (8L)',
+    motoristaTelefone: '+351 934 567 890',
+    motoristaRating: 4.88,
+    etaMinutos: 15,
+    driverLocation: { lat: 38.7050, lng: -9.2800 },
+    metodoPagamento: 'TPA',
+    statusPagamento: 'pendente',
+    trackingToken: 'jnc771a9',
+    source: 'b2b_concierge',
+    createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString()
+  },
+  {
+    id: 'ride_b2b_tivoli_003',
+    isB2B: true,
+    establishmentId: 'est_tivoli_avenida',
+    establishmentName: 'Hotel Tivoli Avenida Liberdade',
+    guestRoomNumber: 'Quarto 215',
+    clienteNome: 'Monsieur Pierre Dupont',
+    clienteTelefone: '+33 612 345678',
+    origem: {
+      lat: 38.7212,
+      lng: -9.1465,
+      endereco: 'Hotel Tivoli - Av. da Liberdade, 185, Lisboa'
+    },
+    destino: {
+      lat: 38.6916,
+      lng: -9.2160,
+      endereco: 'Mosteiro dos Jerónimos, Belém, Lisboa'
+    },
+    distanciaKm: 7.2,
+    duracaoMin: 16,
+    categoria: 'STANDARD',
+    valorTotal: 14.50,
+    valorLiquidoMotorista: 12.32,
+    comissaoFrota: 2.18,
+    b2bCommissionRate: 10,
+    b2bCommissionValue: 1.45,
+    tipoViagem: 'imediato',
+    status: 'concluido',
+    motoristaId: 'drv_002',
+    motoristaNome: 'Manuel Antunes',
+    viaturaMatricula: '72-ZF-14',
+    viaturaModelo: 'Kia EV6 Long Range Earth',
+    metodoPagamento: 'CARD',
+    statusPagamento: 'pago',
+    trackingToken: 'tvl992p3',
+    source: 'b2b_concierge',
+    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+    completedAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
+  },
+  {
+    id: 'ride_b2b_epic_004',
+    isB2B: true,
+    establishmentId: 'est_epic_sana',
+    establishmentName: 'Epic Sana Lisboa Hotel',
+    guestRoomNumber: 'Suite 902',
+    clienteNome: 'Dra. Carmen Morales',
+    clienteTelefone: '+34 600 123456',
+    origem: {
+      lat: 38.7253,
+      lng: -9.1578,
+      endereco: 'Av. Eng. Duarte Pacheco 15, Lisboa'
+    },
+    destino: {
+      lat: 38.7756,
+      lng: -9.1354,
+      endereco: 'Aeroporto Humberto Delgado LIS T1'
+    },
+    distanciaKm: 8.9,
+    duracaoMin: 19,
+    categoria: 'PRIORIDADE',
+    valorTotal: 22.00,
+    valorLiquidoMotorista: 18.70,
+    comissaoFrota: 3.30,
+    b2bCommissionRate: 12,
+    b2bCommissionValue: 2.64,
+    tipoViagem: 'imediato',
+    status: 'concluido',
+    motoristaId: 'drv_001',
+    motoristaNome: 'Carlos Silva',
+    viaturaMatricula: '45-TX-90',
+    viaturaModelo: 'Tesla Model 3 Highland Black',
+    metodoPagamento: 'STRIPE',
+    statusPagamento: 'pago',
+    trackingToken: 'epc339k1',
+    source: 'b2b_concierge',
+    createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+    completedAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString()
+  }
+];
+
 class DispatchService {
   private fareRules: FleetFareRules = DEFAULT_FARE_RULES;
   private localRides: PrivateRide[] = [];
@@ -261,9 +429,13 @@ class DispatchService {
       const savedRides = localStorage.getItem('asfalto_private_rides');
       if (savedRides) {
         this.localRides = JSON.parse(savedRides);
+      } else {
+        this.localRides = [...INITIAL_DEMO_RIDES];
+        this.persistLocalRides();
       }
     } catch (e) {
       console.warn('Error loading dispatch local data', e);
+      this.localRides = [...INITIAL_DEMO_RIDES];
     }
   }
 
@@ -357,6 +529,12 @@ class DispatchService {
    */
   public async createRide(rideData: Omit<PrivateRide, 'id' | 'createdAt' | 'status' | 'statusPagamento'>): Promise<PrivateRide> {
     const newId = `ride_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const trackingToken = rideData.trackingToken || Math.random().toString(36).substring(2, 10);
+    const b2bCommissionRate = rideData.b2bCommissionRate || 10;
+    const b2bCommissionValue = rideData.b2bCommissionValue !== undefined 
+      ? rideData.b2bCommissionValue 
+      : (rideData.isB2B ? Math.round((rideData.valorTotal * (b2bCommissionRate / 100)) * 100) / 100 : undefined);
+
     const newRide: PrivateRide = {
       ...rideData,
       id: newId,
@@ -364,11 +542,15 @@ class DispatchService {
       statusPagamento: rideData.metodoPagamento === 'CASH' || rideData.metodoPagamento === 'TPA' ? 'pendente' : 'pago',
       createdAt: new Date().toISOString(),
       etaMinutos: Math.ceil(rideData.duracaoMin / 2) || 4,
+      trackingToken,
+      b2bCommissionRate,
+      b2bCommissionValue,
+      source: rideData.source || (rideData.isB2B ? 'b2b_concierge' : 'rider_app'),
       chatMensagens: [
         {
           id: 'msg_welcome',
           sender: 'system',
-          text: 'Chamado privado recebido. A procurar a viatura Asfalto Cativante mais próxima...',
+          text: 'Chamado recebido com sucesso. A despachar a viatura executiva Asfalto Cativante...',
           time: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
         }
       ]
@@ -385,6 +567,42 @@ class DispatchService {
     }
 
     return newRide;
+  }
+
+  /**
+   * Subscribe to rides from a specific B2B establishment (Hotel/Restaurant)
+   */
+  public subscribeToEstablishmentRides(establishmentId: string, callback: (rides: PrivateRide[]) => void) {
+    const filter = () => this.localRides.filter(r => r.establishmentId === establishmentId);
+    callback(filter());
+
+    try {
+      const unsubscribe = db.collection('corridas_privadas')
+        .where('establishmentId', '==', establishmentId)
+        .onSnapshot((snapshot) => {
+          const firestoreRides: PrivateRide[] = [];
+          snapshot.forEach(doc => firestoreRides.push(doc.data() as PrivateRide));
+          if (firestoreRides.length > 0) {
+            firestoreRides.forEach(fr => this.updateLocalRide(fr));
+          }
+          callback(filter());
+        }, () => {
+          callback(filter());
+        });
+      return unsubscribe;
+    } catch (e) {
+      const interval = setInterval(() => {
+        callback(filter());
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }
+
+  /**
+   * Get ride by ID or Public Tracking Token
+   */
+  public getRideByIdOrToken(idOrToken: string): PrivateRide | undefined {
+    return this.localRides.find(r => r.id === idOrToken || r.trackingToken === idOrToken);
   }
 
   /**
@@ -490,6 +708,16 @@ class DispatchService {
     }
 
     this.updateRideStatusInLocalAndDb(rideId, updates);
+  }
+
+  /**
+   * Update ride status (compatible alias for tracking and administrative updates)
+   */
+  public async updateRideStatus(rideId: string, newStatus: RideStatus, extraUpdates?: Partial<PrivateRide>) {
+    await this.advanceRideStatus(rideId, newStatus);
+    if (extraUpdates) {
+      this.updateRideStatusInLocalAndDb(rideId, extraUpdates);
+    }
   }
 
   /**
