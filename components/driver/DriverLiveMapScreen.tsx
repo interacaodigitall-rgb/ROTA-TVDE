@@ -35,7 +35,8 @@ import {
   VolumeX, 
   Eye, 
   EyeOff,
-  Briefcase
+  Briefcase,
+  Menu
 } from 'lucide-react';
 
 interface DriverLiveMapScreenProps {
@@ -43,6 +44,7 @@ interface DriverLiveMapScreenProps {
   isOnline: boolean;
   onToggleOnline: () => void;
   onOpenProfile?: () => void;
+  onOpenDrawer?: () => void;
   onOpenCalculations?: () => void;
   onRideCompleted?: (ride: PrivateRide) => void;
 }
@@ -112,6 +114,7 @@ export const DriverLiveMapScreen: React.FC<DriverLiveMapScreenProps> = ({
   isOnline,
   onToggleOnline,
   onOpenProfile,
+  onOpenDrawer,
   onOpenCalculations,
   onRideCompleted
 }) => {
@@ -334,14 +337,14 @@ export const DriverLiveMapScreen: React.FC<DriverLiveMapScreenProps> = ({
 
       {/* 2. Top Floating Controls: Profile/Home & Quick Destination Search */}
       <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
-        {/* Left: Driver Profile / Back to Management */}
+        {/* Left: Driver Profile / Menu Drawer */}
         <button
           id="btn-driver-profile"
-          onClick={onOpenProfile}
-          className="pointer-events-auto w-12 h-12 rounded-2xl bg-[#0F172A]/90 backdrop-blur-xl border border-slate-700/80 shadow-2xl flex items-center justify-center text-slate-200 hover:text-white hover:border-emerald-400/60 hover:scale-105 active:scale-95 transition"
-          title="Ver Informações e Dados da Frota"
+          onClick={onOpenDrawer || onOpenProfile}
+          className="pointer-events-auto w-12 h-12 rounded-2xl bg-[#0F172A]/90 backdrop-blur-xl border border-slate-700/80 shadow-2xl flex items-center justify-center text-slate-200 hover:text-white hover:border-emerald-400/60 hover:scale-105 active:scale-95 transition cursor-pointer"
+          title="Abrir Menu Lateral"
         >
-          <UserIcon className="w-5 h-5 text-emerald-400" />
+          <Menu className="w-5 h-5 text-white" />
         </button>
 
         {/* Center: Live Status Pill */}

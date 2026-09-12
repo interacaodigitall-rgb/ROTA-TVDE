@@ -11,6 +11,12 @@ import DriverDispatchOverlay from './driver/DriverDispatchOverlay';
 import DriverLiveMapScreen from './driver/DriverLiveMapScreen';
 import DriverRequirementsView from './driver/DriverRequirementsView';
 import DriverProfileView from './driver/DriverProfileView';
+import DriverDrawerNavigation from './driver/DriverDrawerNavigation';
+import { 
+  DriverRideHistoryModal, 
+  DriverCampaignsModal, 
+  DriverScheduledRidesModal 
+} from './driver/DriverDrawerModals';
 import { dispatchService } from '../services/dispatchService';
 import { db, firestore } from '../firebase';
 import { 
@@ -26,7 +32,8 @@ import {
   TrendingUp,
   Clock,
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Menu
 } from 'lucide-react';
 
 export type DriverTab = 'rides' | 'calculations' | 'requirements' | 'profile';
@@ -168,6 +175,12 @@ export const DriverDashboard: React.FC = () => {
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
 
+  // Drawer & Modals state (Uber Driver style)
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isRideHistoryOpen, setIsRideHistoryOpen] = useState<boolean>(false);
+  const [isCampaignsOpen, setIsCampaignsOpen] = useState<boolean>(false);
+  const [isScheduledRidesOpen, setIsScheduledRidesOpen] = useState<boolean>(false);
+
   // Push location to dispatchService and Firestore
   const pushLocationUpdate = (
     online: boolean, 
@@ -286,19 +299,29 @@ export const DriverDashboard: React.FC = () => {
   return (
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-slate-950 text-slate-100 select-none relative">
       
-      {/* 1. HEADER COMPACTO E FIXO (h-14): Logo + Nome/Matrícula + Indicador de Sinal GPS */}
+      {/* 1. HEADER COMPACTO E FIXO (h-14): Hamburger + Logo + Nome/Matrícula + Indicador de Sinal GPS */}
       <header className="h-14 flex-shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-4 flex items-center justify-between z-40 select-none shadow-md">
-        {/* Left: Brand Logo + Driver Name & License Plate */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        {/* Left: Hamburger Menu Icon + Brand Logo + Driver Name & License Plate */}
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          <button
+            id="btn-driver-menu-hamburger"
+            type="button"
+            onClick={() => setIsDrawerOpen(true)}
+            className="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 hover:text-white border border-slate-700/70 shadow-sm flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
+            title="Abrir Menu Lateral Uber Driver"
+          >
+            <Menu className="w-5 h-5 text-white" />
+          </button>
+
           <img 
             src={BRAND_LOGOS.MOBILE} 
             alt="ROTA TVDE" 
             referrerPolicy="no-referrer"
-            className="w-8 h-8 rounded-xl object-cover border border-slate-700 shadow-sm flex-shrink-0 cursor-pointer"
+            className="w-8 h-8 rounded-xl object-cover border border-slate-700 shadow-sm flex-shrink-0 cursor-pointer hidden sm:block"
             onClick={() => setCurrentTab('rides')}
           />
-          <div className="min-w-0 flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-black text-white truncate max-w-[120px] sm:max-w-[180px]">
+          <div className="min-w-0 flex items-center gap-1.5 sm:gap-2">
+            <span className="text-xs sm:text-sm font-black text-white truncate max-w-[100px] sm:max-w-[180px]">
               {user?.name || 'Motorista'}
             </span>
             <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-mono font-black text-emerald-400 flex-shrink-0 shadow-sm">
@@ -350,6 +373,7 @@ export const DriverDashboard: React.FC = () => {
             user={user}
             isOnline={isOnline}
             onToggleOnline={handleToggleOnline}
+            onOpenDrawer={() => setIsDrawerOpen(true)}
             onOpenProfile={() => setCurrentTab('profile')}
             onOpenCalculations={() => setCurrentTab('calculations')}
             onRideCompleted={handleRideCompleted}
@@ -465,6 +489,40 @@ export const DriverDashboard: React.FC = () => {
           onRideCompleted={handleRideCompleted}
         />
       )}
+
+      {/* Menu Lateral Deslizante Estilo Uber Driver (Drawer Navigation) */}
+      <DriverDrawerNavigation
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSelectTab={(tab) => {
+          setCurrentTab(tab);
+          if (tab === 'calculations') {
+            setCalcSubView('list');
+          }
+        }}
+        onOpenRideHistory={() => setIsRideHistoryOpen(true)}
+        onOpenCampaigns={() => setIsCampaignsOpen(true)}
+        onOpenScheduledRides={() => setIsScheduledRidesOpen(true)}
+      />
+
+      {/* Modal 1: Histórico de Viagens */}
+      <DriverRideHistoryModal
+        isOpen={isRideHistoryOpen}
+        onClose={() => setIsRideHistoryOpen(false)}
+        completedRides={todayCompletedRides}
+      />
+
+      {/* Modal 2: Campanhas & Bónus AdTech */}
+      <DriverCampaignsModal
+        isOpen={isCampaignsOpen}
+        onClose={() => setIsCampaignsOpen(false)}
+      />
+
+      {/* Modal 3: Viagens Agendadas & Transfers */}
+      <DriverScheduledRidesModal
+        isOpen={isScheduledRidesOpen}
+        onClose={() => setIsScheduledRidesOpen(false)}
+      />
     </div>
   );
 };
